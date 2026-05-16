@@ -1,5 +1,5 @@
-// おじさんリマインダー Service Worker v2.0
-const CACHE_NAME = 'ojisan-reminder-v2';
+// おじさんリマインダー Service Worker v3.0
+const CACHE_NAME = 'ojisan-reminder-v3';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -12,7 +12,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(ASSETS))
-      .catch(() => {}) // アイコンがなくてもOK
+      .catch(() => {})
   );
   self.skipWaiting();
 });
@@ -31,12 +31,18 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// オフライン対応：キャッシュ優先
+// ネットワーク優先・オフライン時はキャッシュにフォールバック
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request))
-      .catch(() => caches.match('./index.html'))
+    fetch(event.request)
+      .then(response => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        return response;
+      })
+      .catch(() =>
+        caches.match(event.request).then(r => r || caches.match('./index.html'))
+      )
   );
 });
 
@@ -45,9 +51,7 @@ self.addEventListener('notificationclick', event => {
   event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then(clientList => {
-      if (clientList.length > 0) {
-        return clientList[0].focus();
-      }
+      if (clientList.length > 0) return clientList[0].focus();
       return clients.openWindow('./index.html');
     })
   );

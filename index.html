@@ -560,6 +560,7 @@
       </div>
     </div>
     <div style="margin-top:20px;">
+      <button class="btn btn-secondary" onclick="forceUpdate()">🔄 最新版に更新</button>
       <button class="btn btn-secondary" onclick="clearCompleted()">完了済みをまとめて削除</button>
       <button class="btn btn-danger" onclick="clearAll()">全データ削除</button>
     </div>
@@ -972,6 +973,20 @@ function clearCompleted() {
 function clearAll() {
   if(!confirm('全てのリマインドを削除しますか？')) return;
   saveAll([]); renderHome(); showToast('全て削除しました');
+}
+
+// === FORCE UPDATE ===
+async function forceUpdate() {
+  showToast('更新中...');
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+  } catch(e) {}
+  setTimeout(() => location.reload(true), 800);
 }
 
 // === TOAST ===
