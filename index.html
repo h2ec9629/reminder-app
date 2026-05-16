@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1A1614">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="リマインダー">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>おじさんリマインダー</title>
+  <style>
+    /* ===== RESET ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ===== CLAUDE DARK PALETTE ===== */
+    :root {
+      --bg:          #1A1614;
+      --bg-2:        #141210;
+      --surface:     #262220;
+      --surface-2:   #302C2A;
+      --border:      #3A3532;
+      --text:        #F0EBE6;
+      --text-sub:    #9E9691;
+      --text-faint:  #615D5A;
+      --accent:      #C85C3A;
+      --accent-dim:  #3A1E12;
+      --success:     #2A7A4E;
+      --success-dim: #132B1E;
+      --warning:     #B87828;
+      --warning-dim: #2A1E08;
+      --danger:      #B83838;
+      --danger-dim:  #2A1010;
+      --purple:      #7255A8;
+      --purple-dim:  #1E1530;
+      --nav-h:       60px;
+      --header-h:    54px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 16px;
+      z-index: 200;
+    }
+    .header-mascot {
+      width: 30px; height: 30px; margin-right: 10px; flex-shrink: 0;
+    }
+    .header-title {
+      font-size: 16px; font-weight: 700; color: var(--text);
+      letter-spacing: 0.2px;
+    }
+    .header-date {
+      margin-left: auto;
+      font-size: 12px; font-weight: 600; color: var(--text-sub);
+      background: var(--surface-2);
+      padding: 4px 10px; border-radius: 8px;
+    }
+    .urgent-badge {
+      margin-left: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px; font-weight: 700;
+      padding: 3px 9px; border-radius: 8px;
+      display: none;
+    }
+    .urgent-badge.show { display: block; }
+
+    /* ===== MAIN ===== */
+    .main {
+      margin-top: var(--header-h);
+      margin-bottom: var(--nav-h);
+      padding: 14px 12px;
+    }
+
+    /* ===== TABS ===== */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ===== BOTTOM NAV ===== */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: var(--nav-h);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex; z-index: 200;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+    .nav-btn {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 4px;
+      background: none; border: none;
+      color: var(--text-faint);
+      font-size: 10px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      transition: color 0.15s; position: relative;
+    }
+    .nav-btn svg { width: 22px; height: 22px; }
+    .nav-btn.active { color: var(--accent); }
+    .nav-dot {
+      position: absolute; top: 6px; right: calc(50% - 16px);
+      width: 6px; height: 6px;
+      background: var(--danger); border-radius: 50%;
+      border: 1.5px solid var(--surface); display: none;
+    }
+    .nav-dot.show { display: block; }
+
+    /* ===== SECTION HEADER ===== */
+    .section-hd {
+      font-size: 10px; font-weight: 700;
+      color: var(--text-faint);
+      text-transform: uppercase; letter-spacing: 1.2px;
+      margin: 20px 2px 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-hd::after {
+      content: ''; flex: 1; height: 1px;
+      background: var(--border);
+    }
+
+    /* ===== PROGRESS ===== */
+    .progress-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 14px;
+    }
+    .progress-top {
+      display: flex; justify-content: space-between;
+      font-size: 11px; font-weight: 600;
+      color: var(--text-sub); margin-bottom: 8px;
+    }
+    .progress-bar {
+      height: 5px; background: var(--bg-2);
+      border-radius: 99px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; background: var(--accent);
+      border-radius: 99px;
+      transition: width 0.5s cubic-bezier(.34,1.3,.64,1);
+    }
+
+    /* ===== REMINDER CARDS ===== */
+    .rcard {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 8px;
+      border-left: 4px solid var(--success);
+    }
+    .rcard.urgent  { border-left-color: var(--danger);  background: var(--danger-dim); }
+    .rcard.soon    { border-left-color: var(--warning); background: var(--warning-dim); }
+    .rcard.overdue { border-left-color: var(--purple);  background: var(--purple-dim); }
+    .rcard.done    { opacity: 0.35; }
+    .rcard.done .rtitle { text-decoration: line-through; }
+
+    .rtitle {
+      font-size: 15px; font-weight: 700;
+      margin-bottom: 8px; line-height: 1.35; color: var(--text);
+    }
+    .rmeta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+
+    .badge {
+      font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 6px;
+    }
+    .badge-excel    { background: #1A3025; color: #4ADE80; }
+    .badge-obsidian { background: #1E1630; color: #A78BFA; }
+    .badge-claude   { background: var(--accent-dim); color: #FB9070; }
+    .badge-manual   { background: var(--surface-2); color: var(--text-sub); }
+
+    .dchip {
+      font-size: 12px; font-weight: 600; color: var(--text-sub);
+    }
+    .dchip.dc-danger  { color: #F87171; }
+    .dchip.dc-warning { color: #FBB040; }
+    .dchip.dc-purple  { color: #A78BFA; }
+
+    .rnotes {
+      font-size: 12px; color: var(--text-sub);
+      margin-top: 7px; line-height: 1.55;
+    }
+    .ractions { display: flex; gap: 7px; margin-top: 11px; }
+    .ract {
+      flex: 1; padding: 8px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: none;
+      font-size: 12px; font-weight: 700;
+      color: var(--text-sub); cursor: pointer;
+      font-family: inherit; transition: background 0.15s;
+    }
+    .ract:active { background: var(--surface-2); }
+    .ract.done-btn { color: #4ADE80; border-color: #1A3025; }
+    .ract.del-btn  { color: #F87171; border-color: #2A1010; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      display: flex; flex-direction: column;
+      align-items: center;
+      padding: 36px 20px 24px; text-align: center;
+    }
+    .empty-state p {
+      font-size: 15px; font-weight: 600;
+      color: var(--text-sub); line-height: 1.7; margin-top: 18px;
+    }
+    .empty-state small {
+      font-size: 12px; color: var(--text-faint);
+      margin-top: 6px; display: block;
+    }
+
+    /* ===== BANNER ===== */
+    .banner {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      color: var(--text);
+      padding: 12px 14px; border-radius: 12px;
+      margin-bottom: 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; font-weight: 500;
+    }
+    .banner button {
+      margin-left: auto; flex-shrink: 0;
+      background: var(--accent);
+      border: none; color: #fff;
+      padding: 7px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+    }
+
+    /* ===== FORM ===== */
+    .form-group { margin-bottom: 18px; }
+    .form-label {
+      display: block; font-size: 12px; font-weight: 700;
+      color: var(--text-sub); margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .form-input {
+      width: 100%; padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: 10px;
+      font-size: 15px; font-family: inherit;
+      background: var(--surface); color: var(--text);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none; appearance: none;
+    }
+    .form-input::placeholder { color: var(--text-faint); }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(200,92,58,0.15);
+    }
+    textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.55; }
+    select.form-input {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239E9691' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center;
+      padding-right: 36px;
+    }
+    option { background: var(--surface); }
+
+    .btn {
+      width: 100%; padding: 14px;
+      border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:active { opacity: 0.8; transform: scale(0.985); }
+    .btn-accent    { background: var(--accent); color: #fff; }
+    .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+    .btn-danger    { background: var(--danger); color: #fff; }
+    .btn + .btn    { margin-top: 9px; }
+
+    /* ===== HINT BOX ===== */
+    .hint-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 10px; padding: 14px;
+      margin-bottom: 18px;
+      font-size: 13px; line-height: 1.7; color: var(--text-sub);
+    }
+    .hint-box strong { color: var(--text); }
+    .hint-box code {
+      display: block; margin-top: 10px;
+      background: var(--bg-2); color: #B0A8A4;
+      border: 1px solid var(--border);
+      padding: 12px; border-radius: 8px;
+      font-size: 11px; line-height: 1.65;
+      white-space: pre-wrap; word-break: break-all;
+      font-family: 'Menlo', 'Monaco', monospace;
+    }
+
+    /* ===== SETTINGS ===== */
+    .set-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 15px;
+      margin-bottom: 8px;
+      display: flex; align-items: center;
+    }
+    .set-info { flex: 1; }
+    .set-label { font-size: 14px; font-weight: 700; color: var(--text); }
+    .set-sub { font-size: 12px; color: var(--text-sub); margin-top: 3px; }
+    .set-act { margin-left: 12px; flex-shrink: 0; }
+    .sm-btn {
+      padding: 7px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700;
+      cursor: pointer; font-family: inherit; border: none;
+    }
+    .sm-btn-accent { background: var(--accent); color: #fff; }
+    .sm-btn-sec    { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+
+    /* ===== TOGGLE ===== */
+    .toggle { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-sl {
+      position: absolute; inset: 0;
+      background: var(--border); border-radius: 99px;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .toggle-sl::before {
+      content: ''; position: absolute;
+      width: 18px; height: 18px; left: 3px; top: 3px;
+      background: var(--text-faint); border-radius: 50%;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .toggle input:checked + .toggle-sl { background: var(--accent-dim); border: 1px solid var(--accent); }
+    .toggle input:checked + .toggle-sl::before { transform: translateX(20px); background: var(--accent); }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--nav-h) + 14px); left: 50%;
+      transform: translateX(-50%) translateY(8px);
+      background: var(--surface-2); color: var(--text);
+      border: 1px solid var(--border);
+      padding: 9px 20px; border-radius: 10px;
+      font-size: 13px; font-weight: 600;
+      z-index: 999; white-space: nowrap;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ===== SAFE AREA ===== */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .bottom-nav { height: calc(var(--nav-h) + env(safe-area-inset-bottom)); }
+      .main { margin-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); }
+      .toast { bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ========== MASCOT DEF (hidden) ========== -->
+<!-- オリジナルキャラ「リマちゃん」 クリーム色のシンプルぷりぷり生物 -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="rimachan" viewBox="0 0 100 105">
+      <circle cx="50" cy="56" r="44" fill="#F0EBE6"/>
+      <circle cx="33" cy="44" r="2.5" fill="#1A1614"/>
+      <circle cx="59" cy="44" r="2.5" fill="#1A1614"/>
+      <path d="M39 54 Q46 57 53 54"
+            stroke="#1A1614" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ========== HEADER ========== -->
+<header class="header">
+  <!-- header用ミニリマちゃん -->
+  <svg class="header-mascot" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+    <use href="#rimachan"/>
+  </svg>
+  <span class="header-title">リマインダー</span>
+  <span class="urgent-badge" id="urgentBadge"></span>
+  <span class="header-date" id="headerDate"></span>
+</header>
+
+<!-- ========== MAIN ========== -->
+<main class="main">
+
+  <!-- HOME -->
+  <div id="tab-home" class="tab-content active">
+    <div id="notifBanner" class="banner" style="display:none">
+      <span>🔔 期限前に通知を受け取りませんか？</span>
+      <button onclick="requestNotif()">許可する</button>
+    </div>
+    <div id="progressWrap" class="progress-wrap" style="display:none">
+      <div class="progress-top">
+        <span>進捗</span>
+        <span id="progressText"></span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+    <div id="homeContent"></div>
+  </div>
+
+  <!-- ADD -->
+  <div id="tab-add" class="tab-content">
+    <form id="addForm" autocomplete="off">
+      <div class="form-group">
+        <label class="form-label">タイトル <span style="color:var(--danger)">*</span></label>
+        <input type="text" class="form-input" id="titleInput" placeholder="例：○○社 納品締め切り" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">期限日 <span style="color:var(--danger)">*</span></label>
+        <input type="date" class="form-input" id="deadlineInput" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">カテゴリー</label>
+        <select class="form-input" id="categoryInput">
+          <option value="manual">手動入力</option>
+          <option value="excel">Excel（SGT）</option>
+          <option value="obsidian">Obsidian</option>
+          <option value="claude">Claude会話</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">何日前から通知</label>
+        <select class="form-input" id="advanceDaysInput">
+          <option value="1">1日前</option>
+          <option value="3" selected>3日前</option>
+          <option value="5">5日前</option>
+          <option value="7">1週間前</option>
+          <option value="14">2週間前</option>
+          <option value="30">1ヶ月前</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">メモ</label>
+        <textarea class="form-input" id="notesInput" placeholder="詳細・備考（任意）"></textarea>
+      </div>
+      <button type="submit" class="btn btn-accent">追加する</button>
+    </form>
+  </div>
+
+  <!-- IMPORT -->
+  <div id="tab-import" class="tab-content">
+    <div class="hint-box">
+      <strong>コワークのチャットにこれを貼り付けてください</strong>
+      <code>ExcelファイルとObsidianのメモから、締め切りや予定を全て抽出して以下のJSON形式で出力してください（カテゴリはexcel/obsidian/claudeのいずれか）：
+{"reminders": [{"title": "件名", "deadline": "YYYY-MM-DD", "advance_days": 3, "notes": "備考", "category": "excel"}]}</code>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ClaudeのJSON出力を貼り付け</label>
+      <textarea class="form-input" id="importJson"
+        placeholder='{"reminders": [...]}'
+        style="min-height:160px; font-size:12px; font-family:monospace;"></textarea>
+    </div>
+    <button class="btn btn-accent" onclick="importFromJSON()">取り込む</button>
+    <p style="text-align:center; margin-top:10px; font-size:11px; color:var(--text-faint);">重複チェックあり・既存データは上書きしません</p>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="tab-settings" class="tab-content">
+    <div class="set-item">
+      <div class="set-info">
+        <div class="set-label">通知設定</div>
+        <div class="set-sub" id="notifStatus">確認中...</div>
+      </div>
+      <div class="set-act">
+        <button class="sm-btn sm-btn-accent" onclick="requestNotif()">設定する</button>
+      </div>
+    </div>
+    <div class="set-item">
+      <div class="set-info">
+        <div class="set-label">完了済みを表示</div>
+        <div class="set-sub">ホームに完了リマインドも出す</div>
+      </div>
+      <div class="set-act">
+        <label class="toggle">
+          <input type="checkbox" id="showCompleted" onchange="renderHome()">
+          <span class="toggle-sl"></span>
+        </label>
+      </div>
+    </div>
+    <div class="set-item" style="flex-direction:column; align-items:stretch; gap:10px;">
+      <div class="set-label">🔗 GitHub Gist 自動同期</div>
+      <div class="set-sub">毎晩23:30にCoworkが自動更新します</div>
+      <div style="font-size:11px; color:var(--text-faint); word-break:break-all; background:var(--bg-2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-family:monospace; line-height:1.6;" id="gistUrlDisplay"></div>
+      <button class="sm-btn sm-btn-accent" style="width:100%; padding:9px;" onclick="syncFromGist(true)">今すぐ同期</button>
+    </div>
+
+    <div class="set-item">
+      <div class="set-info">
+        <div class="set-label">データエクスポート</div>
+        <div class="set-sub">JSONでバックアップ保存</div>
+      </div>
+      <div class="set-act">
+        <button class="sm-btn sm-btn-sec" onclick="exportData()">書き出す</button>
+      </div>
+    </div>
+    <div class="set-item">
+      <div class="set-info">
+        <div class="set-label">バックアップを復元</div>
+        <div class="set-sub">エクスポートしたJSONを読み込む</div>
+      </div>
+      <div class="set-act">
+        <label class="sm-btn sm-btn-sec" style="cursor:pointer; display:inline-block;">
+          <input type="file" accept=".json" style="display:none" onchange="importBackup(this)">
+          読み込む
+        </label>
+      </div>
+    </div>
+    <div style="margin-top:20px;">
+      <button class="btn btn-secondary" onclick="clearCompleted()">完了済みをまとめて削除</button>
+      <button class="btn btn-danger" onclick="clearAll()">全データ削除</button>
+    </div>
+    <div style="text-align:center; margin-top:28px; color:var(--text-faint); font-size:11px; line-height:2;">
+      おじさんリマインダー v1.2<br>
+      データはこのデバイスのみに保存されます
+    </div>
+  </div>
+
+</main>
+
+<!-- ========== BOTTOM NAV (SVGアウトラインアイコン) ========== -->
+<nav class="bottom-nav">
+
+  <button class="nav-btn active" id="nav-home" onclick="switchTab('home',this)">
+    <!-- house icon -->
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 12L12 4L21 12V21H15V15H9V21H3V12Z"/>
+    </svg>
+    <span>ホーム</span>
+    <span class="nav-dot" id="homeDot"></span>
+  </button>
+
+  <button class="nav-btn" id="nav-add" onclick="switchTab('add',this)">
+    <!-- plus-circle icon -->
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 8V16M8 12H16"/>
+    </svg>
+    <span>追加</span>
+  </button>
+
+  <button class="nav-btn" id="nav-import" onclick="switchTab('import',this)">
+    <!-- download icon -->
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 4V15M8 11L12 15L16 11"/>
+      <path d="M4 18H20"/>
+    </svg>
+    <span>Claude取込</span>
+  </button>
+
+  <button class="nav-btn" id="nav-settings" onclick="switchTab('settings',this)">
+    <!-- sliders icon -->
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <line x1="4" y1="6"  x2="20" y2="6"/>
+      <line x1="4" y1="12" x2="20" y2="12"/>
+      <line x1="4" y1="18" x2="20" y2="18"/>
+      <circle cx="9"  cy="6"  r="2.2" fill="#1A1614" stroke="currentColor" stroke-width="1.8"/>
+      <circle cx="16" cy="12" r="2.2" fill="#1A1614" stroke="currentColor" stroke-width="1.8"/>
+      <circle cx="11" cy="18" r="2.2" fill="#1A1614" stroke="currentColor" stroke-width="1.8"/>
+    </svg>
+    <span>設定</span>
+  </button>
+
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<!-- ========== JS ========== -->
+<script>
+'use strict';
+
+// === DATA ===
+const KEY = 'ojisan_reminders_v1';
+const getAll  = () => { try { return JSON.parse(localStorage.getItem(KEY)||'[]'); } catch{return[];} };
+const saveAll = a => localStorage.setItem(KEY, JSON.stringify(a));
+const genId   = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const todayStr= () => new Date().toISOString().split('T')[0];
+
+function addReminder(r) {
+  const a = getAll();
+  r.id = genId(); r.created_at = todayStr(); r.completed = false;
+  a.push(r); saveAll(a); return r;
+}
+const markDone  = id => saveAll(getAll().map(r => r.id===id ? {...r, completed:true, completed_at:todayStr()} : r));
+const deleteOne = id => saveAll(getAll().filter(r => r.id!==id));
+
+// === DATE ===
+function daysUntil(s) {
+  const t=new Date(); t.setHours(0,0,0,0);
+  const d=new Date(s); d.setHours(0,0,0,0);
+  return Math.round((d-t)/86400000);
+}
+function fmtDate(s) {
+  const d=new Date(s);
+  return `${d.getMonth()+1}/${d.getDate()}(${'日月火水木金土'[d.getDay()]})`;
+}
+function daysLabel(n) {
+  if(n<0)   return `${Math.abs(n)}日超過`;
+  if(n===0) return '今日が期限';
+  if(n===1) return '明日が期限';
+  return `${n}日後`;
+}
+function urgClass(n, adv) {
+  if(n<0)  return 'overdue';
+  if(n===0 || n<=Math.min(adv,2)) return 'urgent';
+  if(n<=7) return 'soon';
+  return '';
+}
+function chipCls(n) {
+  if(n<0)  return 'dc-purple';
+  if(n<=2) return 'dc-danger';
+  if(n<=7) return 'dc-warning';
+  return '';
+}
+
+// === MASCOT ===
+function mascotSVG(w=120, h=132) {
+  return `<svg width="${w}" height="${h}" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg"><use href="#rimachan"/></svg>`;
+}
+
+// === RENDER HOME ===
+function renderHome() {
+  const all  = getAll();
+  const showDone = document.getElementById('showCompleted').checked;
+  const act  = all.filter(r=>!r.completed);
+  const done = all.filter(r=>r.completed);
+  const sortBy = arr => [...arr].sort((a,b)=>daysUntil(a.deadline)-daysUntil(b.deadline));
+  const overdue  = sortBy(act.filter(r=>daysUntil(r.deadline)<0));
+  const today    = sortBy(act.filter(r=>daysUntil(r.deadline)===0));
+  const in3      = sortBy(act.filter(r=>{ const d=daysUntil(r.deadline); return d>0&&d<=3; }));
+  const thisWeek = sortBy(act.filter(r=>{ const d=daysUntil(r.deadline); return d>3&&d<=7; }));
+  const later    = sortBy(act.filter(r=>daysUntil(r.deadline)>7));
+
+  // progress
+  if(all.length>0) {
+    const pct=Math.round(done.length/all.length*100);
+    document.getElementById('progressWrap').style.display='block';
+    document.getElementById('progressText').textContent=`${done.length} / ${all.length}`;
+    document.getElementById('progressFill').style.width=pct+'%';
+  } else {
+    document.getElementById('progressWrap').style.display='none';
+  }
+
+  // urgent badge
+  const uc=overdue.length+today.length+in3.length;
+  const badge=document.getElementById('urgentBadge');
+  if(uc>0){ badge.textContent=`${uc}件`; badge.classList.add('show'); document.getElementById('homeDot').classList.add('show'); }
+  else    { badge.classList.remove('show'); document.getElementById('homeDot').classList.remove('show'); }
+
+  // notif banner
+  document.getElementById('notifBanner').style.display =
+    ('Notification' in window && Notification.permission==='default') ? 'flex' : 'none';
+
+  let html='';
+  if(overdue.length)  html+=sec('期限超過',overdue);
+  if(today.length)    html+=sec('今日が期限',today);
+  else if(!overdue.length) {
+    html+=`<div class="section-hd">今日の期限</div>
+           <div class="rcard" style="border-left-color:var(--success);text-align:center;color:var(--text-faint);font-size:13px;font-weight:600;padding:18px 14px;">今日の期限はありません ✓</div>`;
+  }
+  if(in3.length)      html+=sec('3日以内', in3);
+  if(thisWeek.length) html+=sec('今週中', thisWeek);
+  if(later.length)    html+=sec('それ以降', later);
+
+  if(act.length===0) {
+    html=`<div class="empty-state">
+      ${mascotSVG(120,132)}
+      <p>リマインドなし！<br>余裕あるやん〜</p>
+      <small>うどんでも食べながらゆっくりしてください</small>
+    </div>`;
+  }
+  if(showDone&&done.length) html+=sec(`完了済み（${done.length}件）`,done);
+  document.getElementById('homeContent').innerHTML=html;
+}
+
+function sec(label,items) {
+  return `<div class="section-hd">${escH(label)}</div>`+items.map(cardHTML).join('');
+}
+
+function cardHTML(r) {
+  const n=daysUntil(r.deadline);
+  const uc=r.completed?'done':urgClass(n,r.advance_days||3);
+  const catLabel={excel:'Excel',obsidian:'Obsidian',claude:'Claude',manual:'手動'}[r.category]||'手動';
+  const notesHtml=r.notes?`<div class="rnotes">${escH(r.notes)}</div>`:'';
+  const actions=r.completed
+    ?`<div class="ractions"><button class="ract del-btn" onclick="doDelete('${r.id}')">削除</button></div>`
+    :`<div class="ractions">
+        <button class="ract done-btn" onclick="doDone('${r.id}')">完了</button>
+        <button class="ract del-btn"  onclick="doDelete('${r.id}')">削除</button>
+      </div>`;
+  return `<div class="rcard ${uc}">
+    <div class="rtitle">${escH(r.title)}</div>
+    <div class="rmeta">
+      <span class="badge badge-${r.category||'manual'}">${catLabel}</span>
+      <span class="dchip ${chipCls(n)}">${fmtDate(r.deadline)} · ${daysLabel(n)}</span>
+    </div>
+    ${notesHtml}
+    ${actions}
+  </div>`;
+}
+
+const escH=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+// === NAV ===
+function switchTab(name,btn) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='home')     renderHome();
+  if(name==='settings') updateNotifStatus();
+}
+
+// === ACTIONS ===
+const doDone  = id => { markDone(id);  renderHome(); showToast('完了しました'); };
+function doDelete(id) {
+  if(!confirm('このリマインドを削除しますか？')) return;
+  deleteOne(id); renderHome(); showToast('削除しました');
+}
+
+// === ADD FORM ===
+document.getElementById('addForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  addReminder({
+    title:        document.getElementById('titleInput').value.trim(),
+    deadline:     document.getElementById('deadlineInput').value,
+    category:     document.getElementById('categoryInput').value,
+    advance_days: parseInt(document.getElementById('advanceDaysInput').value,10),
+    notes:        document.getElementById('notesInput').value.trim(),
+  });
+  e.target.reset();
+  document.getElementById('deadlineInput').value=todayStr();
+  showToast('追加しました');
+  setTimeout(()=>document.getElementById('nav-home').click(),400);
+});
+
+// === IMPORT ===
+function importFromJSON() {
+  const raw=document.getElementById('importJson').value.trim();
+  if(!raw){ showToast('JSONを貼り付けてください'); return; }
+  let data; try{ data=JSON.parse(raw); }catch{ showToast('JSONの形式が違います'); return; }
+  const list=Array.isArray(data)?data:(data.reminders||[]);
+  if(!list.length){ showToast('リマインドが見つかりませんでした'); return; }
+  const keys=new Set(getAll().map(r=>r.title+'|'+r.deadline));
+  let added=0;
+  list.forEach(item=>{
+    if(!item.title||!item.deadline) return;
+    const k=item.title+'|'+item.deadline;
+    if(keys.has(k)) return;
+    addReminder({title:item.title,deadline:item.deadline,category:item.category||'claude',
+                 advance_days:item.advance_days||3,notes:item.notes||''});
+    keys.add(k); added++;
+  });
+  document.getElementById('importJson').value='';
+  showToast(added>0?`${added}件取り込みました`:'新しいリマインドはありませんでした');
+  if(added>0) setTimeout(()=>document.getElementById('nav-home').click(),600);
+}
+
+function importBackup(input) {
+  const file=input.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=e=>{ try{ const d=JSON.parse(e.target.result); const l=d.reminders||d; if(!Array.isArray(l)) throw 0; saveAll(l); renderHome(); showToast(`${l.length}件を復元しました`); }catch{ showToast('ファイルの形式が違います'); } };
+  r.readAsText(file); input.value='';
+}
+
+// === NOTIFICATIONS ===
+async function requestNotif() {
+  if(!('Notification' in window)){ showToast('このブラウザは通知非対応です'); return; }
+  const p=await Notification.requestPermission();
+  updateNotifStatus();
+  if(p==='granted'){ showToast('通知を許可しました'); document.getElementById('notifBanner').style.display='none'; triggerNotifications(); }
+  else showToast('通知がブロックされています');
+}
+function updateNotifStatus() {
+  const el=document.getElementById('notifStatus'); if(!el) return;
+  el.textContent = !('Notification' in window) ? '通知非対応のブラウザです'
+    : Notification.permission==='granted' ? '許可済み'
+    : Notification.permission==='denied'  ? 'ブロック済み（ブラウザ設定から変更してください）'
+    : '未設定';
+}
+function triggerNotifications() {
+  if(Notification.permission!=='granted') return;
+  getAll().filter(r=>!r.completed).forEach(r=>{
+    const n=daysUntil(r.deadline),adv=r.advance_days||3;
+    if(n<0) new Notification(r.title,{body:`${Math.abs(n)}日超過しています`,tag:'ov-'+r.id,icon:'icons/icon-192.png'});
+    else if(n<=adv) new Notification(r.title,{body:n===0?'今日が期限です':`${n}日後が期限です`,tag:r.id,icon:'icons/icon-192.png'});
+  });
+}
+
+// === GITHUB GIST SYNC ===
+const GIST_RAW_URL = 'https://gist.githubusercontent.com/H2EC9629/34f07c829b92ea7141367874f8777512/raw/reminder_sync.json';
+
+async function syncFromGist(manual=false) {
+  try {
+    const res = await fetch(GIST_RAW_URL + '?t=' + Date.now());
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    const list = data.reminders || [];
+    const keys = new Set(getAll().map(r=>r.title+'|'+r.deadline));
+    let added = 0;
+    list.forEach(item => {
+      if (!item.title) return;
+      const k = item.title+'|'+(item.deadline||'null');
+      if (keys.has(k)) return;
+      addReminder({ title:item.title, deadline:item.deadline||null,
+                    category:'obsidian', advance_days:item.advance_days||3, notes:item.notes||'' });
+      keys.add(k); added++;
+    });
+    if (added > 0) { renderHome(); showToast(`Obsidianから${added}件を取込みました`); }
+    else if (manual) showToast('新しいリマインドはありませんでした');
+  } catch(e) {
+    if (manual) showToast('同期に失敗しました（しばらく後でお試しください）');
+  }
+}
+
+// === SETTINGS ===
+function exportData() {
+  const blob=new Blob([JSON.stringify({reminders:getAll(),exported_at:new Date().toISOString()},null,2)],{type:'application/json'});
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`reminder-${todayStr()}.json`});
+  a.click(); URL.revokeObjectURL(a.href); showToast('エクスポートしました');
+}
+function clearCompleted() {
+  const b=getAll().length; saveAll(getAll().filter(r=>!r.completed));
+  renderHome(); showToast(`${b-getAll().length}件削除しました`);
+}
+function clearAll() {
+  if(!confirm('全てのリマインドを削除しますか？')) return;
+  saveAll([]); renderHome(); showToast('全て削除しました');
+}
+
+// === TOAST ===
+let _tt;
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// === INIT ===
+(function init(){
+  const now=new Date();
+  document.getElementById('headerDate').textContent=
+    `${now.getMonth()+1}/${now.getDate()}(${'日月火水木金土'[now.getDay()]})`;
+  document.getElementById('deadlineInput').value=todayStr();
+  // OneDrive URL を設定欄に復元
+  const savedUrl = localStorage.getItem(OD_URL_KEY);
+  if (savedUrl) document.getElementById('onedriveSyncUrl').value = savedUrl;
+
+  // GistのURL表示
+  const disp = document.getElementById('gistUrlDisplay');
+  if (disp) disp.textContent = GIST_RAW_URL;
+
+  renderHome();
+  if(Notification.permission==='granted') triggerNotifications();
+  // 起動時にGist自動同期
+  syncFromGist(false);
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>
