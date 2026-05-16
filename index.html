@@ -114,6 +114,20 @@
       overflow-y: auto; scrollbar-width: none;
     }
     .rima-nav-comment::-webkit-scrollbar { display: none; }
+    #rimaWrap {
+      flex-shrink: 0;
+      display: flex; align-items: center;
+      transform-origin: center center;
+    }
+    @keyframes rimaKatakata {
+      0%,100% { transform: translateY(0); }
+      25%     { transform: translateY(-1px); }
+      75%     { transform: translateY(1px); }
+    }
+    @keyframes rimaSpin {
+      0%   { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
     .nav-grid {
       flex: 1;
       display: grid;
@@ -700,9 +714,11 @@
   <!-- リマちゃんエリア -->
   <div class="rima-nav-area">
     <div id="rimaNavComment" class="rima-nav-comment"></div>
-    <svg width="68" height="75" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
-      <use href="#rimachan"/>
-    </svg>
+    <div id="rimaWrap">
+      <svg width="68" height="75" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+        <use href="#rimachan"/>
+      </svg>
+    </div>
   </div>
 
   <!-- 2×3 ボタングリッド -->
@@ -824,17 +840,17 @@ function mascotSVG(w=120, h=132) {
 }
 
 // === RIMA ROTATION ===
-const MEIGEN_LIST = [
-  'API＝アプリケーション・ポイント・インド人\n→ Application Programming Interface\nアプリ同士をつなぐ接続口',
-  'MCP＝マルチ・コラボ・ピーちゃん\n→ Model Context Protocol\nAIとツールをつなぐ謎の力の規格',
-  'RLHF＝ローリングロング・ヒューマンファンタジー\n→ 人の評価フィードバックでAIを鍛える学習法',
-  'ハルシネーション＝知ったかぶり（惜しい！）\n→ AIが自信満々に嘘をつく現象',
-  '機械学習＝自律機械学習\n→ データからパターンをAIが自動で学ぶ仕組み',
-  '知識カットオフ＝キャッシュメモリー？\n→ AIが学習した情報の時間的な境界線',
-  'トークン＝ソシャゲのスタミナみたいな何か\n→ AIが処理する文字のかたまりの単位',
-  'コンテキストウィンドウ＝リミット？\n→ AIが一度に扱える情報量の上限',
-  'npx＝なんやーそれー。jsonファイル？\n→ Node.jsのパッケージをその場で実行するコマンド',
-  'ADO＝辞書化\n→ VBAからデータベースに接続するための仕組み',
+const QUIZ_LIST = [
+  { q:'AIが大量のデータを見てパターンを学ぶ仕組みは？',      a:'自律機械学習',                          ans:'機械学習\nデータからパターンをAIが自動で学ぶ仕組み' },
+  { q:'AIが嘘を自信満々に答える現象は？',                    a:'知ったかぶり（惜しい）',                  ans:'ハルシネーション\nAIが自信満々に嘘をつく現象' },
+  { q:'人間のフィードバックでAIを改善する学習法は？',         a:'ローリングロング・ヒューマンファンタジー🏆', ans:'RLHF\n人の評価でAIを改善する学習法' },
+  { q:'APIの正式名称は？',                                   a:'アプリ・ポイント・インド人🏆',             ans:'Application Programming Interface\nアプリ同士をつなぐ接続口' },
+  { q:'MCPの正式名称は？',                                   a:'マルチ・コラボ・ピーちゃん🏆',            ans:'Model Context Protocol\nAIとツールをつなぐ規格' },
+  { q:'npxって何をするコマンド？',                            a:'なんやーそれー。jsonファイル？',            ans:'npx\nNode.jsパッケージを即実行するコマンド' },
+  { q:'VBAでDB接続する仕組みは？',                           a:'辞書化',                                  ans:'ADO\nVBAからDBに接続する仕組み' },
+  { q:'AIが処理する文字のかたまりの単位は？',                 a:'ソシャゲのスタミナみたいな何か（惜しい）',  ans:'トークン\nAIが処理する文字のかたまりの単位' },
+  { q:'AIが一度に扱える情報量の上限は？',                     a:'リミット？（惜しい）',                    ans:'コンテキストウィンドウ\nAIが一度に扱える情報量の上限' },
+  { q:'AIの知識の時間的な境界線は？',                        a:'キャッシュメモリー？',                     ans:'知識カットオフ\nAIが学習した情報の時間的な境界線' },
 ];
 
 function rimaCommentText(count) {
@@ -845,27 +861,42 @@ function rimaCommentText(count) {
   return 'パンパンやないですか！\n気合い入れていきまひょ';
 }
 
-function buildCommentPool() {
-  const act = getAll().filter(r => !r.completed).length;
-  return [rimaCommentText(act), ...MEIGEN_LIST];
-}
-
-let _rimaIdx = 0;
+// スライド状態管理
+let _rimaSlide    = 'status'; // 'status' | 'q' | 'a' | 'ans'
+let _currentQuiz  = null;
 let _rimaCycleTimer = null;
 let _rimaTypeTimer  = null;
-const CHAR_DELAY_MS = 100;
-const CYCLE_MS      = 10000;
+const SLIDE_MS = 6000;
+
+function getCurrentSlideText() {
+  const n = getAll().filter(r=>!r.completed).length;
+  switch(_rimaSlide) {
+    case 'status': return rimaCommentText(n);
+    case 'q':      return 'Q.\n' + _currentQuiz.q;
+    case 'a':      return 'おじさんの回答\n' + _currentQuiz.a;
+    case 'ans':    return '正解\n' + _currentQuiz.ans;
+  }
+}
+
+function advanceSlide() {
+  switch(_rimaSlide) {
+    case 'status': _currentQuiz = QUIZ_LIST[Math.floor(Math.random()*QUIZ_LIST.length)]; _rimaSlide='q';      break;
+    case 'q':      _rimaSlide = 'a';      break;
+    case 'a':      _rimaSlide = 'ans';    break;
+    case 'ans':    _rimaSlide = 'status'; break;
+  }
+}
 
 function startRimaRotation() {
   clearTimeout(_rimaCycleTimer);
   clearTimeout(_rimaTypeTimer);
-  _rimaIdx = 0;
+  _rimaSlide   = 'status';
+  _currentQuiz = null;
   showNextRimaComment();
 }
 
 function showNextRimaComment() {
-  const pool = buildCommentPool();
-  const text = pool[_rimaIdx % pool.length];
+  const text = getCurrentSlideText();
   const el   = document.getElementById('rimaNavComment');
   if(!el) return;
 
@@ -881,20 +912,24 @@ function showNextRimaComment() {
     el.style.transform  = 'translateX(0)';
   }));
 
-  const totalTypingMs = text.length * CHAR_DELAY_MS;
-  const pauseMs = Math.max(800, CYCLE_MS - totalTypingMs - 700);
+  const charDelay     = Math.min(100, Math.max(40, 2500 / text.length));
+  const totalTypingMs = text.length * charDelay;
+  const pauseMs       = Math.max(600, SLIDE_MS - totalTypingMs - 650);
   let i = 0;
 
   function typeNext() {
     if(i >= text.length) {
       _rimaCycleTimer = setTimeout(() => {
+        const rima = document.getElementById('rimaWrap');
+        if(rima) { rima.style.animation='none'; void rima.offsetWidth; rima.style.animation='rimaSpin 0.45s ease-in-out'; }
         el.style.transition = 'opacity 0.3s, transform 0.3s';
         el.style.opacity    = '0';
         el.style.transform  = 'translateX(-14px)';
         setTimeout(() => {
-          _rimaIdx = (_rimaIdx + 1) % pool.length;
+          if(rima) rima.style.animation = 'none';
+          advanceSlide();
           showNextRimaComment();
-        }, 300);
+        }, 450);
       }, pauseMs);
       return;
     }
@@ -904,8 +939,10 @@ function showNextRimaComment() {
     } else {
       el.innerHTML += ch==='&'?'&amp;':ch==='<'?'&lt;':ch==='>'?'&gt;':ch;
     }
-    el.scrollTop = el.scrollHeight;
-    _rimaTypeTimer = setTimeout(typeNext, CHAR_DELAY_MS);
+    el.scrollTop = Math.max(0, el.scrollHeight - el.clientHeight * 0.6);
+    const rima = document.getElementById('rimaWrap');
+    if(rima) { rima.style.animation='none'; void rima.offsetWidth; rima.style.animation='rimaKatakata 0.12s ease-in-out'; }
+    _rimaTypeTimer = setTimeout(typeNext, charDelay);
   }
 
   setTimeout(typeNext, 400);
