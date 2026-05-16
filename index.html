@@ -111,7 +111,9 @@
     .rima-nav-comment {
       flex: 1; font-size: 11px; font-weight: 600;
       color: var(--text-sub); line-height: 1.65;
+      overflow-y: auto; scrollbar-width: none;
     }
+    .rima-nav-comment::-webkit-scrollbar { display: none; }
     .nav-grid {
       flex: 1;
       display: grid;
@@ -821,21 +823,98 @@ function mascotSVG(w=120, h=132) {
   return `<svg width="${w}" height="${h}" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg"><use href="#rimachan"/></svg>`;
 }
 
-// === RIMA NAV ===
-function updateRimaNav() {
-  const act = getAll().filter(r => !r.completed);
-  const el = document.getElementById('rimaNavComment');
-  if(el) el.innerHTML = rimaComment(act.length);
+// === RIMA ROTATION ===
+const MEIGEN_LIST = [
+  'API＝アプリケーション・ポイント・インド人\n→ Application Programming Interface\nアプリ同士をつなぐ接続口',
+  'MCP＝マルチ・コラボ・ピーちゃん\n→ Model Context Protocol\nAIとツールをつなぐ謎の力の規格',
+  'RLHF＝ローリングロング・ヒューマンファンタジー\n→ 人の評価フィードバックでAIを鍛える学習法',
+  'ハルシネーション＝知ったかぶり（惜しい！）\n→ AIが自信満々に嘘をつく現象',
+  '機械学習＝自律機械学習\n→ データからパターンをAIが自動で学ぶ仕組み',
+  '知識カットオフ＝キャッシュメモリー？\n→ AIが学習した情報の時間的な境界線',
+  'トークン＝ソシャゲのスタミナみたいな何か\n→ AIが処理する文字のかたまりの単位',
+  'コンテキストウィンドウ＝リミット？\n→ AIが一度に扱える情報量の上限',
+  'npx＝なんやーそれー。jsonファイル？\n→ Node.jsのパッケージをその場で実行するコマンド',
+  'ADO＝辞書化\n→ VBAからデータベースに接続するための仕組み',
+];
+
+function rimaCommentText(count) {
+  if(count === 0) return 'うどんでも食べながら\nゆっくりしてください';
+  if(count <= 2)  return 'ぼちぼちありますわ〜\n無理せず片付けてください';
+  if(count <= 5)  return 'そこそこありますよ！\n優先順位つけていきましょ';
+  if(count <= 9)  return 'けっこう多いですね...\n一個ずつ着実にどうぞ';
+  return 'パンパンやないですか！\n気合い入れていきまひょ';
 }
 
-// === RIMA COMMENT ===
-function rimaComment(activeCount) {
-  if(activeCount === 0) return 'うどんでも食べながら<br>ゆっくりしてください';
-  if(activeCount <= 2)  return 'ぼちぼちありますわ〜<br>無理せず片付けてください';
-  if(activeCount <= 5)  return 'そこそこありますよ！<br>優先順位つけていきましょ';
-  if(activeCount <= 9)  return 'けっこう多いですね...<br>一個ずつ着実にどうぞ';
-  return 'パンパンやないですか！<br>気合い入れていきまひょ';
+function buildCommentPool() {
+  const act = getAll().filter(r => !r.completed).length;
+  return [rimaCommentText(act), ...MEIGEN_LIST];
 }
+
+let _rimaIdx = 0;
+let _rimaCycleTimer = null;
+let _rimaTypeTimer  = null;
+const CHAR_DELAY_MS = 100;
+const CYCLE_MS      = 10000;
+
+function startRimaRotation() {
+  clearTimeout(_rimaCycleTimer);
+  clearTimeout(_rimaTypeTimer);
+  _rimaIdx = 0;
+  showNextRimaComment();
+}
+
+function showNextRimaComment() {
+  const pool = buildCommentPool();
+  const text = pool[_rimaIdx % pool.length];
+  const el   = document.getElementById('rimaNavComment');
+  if(!el) return;
+
+  el.style.transition = 'none';
+  el.style.opacity    = '0';
+  el.style.transform  = 'translateX(14px)';
+  el.innerHTML        = '';
+  el.scrollTop        = 0;
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    el.style.transition = 'opacity 0.35s, transform 0.35s';
+    el.style.opacity    = '1';
+    el.style.transform  = 'translateX(0)';
+  }));
+
+  const totalTypingMs = text.length * CHAR_DELAY_MS;
+  const pauseMs = Math.max(800, CYCLE_MS - totalTypingMs - 700);
+  let i = 0;
+
+  function typeNext() {
+    if(i >= text.length) {
+      _rimaCycleTimer = setTimeout(() => {
+        el.style.transition = 'opacity 0.3s, transform 0.3s';
+        el.style.opacity    = '0';
+        el.style.transform  = 'translateX(-14px)';
+        setTimeout(() => {
+          _rimaIdx = (_rimaIdx + 1) % pool.length;
+          showNextRimaComment();
+        }, 300);
+      }, pauseMs);
+      return;
+    }
+    const ch = text[i++];
+    if(ch === '\n') {
+      el.innerHTML += '<br>';
+    } else {
+      el.innerHTML += ch==='&'?'&amp;':ch==='<'?'&lt;':ch==='>'?'&gt;':ch;
+    }
+    el.scrollTop = el.scrollHeight;
+    _rimaTypeTimer = setTimeout(typeNext, CHAR_DELAY_MS);
+  }
+
+  setTimeout(typeNext, 400);
+}
+
+function updateRimaNav() { /* ローテーションに統合済み */ }
+
+// === RIMA COMMENT (後方互換) ===
+function rimaComment(count) { return rimaCommentText(count); }
 
 // === RENDER HOME ===
 function renderHome() {
@@ -1305,7 +1384,7 @@ document.getElementById('headerDate').textContent=
 document.getElementById('deadlineInput').value=todayStr();
 document.getElementById('gistUrlDisplay').textContent=GIST_RAW_URL;
 updateNotifStatus();
-updateRimaNav();
+startRimaRotation();
 syncFromGist();
 renderHome();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
