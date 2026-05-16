@@ -656,6 +656,15 @@
       <button class="sm-btn sm-btn-accent" style="width:100%; padding:9px;" onclick="syncFromGist(true)">今すぐ同期</button>
     </div>
 
+    <div class="set-item" style="flex-direction:column; align-items:stretch; gap:10px;">
+      <div class="set-label">📬 投函箱Gist設定</div>
+      <div class="set-sub">手動追加をObsidianに届ける仕組み（各デバイスで1回だけ設定）</div>
+      <input type="text" class="form-input" id="mailboxGistId" placeholder="GistID（URLの末尾の英数字）" style="font-size:13px;">
+      <input type="password" class="form-input" id="mailboxPat" placeholder="Fine-grained PAT" style="font-size:13px;">
+      <button class="sm-btn sm-btn-accent" style="width:100%; padding:9px;" onclick="saveMailboxSettings()">保存する</button>
+      <div style="font-size:11px; color:var(--text-faint);" id="mailboxStatus"></div>
+    </div>
+
     <div class="set-item">
       <div class="set-info">
         <div class="set-label">データエクスポート</div>
@@ -683,7 +692,7 @@
       <button class="btn btn-danger" onclick="clearAll()">全データ削除</button>
     </div>
     <div style="text-align:center; margin-top:28px; color:var(--text-faint); font-size:11px; line-height:2;">
-      おじさんリマインダー v1.3<br>
+      おじさんリマインダー v1.4<br>
       データはこのデバイスのみに保存されます
     </div>
   </div>
@@ -1130,9 +1139,9 @@ function doDelete(id) {
 }
 
 // === ADD FORM ===
-document.getElementById('addForm').addEventListener('submit', e=>{
+document.getElementById('addForm').addEventListener('submit', async e=>{
   e.preventDefault();
-  addReminder({
+  const reminder = addReminder({
     title:        document.getElementById('titleInput').value.trim(),
     deadline:     document.getElementById('deadlineInput').value,
     category:     document.getElementById('categoryInput').value,
@@ -1143,6 +1152,7 @@ document.getElementById('addForm').addEventListener('submit', e=>{
   document.getElementById('deadlineInput').value=todayStr();
   showToast('追加しました');
   setTimeout(()=>document.getElementById('nav-home').click(),400);
+  pushToMailbox(reminder); // 投函箱に非同期送信（失敗してもローカル保存は済み）
 });
 
 // === IMPORT ===
@@ -1197,6 +1207,79 @@ function triggerNotifications() {
     if(n<0) new Notification(r.title,{body:`${Math.abs(n)}日超過しています`,tag:'ov-'+r.id,icon:'icons/icon-192.png'});
     else if(n<=adv) new Notification(r.title,{body:n===0?'今日が期限です':`${n}日後が期限です`,tag:r.id,icon:'icons/icon-192.png'});
   });
+}
+
+// === MAILBOX GIST ===
+const MAILBOX_CFG_KEY = 'ojisan_mailbox_cfg_v1';
+
+function getMailboxCfg() {
+  try { return JSON.parse(localStorage.getItem(MAILBOX_CFG_KEY)||'{}'); } catch { return {}; }
+}
+
+function saveMailboxSettings() {
+  const gistId = document.getElementById('mailboxGistId').value.trim();
+  const pat    = document.getElementById('mailboxPat').value.trim();
+  if (!gistId || !pat) { showToast('GistIDとPATを両方入力してください'); return; }
+  localStorage.setItem(MAILBOX_CFG_KEY, JSON.stringify({ gistId, pat }));
+  showToast('投函箱設定を保存しました');
+  updateMailboxStatus();
+}
+
+function updateMailboxStatus() {
+  const el = document.getElementById('mailboxStatus');
+  if (!el) return;
+  const cfg = getMailboxCfg();
+  if (cfg.gistId && cfg.pat) {
+    el.textContent = '設定済み ✓  GistID: ' + cfg.gistId.slice(0,10) + '...';
+    document.getElementById('mailboxGistId').value = cfg.gistId;
+  } else {
+    el.textContent = '未設定 — GistIDとPATを入力して保存してください';
+  }
+}
+
+async function pushToMailbox(reminder) {
+  const cfg = getMailboxCfg();
+  if (!cfg.gistId || !cfg.pat) return;
+
+  try {
+    const getRes = await fetch('https://api.github.com/gists/' + cfg.gistId, {
+      headers: {
+        'Authorization': 'Bearer ' + cfg.pat,
+        'Accept': 'application/vnd.github+json'
+      }
+    });
+    if (!getRes.ok) throw new Error('get failed');
+    const gistData = await getRes.json();
+
+    let pending = [];
+    try {
+      const raw = gistData.files['pending_manual.json']?.content || '{"pending_manual":[]}';
+      pending = JSON.parse(raw).pending_manual || [];
+    } catch {}
+
+    pending.push({
+      title:        reminder.title,
+      deadline:     reminder.deadline || null,
+      notes:        reminder.notes || '',
+      advance_days: reminder.advance_days || 3,
+      pushed_at:    todayStr()
+    });
+
+    const patchRes = await fetch('https://api.github.com/gists/' + cfg.gistId, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + cfg.pat,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        files: { 'pending_manual.json': { content: JSON.stringify({ pending_manual: pending }, null, 2) } }
+      })
+    });
+    if (!patchRes.ok) throw new Error('patch failed');
+  } catch(e) {
+    console.warn('投函箱送信失敗（ローカルには保存済み）:', e.message);
+  }
 }
 
 // === GITHUB GIST SYNC ===
@@ -1421,6 +1504,7 @@ document.getElementById('headerDate').textContent=
 document.getElementById('deadlineInput').value=todayStr();
 document.getElementById('gistUrlDisplay').textContent=GIST_RAW_URL;
 updateNotifStatus();
+updateMailboxStatus();
 startRimaRotation();
 syncFromGist();
 renderHome();
