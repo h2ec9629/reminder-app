@@ -35,7 +35,7 @@
       --purple:      #7255A8;
       --purple-dim:  #1E1530;
       --nav-h:       108px;
-      --header-h:    54px;
+      --header-h:    28px;
     }
 
     html, body {
@@ -54,28 +54,27 @@
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       display: flex; align-items: center;
-      padding: 0 16px;
+      padding: 0 10px;
       z-index: 200;
+      opacity: 0.82;
     }
-    .header-mascot {
-      width: 30px; height: 30px; margin-right: 10px; flex-shrink: 0;
-    }
+    .header-mascot { display: none; }
     .header-title {
-      font-size: 16px; font-weight: 700; color: var(--text);
-      letter-spacing: 0.2px;
+      font-size: 11px; font-weight: 700; color: var(--text-sub);
+      letter-spacing: 0.3px;
     }
     .header-date {
       margin-left: auto;
-      font-size: 15px; font-weight: 600; color: var(--text-sub);
+      font-size: 11px; font-weight: 600; color: var(--text-sub);
       background: var(--surface-2);
-      padding: 4px 10px; border-radius: 8px;
+      padding: 2px 7px; border-radius: 5px;
     }
     .urgent-badge {
-      margin-left: 8px;
+      margin-left: 6px;
       background: var(--accent);
       color: #fff;
-      font-size: 11px; font-weight: 700;
-      padding: 3px 9px; border-radius: 8px;
+      font-size: 10px; font-weight: 700;
+      padding: 1px 6px; border-radius: 5px;
       display: none;
     }
     .urgent-badge.show { display: block; }
@@ -1517,9 +1516,16 @@ function renderCalDetail(iso, reminders, acItems, adItems) {
 }
 
 // === GANTT ===
+function abbrevName(n) {
+  if (/^採光ルーバー/.test(n)) return 'ルーバーB';
+  if (/^灯具/.test(n)) { const m = n.match(/L=[\d.]+/); return '灯具' + (m ? ' ' + m[0] : ''); }
+  if (/^8FL/.test(n))  { const m = n.match(/L=[\d.]+/); return '8FL' + (m ? ' ' + m[0] : ''); }
+  return n;
+}
+
 function renderGantt() {
-  const SC = 3;   // px per work-hour
-  const LW = 130; // label width px
+  const SC = 4.5;
+  const LW = 82;
 
   const d2h = {
     '2026-05-11':-40,'2026-05-12':-32,'2026-05-13':-24,'2026-05-14':-16,
@@ -1533,16 +1539,12 @@ function renderGantt() {
     '2026-06-22':208,'2026-06-23':216,'2026-07-02':272
   };
 
-  // 今日の累計時間を計算（休日は補間）
   const TODAY_ISO = new Date().toISOString().split('T')[0];
   const TODAY_H = (function() {
     if (d2h[TODAY_ISO] !== undefined) return d2h[TODAY_ISO];
     const keys = Object.keys(d2h).sort();
     let prev = null, next = null;
-    for (const k of keys) {
-      if (k <= TODAY_ISO) prev = k;
-      else if (!next) next = k;
-    }
+    for (const k of keys) { if (k <= TODAY_ISO) prev = k; else if (!next) next = k; }
     if (!prev) return d2h[keys[0]];
     if (!next)  return d2h[keys[keys.length-1]];
     const frac = (new Date(TODAY_ISO)-new Date(prev))/(new Date(next)-new Date(prev));
@@ -1603,16 +1605,12 @@ function renderGantt() {
 
   const h2px = h => Math.round(h * SC);
 
-  // 日付文字列→ピクセル位置（d2hを使って補間）
   function d2px(iso) {
     if (!iso) return null;
     if (d2h[iso] !== undefined) return h2px(d2h[iso]);
     const keys = Object.keys(d2h).sort();
     let prev = null, next = null;
-    for (const k of keys) {
-      if (k <= iso) prev = k;
-      else if (!next) next = k;
-    }
+    for (const k of keys) { if (k <= iso) prev = k; else if (!next) next = k; }
     if (!prev) return 0;
     if (!next)  return h2px(d2h[keys[keys.length-1]]);
     const frac = (new Date(iso)-new Date(prev))/(new Date(next)-new Date(prev));
@@ -1622,77 +1620,58 @@ function renderGantt() {
   const maxH   = Math.max(...D.map(r=>r.ab), TODAY_H+24);
   const TL     = Math.max(maxH*SC+48, 620);
   const todayX = h2px(TODAY_H);
+  const stickyLbl = `flex:0 0 ${LW}px;position:sticky;left:0;z-index:6;border-right:1px solid var(--border);`;
 
-  // 共通スタイル文字列（品名セル: sticky left）
-  const stickyLblBase = `flex:0 0 ${LW}px;position:sticky;left:0;z-index:6;border-right:1px solid var(--border);`;
-
-  // 営業日ごとの縦線 + 軸ラベル（d2hの全エントリ、h>=0のみ）
   const d2hSorted = Object.entries(d2h).filter(([,v])=>v>=0).sort((a,b)=>a[1]-b[1]);
-  let dayGridLines = '';
-  let axTicks = '';
+  let dayGridLines = '', axTicks = '';
   d2hSorted.forEach(([iso, h]) => {
-    const x = h2px(h);
-    const dt = new Date(iso + 'T00:00:00');
-    const isMonday  = dt.getDay() === 1;
-    const isMthStart = dt.getDate() === 1;
-    // 月曜・月初は少し濃い線
-    const lineOpacity = (isMonday || isMthStart) ? '0.5' : '0.25';
-    dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x}px;width:1px;background:var(--border);opacity:${lineOpacity};z-index:1;pointer-events:none;"></div>`;
-    // ラベル: 月初は M/1 形式、それ以外は日のみ
-    const lbl = isMthStart ? `${dt.getMonth()+1}/1` : String(dt.getDate());
+    const x  = h2px(h);
+    const dt = new Date(iso+'T00:00:00');
+    const isMon = dt.getDay()===1, isMth = dt.getDate()===1;
+    const op = (isMon||isMth) ? '0.5' : '0.22';
+    dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x}px;width:1px;background:var(--border);opacity:${op};z-index:1;pointer-events:none;"></div>`;
+    const lbl = isMth ? `${dt.getMonth()+1}/1` : String(dt.getDate());
     axTicks += `<span style="position:absolute;font-size:8px;color:var(--text-faint);top:4px;left:${x+2}px;white-space:nowrap;">${lbl}</span>`;
   });
 
-  // today縦線（赤・全行共通）
-  const todayInBar = `<div style="position:absolute;top:0;bottom:0;left:${todayX}px;width:2px;background:#E24B4A;z-index:5;pointer-events:none;"></div>`;
-
+  const todayLine = `<div style="position:absolute;top:0;bottom:0;left:${todayX}px;width:2px;background:#E24B4A;z-index:5;pointer-events:none;"></div>`;
   let html = `<div style="position:relative;display:inline-block;min-width:${LW+TL}px;width:100%;">`;
 
-  // ── 軸ヘッダー行（sticky top + sticky left 両立）──
   html += `<div style="display:flex;height:22px;position:sticky;top:0;z-index:10;border-bottom:1px solid var(--border);">
-    <div style="${stickyLblBase}background:var(--surface-2);height:22px;"></div>
-    <div style="position:relative;flex:1;height:22px;background:var(--surface-2);overflow:hidden;">
-      ${dayGridLines}${todayInBar}${axTicks}
-    </div>
+    <div style="${stickyLbl}background:var(--surface-2);height:22px;z-index:11;"></div>
+    <div style="position:relative;flex:1;height:22px;background:var(--surface-2);overflow:hidden;">${dayGridLines}${todayLine}${axTicks}</div>
   </div>`;
 
-  // ── 完了済みヘッダー行（sticky top:22px）──
   html += `<div style="display:flex;height:22px;position:sticky;top:22px;z-index:9;border-bottom:1px solid var(--border);">
-    <div style="${stickyLblBase}background:var(--bg-2);height:22px;display:flex;align-items:center;font-size:10px;font-weight:700;color:var(--text-faint);padding:0 6px;letter-spacing:0.4px;">完了済 22件</div>
-    <div style="position:relative;flex:1;height:22px;background:var(--bg-2);overflow:hidden;">${dayGridLines}${todayInBar}</div>
+    <div style="${stickyLbl}background:var(--bg-2);height:22px;z-index:10;display:flex;align-items:center;font-size:10px;font-weight:700;color:var(--text-faint);padding:0 5px;">完了済 22件</div>
+    <div style="position:relative;flex:1;height:22px;background:var(--bg-2);overflow:hidden;">${dayGridLines}${todayLine}</div>
   </div>`;
 
-  // ── アクティブ各行 ──
   D.forEach(row => {
-    const barColor = row.b === '灯具' ? '#85B7EB' : '#C8C8C8';
+    const barColor = row.b==='灯具' ? '#85B7EB' : '#C8C8C8';
     const barX = h2px(row.aa);
-    const barW = row.ab > row.aa ? Math.max(h2px(row.ab - row.aa), 2) : 0;
+    const barW = row.ab>row.aa ? Math.max(h2px(row.ab-row.aa),2) : 0;
     const kX = d2px(row.k);
     const sX = row.s ? Math.max(0, d2px(row.s)) : null;
     const eX = d2px(row.e);
 
-    let barContent = dayGridLines + todayInBar;
-    if (barW > 0) {
-      barContent += `<div style="position:absolute;top:6px;height:15px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColor};"></div>`;
-    } else if (row.aa > 0) {
-      barContent += `<div style="position:absolute;top:9px;height:9px;left:${barX}px;width:3px;border-radius:2px;background:${barColor};opacity:0.6;"></div>`;
-    }
-    if (kX !== null) barContent += `<div style="position:absolute;top:0;bottom:0;left:${kX}px;width:1.5px;background:#A32D2D;z-index:3;"></div>`;
-    if (sX !== null) barContent += `<span style="position:absolute;top:1px;left:${sX}px;font-size:8px;color:#F4C430;transform:translateX(-50%);z-index:5;line-height:1;">▼</span>`;
-    if (eX !== null) barContent += `<span style="position:absolute;bottom:1px;left:${eX}px;font-size:8px;color:#4ADE80;transform:translateX(-50%);z-index:5;line-height:1;">▲</span>`;
+    let bar = dayGridLines + todayLine;
+    if (barW>0) bar += `<div style="position:absolute;top:6px;height:15px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColor};z-index:2;"></div>`;
+    else if (row.aa>0) bar += `<div style="position:absolute;top:9px;height:9px;left:${barX}px;width:3px;border-radius:2px;background:${barColor};opacity:0.6;z-index:2;"></div>`;
+    if (kX!==null) bar += `<div style="position:absolute;top:0;bottom:0;left:${kX}px;width:1.5px;background:#A32D2D;z-index:3;"></div>`;
+    if (sX!==null) bar += `<span style="position:absolute;top:1px;left:${sX}px;font-size:8px;color:#F4C430;transform:translateX(-50%);z-index:6;line-height:1;">▼</span>`;
+    if (eX!==null) bar += `<span style="position:absolute;bottom:1px;left:${eX}px;font-size:8px;color:#4ADE80;transform:translateX(-50%);z-index:6;line-height:1;">▲</span>`;
 
     html += `<div style="display:flex;height:28px;border-bottom:1px solid var(--border);">
-      <div style="${stickyLblBase}background:var(--surface);height:28px;font-size:10px;color:var(--text-sub);padding:0 5px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${escH(row.n)}</div>
-      <div style="position:relative;flex:1;height:28px;overflow:hidden;">${barContent}</div>
+      <div style="${stickyLbl}background:var(--surface);height:28px;font-size:10px;color:var(--text-sub);padding:0 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${escH(abbrevName(row.n))}</div>
+      <div style="position:relative;flex:1;height:28px;overflow:hidden;">${bar}</div>
     </div>`;
   });
 
   html += '</div>';
   document.getElementById('ganttInner').innerHTML = html;
-
-  // 今日が見えるようにスクロール
   const outer = document.getElementById('ganttOuter');
-  outer.scrollLeft = Math.max(0, todayX - 80);
+  outer.scrollLeft = Math.max(0, todayX - 60);
 }
 
 // === FORCE UPDATE ===
@@ -1720,7 +1699,7 @@ function showToast(msg) {
 // === INIT ===
 const now=new Date();
 document.getElementById('headerDate').textContent=
-  `${now.getMonth()+1}/${now.getDate()}(${'\u65e5\u6708\u706b\u6c34\u6728\u91d1\u571f'[now.getDay()]})`;
+  `${now.getMonth()+1}/${now.getDate()}(${'日月火水木金土'[now.getDay()]})`;
 document.getElementById('deadlineInput').value=todayStr();
 document.getElementById('gistUrlDisplay').textContent=GIST_RAW_URL;
 updateNotifStatus();
