@@ -34,7 +34,7 @@
       --danger-dim:  #2A1010;
       --purple:      #7255A8;
       --purple-dim:  #1E1530;
-      --nav-h:       60px;
+      --nav-h:       108px;
       --header-h:    54px;
     }
 
@@ -130,9 +130,11 @@
     }
     .nav-grid {
       flex: 1;
-      display: flex;
+      display: grid;
+      grid-template-rows: repeat(2, 1fr);
+      grid-auto-flow: column;
+      grid-auto-columns: calc(100% / 3);
       overflow-x: auto;
-      overflow-y: hidden;
       scrollbar-width: none;
       -webkit-overflow-scrolling: touch;
     }
@@ -146,11 +148,11 @@
       cursor: pointer; font-family: inherit;
       transition: color 0.15s; position: relative;
       border-left: 1px solid var(--border);
-      flex: 0 0 auto;
-      min-width: 60px;
-      padding: 0 8px;
     }
-    .nav-btn:first-child { border-left: none; }
+    .nav-btn svg { width: 18px; height: 18px; }
+    .nav-btn.active { color: var(--accent); }
+    .nav-btn:nth-child(1) { border-left: none; }
+    .nav-btn:nth-child(even) { border-top: 1px solid var(--border); border-left: none; }
     .nav-btn svg { width: 18px; height: 18px; }
     .nav-btn.active { color: var(--accent); }
     .nav-dot {
@@ -409,7 +411,7 @@
       background: var(--surface);
       border-radius: 12px;
       border: 1px solid var(--border);
-      max-height: calc(100dvh - var(--header-h) - var(--nav-h) - 52px);
+      max-height: calc(100dvh - var(--header-h) - var(--nav-h) - 40px);
     }
 
     /* ===== SAFE AREA ===== */
@@ -755,9 +757,10 @@
     </div>
   </div>
 
-  <!-- 横スクロールボタン列: ホーム|日程|配送|同期|追加|カレンダー|設定 -->
+  <!-- 2行グリッド・列優先・横スクロール: 列1[ホーム/同期] 列2[日程/追加] 列3[配送/カレンダー] 列4[設定] -->
   <div class="nav-grid">
 
+    <!-- 列1 上: ホーム -->
     <button class="nav-btn active" id="nav-home" onclick="switchTab('home',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 12L12 4L21 12V21H15V15H9V21H3V12Z"/>
@@ -766,6 +769,16 @@
       <span class="nav-dot" id="homeDot"></span>
     </button>
 
+    <!-- 列1 下: 同期 -->
+    <button class="nav-btn" onclick="syncFromGist(true)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+      </svg>
+      <span>同期</span>
+    </button>
+
+    <!-- 列2 上: 日程(Gantt) -->
     <button class="nav-btn" id="nav-gantt" onclick="switchTab('gantt',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <line x1="3" y1="4" x2="3" y2="20"/>
@@ -776,43 +789,35 @@
       <span>日程</span>
     </button>
 
-    <button class="nav-btn" id="nav-schedule" onclick="switchTab('schedule',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="1" y="3" width="15" height="13" rx="1"/>
-        <path d="M16 8h4l3 3v5h-7V8z"/>
-        <circle cx="5.5" cy="18.5" r="2.5"/>
-        <circle cx="18.5" cy="18.5" r="2.5"/>
-      </svg>
-      <span>配送</span>
-    </button>
-
-    <button class="nav-btn" onclick="syncFromGist(true)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M23 4v6h-6"/>
-        <path d="M1 20v-6h6"/>
-        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-      </svg>
-      <span>同期</span>
-    </button>
-
+    <!-- 列2 下: 追加 -->
     <button class="nav-btn" id="nav-add" onclick="switchTab('add',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-        <circle cx="12" cy="12" r="9"/>
-        <path d="M12 8V16M8 12H16"/>
+        <circle cx="12" cy="12" r="9"/><path d="M12 8V16M8 12H16"/>
       </svg>
       <span>追加</span>
     </button>
 
+    <!-- 列3 上: 配送 -->
+    <button class="nav-btn" id="nav-schedule" onclick="switchTab('schedule',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="3" width="15" height="13" rx="1"/>
+        <path d="M16 8h4l3 3v5h-7V8z"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+      <span>配送</span>
+    </button>
+
+    <!-- 列3 下: カレンダー -->
     <button class="nav-btn" id="nav-calendar" onclick="switchTab('calendar',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="17" rx="2"/>
         <line x1="3" y1="9" x2="21" y2="9"/>
-        <line x1="8" y1="2" x2="8" y2="6"/>
-        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/>
       </svg>
       <span>カレンダー</span>
     </button>
 
+    <!-- 列4 上: 設定（スクロールで見える） -->
     <button class="nav-btn" id="nav-settings" onclick="switchTab('settings',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
         <line x1="4" y1="6"  x2="20" y2="6"/>
@@ -1544,11 +1549,6 @@ function renderGantt() {
     return d2h[prev] + Math.round(frac*(d2h[next]-d2h[prev]));
   })();
 
-  const axW = [
-    {h:0,d:'5/16'},{h:8,d:'5/18'},{h:48,d:'5/25'},
-    {h:88,d:'6/1'},{h:128,d:'6/8'},{h:168,d:'6/15'},{h:208,d:'6/22'}
-  ];
-
   const D = [
     {n:"採光ルーバーパネルB　L=1996",b:"LED",s:"2026-05-13",e:"2026-05-19",k:"2026-05-19",aa:0,ab:4},
     {n:"8FL281304 6110　L=1478",b:"LED",s:"2026-05-11",e:"2026-05-19",k:"2026-05-21",aa:4,ab:4},
@@ -1623,23 +1623,28 @@ function renderGantt() {
   const TL     = Math.max(maxH*SC+48, 620);
   const todayX = h2px(TODAY_H);
 
-  // 背景全体のtoday縦線（barエリアのみ）
-  const todayLineBar = `<div style="position:absolute;top:0;bottom:0;left:${todayX}px;width:2px;background:#E24B4A;z-index:4;pointer-events:none;"></div>`;
-
-  // CSS変数をJS内で使うためのヘルパー
-  const cs = k => getComputedStyle(document.documentElement).getPropertyValue(k).trim();
-
-  // 共通スタイル文字列
+  // 共通スタイル文字列（品名セル: sticky left）
   const stickyLblBase = `flex:0 0 ${LW}px;position:sticky;left:0;z-index:6;border-right:1px solid var(--border);`;
 
-  // 軸目盛り
+  // 営業日ごとの縦線 + 軸ラベル（d2hの全エントリ、h>=0のみ）
+  const d2hSorted = Object.entries(d2h).filter(([,v])=>v>=0).sort((a,b)=>a[1]-b[1]);
+  let dayGridLines = '';
   let axTicks = '';
-  axW.forEach(({h,d}) => {
-    axTicks += `<span style="position:absolute;font-size:9px;color:var(--text-faint);top:3px;left:${h2px(h)}px;white-space:nowrap;transform:translateX(-2px);">${d}</span>`;
+  d2hSorted.forEach(([iso, h]) => {
+    const x = h2px(h);
+    const dt = new Date(iso + 'T00:00:00');
+    const isMonday  = dt.getDay() === 1;
+    const isMthStart = dt.getDate() === 1;
+    // 月曜・月初は少し濃い線
+    const lineOpacity = (isMonday || isMthStart) ? '0.5' : '0.25';
+    dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x}px;width:1px;background:var(--border);opacity:${lineOpacity};z-index:1;pointer-events:none;"></div>`;
+    // ラベル: 月初は M/1 形式、それ以外は日のみ
+    const lbl = isMthStart ? `${dt.getMonth()+1}/1` : String(dt.getDate());
+    axTicks += `<span style="position:absolute;font-size:8px;color:var(--text-faint);top:4px;left:${x+2}px;white-space:nowrap;">${lbl}</span>`;
   });
 
-  // barエリア全体に引くtoday線（軸含む全行共通）
-  const todayInBar = `<div style="position:absolute;top:0;bottom:0;left:${todayX}px;width:2px;background:#E24B4A;z-index:4;pointer-events:none;"></div>`;
+  // today縦線（赤・全行共通）
+  const todayInBar = `<div style="position:absolute;top:0;bottom:0;left:${todayX}px;width:2px;background:#E24B4A;z-index:5;pointer-events:none;"></div>`;
 
   let html = `<div style="position:relative;display:inline-block;min-width:${LW+TL}px;width:100%;">`;
 
@@ -1647,14 +1652,14 @@ function renderGantt() {
   html += `<div style="display:flex;height:22px;position:sticky;top:0;z-index:10;border-bottom:1px solid var(--border);">
     <div style="${stickyLblBase}background:var(--surface-2);height:22px;"></div>
     <div style="position:relative;flex:1;height:22px;background:var(--surface-2);overflow:hidden;">
-      ${todayInBar}${axTicks}
+      ${dayGridLines}${todayInBar}${axTicks}
     </div>
   </div>`;
 
   // ── 完了済みヘッダー行（sticky top:22px）──
   html += `<div style="display:flex;height:22px;position:sticky;top:22px;z-index:9;border-bottom:1px solid var(--border);">
     <div style="${stickyLblBase}background:var(--bg-2);height:22px;display:flex;align-items:center;font-size:10px;font-weight:700;color:var(--text-faint);padding:0 6px;letter-spacing:0.4px;">完了済 22件</div>
-    <div style="position:relative;flex:1;height:22px;background:var(--bg-2);overflow:hidden;">${todayInBar}</div>
+    <div style="position:relative;flex:1;height:22px;background:var(--bg-2);overflow:hidden;">${dayGridLines}${todayInBar}</div>
   </div>`;
 
   // ── アクティブ各行 ──
@@ -1666,7 +1671,7 @@ function renderGantt() {
     const sX = row.s ? Math.max(0, d2px(row.s)) : null;
     const eX = d2px(row.e);
 
-    let barContent = todayInBar;
+    let barContent = dayGridLines + todayInBar;
     if (barW > 0) {
       barContent += `<div style="position:absolute;top:6px;height:15px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColor};"></div>`;
     } else if (row.aa > 0) {
