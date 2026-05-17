@@ -88,7 +88,11 @@
 
     /* ===== TABS ===== */
     .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .tab-content.active { display: block; animation: tabFadeScale .22s ease; }
+    @keyframes tabFadeScale {
+      from { opacity: 0; transform: scale(.93); }
+      to   { opacity: 1; transform: scale(1); }
+    }
 
     /* ===== BOTTOM NAV ===== */
     .bottom-nav {
@@ -593,6 +597,67 @@
       font-size: 10px; color: var(--text-faint);
       text-align: right; margin-top: 10px;
     }
+    /* ===== CALC TAB ===== */
+    .calc-container {
+      display: flex; gap: 10px;
+      height: calc(100dvh - var(--header-h) - var(--nav-h) - 28px);
+    }
+    /* 左: 履歴パネル */
+    .calc-history {
+      flex: 0 0 36%; display: flex; flex-direction: column;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden; min-width: 0;
+    }
+    .calc-history-title {
+      font-size: 10px; font-weight: 700; color: var(--text-faint);
+      text-transform: uppercase; letter-spacing: 1px;
+      padding: 8px 10px; border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .calc-history-list {
+      flex: 1; overflow-y: auto; padding: 6px;
+      scrollbar-width: none;
+    }
+    .calc-history-list::-webkit-scrollbar { display: none; }
+    .calc-history-item {
+      padding: 6px 8px; border-radius: 8px; margin-bottom: 4px;
+      cursor: pointer; transition: background 0.12s;
+    }
+    .calc-history-item:active { background: var(--surface-2); }
+    .calc-history-expr   { font-size: 10px; color: var(--text-faint); line-height: 1.4; word-break: break-all; }
+    .calc-history-result { font-size: 15px; font-weight: 700; color: var(--text); }
+    .calc-history-empty  { text-align: center; color: var(--text-faint); font-size: 11px; padding: 16px 6px; }
+    /* 右: 電卓本体 */
+    .calc-right { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .calc-display {
+      background: var(--bg-2); border: 1px solid var(--border);
+      border-radius: 14px; padding: 10px 14px 8px;
+      margin-bottom: 10px; text-align: right; flex-shrink: 0;
+    }
+    .calc-sub {
+      font-size: 11px; color: var(--text-faint);
+      min-height: 16px; margin-bottom: 2px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .calc-main {
+      font-size: 34px; font-weight: 300; color: var(--text);
+      line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; flex: 1; }
+    .calc-btn {
+      border: none; border-radius: 12px;
+      font-size: 18px; font-weight: 500;
+      cursor: pointer; font-family: inherit;
+      transition: opacity 0.1s, transform 0.08s;
+      -webkit-tap-highlight-color: transparent;
+      min-height: 50px;
+    }
+    .calc-btn:active { opacity: 0.7; transform: scale(0.94); }
+    .calc-btn-num  { background: var(--surface-2); color: var(--text); }
+    .calc-btn-op   { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); font-size: 20px; }
+    .calc-btn-func { background: var(--surface); color: var(--text-sub); border: 1px solid var(--border); font-size: 14px; }
+    .calc-btn-eq   { background: var(--accent); color: #fff; }
+    .calc-btn-wide { grid-column: span 2; }
   </style>
 </head>
 <body>
@@ -787,6 +852,50 @@
     </div>
   </div>
 
+  <!-- CALC -->
+  <div id="tab-calc" class="tab-content">
+    <div class="calc-container">
+
+      <!-- 左: 履歴パネル -->
+      <div class="calc-history">
+        <div class="calc-history-title">履歴</div>
+        <div class="calc-history-list" id="calcHistoryList">
+          <div class="calc-history-empty">まだ計算してへん</div>
+        </div>
+      </div>
+
+      <!-- 右: 電卓本体 -->
+      <div class="calc-right">
+        <div class="calc-display">
+          <div class="calc-sub" id="calcSub"></div>
+          <div class="calc-main" id="calcMain">0</div>
+        </div>
+        <div class="calc-grid">
+          <button class="calc-btn calc-btn-func" onclick="calcFn('C')">C</button>
+          <button class="calc-btn calc-btn-func" onclick="calcFn('+/-')">+/−</button>
+          <button class="calc-btn calc-btn-func" onclick="calcFn('%')">%</button>
+          <button class="calc-btn calc-btn-op"   onclick="calcFn('÷')">÷</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('7')">7</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('8')">8</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('9')">9</button>
+          <button class="calc-btn calc-btn-op"   onclick="calcFn('×')">×</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('4')">4</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('5')">5</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('6')">6</button>
+          <button class="calc-btn calc-btn-op"   onclick="calcFn('−')">−</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('1')">1</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('2')">2</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('3')">3</button>
+          <button class="calc-btn calc-btn-op"   onclick="calcFn('+')">+</button>
+          <button class="calc-btn calc-btn-num calc-btn-wide" onclick="calcNum('0')">0</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('.')">.</button>
+          <button class="calc-btn calc-btn-eq"   onclick="calcFn('=')">=</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </main>
 
 <!-- ========== BOTTOM NAV ========== -->
@@ -802,7 +911,7 @@
     </div>
   </div>
 
-  <!-- 2行グリッド・列優先・横スクロール: 列1[ホーム/同期] 列2[日程/追加] 列3[配送/カレンダー] 列4[設定] -->
+  <!-- 2行グリッド・列優先: 列1[ホーム/電卓] 列2[日程/追加] 列3[配送/同期] 列4[カレンダー/設定] -->
   <div class="nav-grid">
 
     <!-- 列1 上: ホーム -->
@@ -814,16 +923,22 @@
       <span class="nav-dot" id="homeDot"></span>
     </button>
 
-    <!-- 列1 下: 同期 -->
-    <button class="nav-btn" onclick="syncFromGist(true)">
+    <!-- 列1 下: 電卓 -->
+    <button class="nav-btn" id="nav-calc" onclick="switchTab('calc',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
-        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+        <rect x="4" y="2" width="16" height="20" rx="2"/>
+        <rect x="7" y="5" width="10" height="4" rx="1"/>
+        <circle cx="8"  cy="13" r="1" fill="currentColor"/>
+        <circle cx="12" cy="13" r="1" fill="currentColor"/>
+        <circle cx="16" cy="13" r="1" fill="currentColor"/>
+        <circle cx="8"  cy="17" r="1" fill="currentColor"/>
+        <circle cx="12" cy="17" r="1" fill="currentColor"/>
+        <circle cx="16" cy="17" r="1" fill="currentColor"/>
       </svg>
-      <span>同期</span>
+      <span>電卓</span>
     </button>
 
-    <!-- 列2 上: 日程(Gantt) -->
+    <!-- 列2 上: 日程 -->
     <button class="nav-btn" id="nav-gantt" onclick="switchTab('gantt',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <line x1="3" y1="4" x2="3" y2="20"/>
@@ -852,7 +967,16 @@
       <span>配送</span>
     </button>
 
-    <!-- 列3 下: カレンダー -->
+    <!-- 列3 下: 同期 -->
+    <button class="nav-btn" onclick="syncFromGist(true)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+      </svg>
+      <span>同期</span>
+    </button>
+
+    <!-- 列4 上: カレンダー -->
     <button class="nav-btn" id="nav-calendar" onclick="switchTab('calendar',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="17" rx="2"/>
@@ -862,7 +986,7 @@
       <span>カレンダー</span>
     </button>
 
-    <!-- 列4 上: 設定（スクロールで見える） -->
+    <!-- 列4 下: 設定 -->
     <button class="nav-btn" id="nav-settings" onclick="switchTab('settings',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
         <line x1="4" y1="6"  x2="20" y2="6"/>
@@ -946,34 +1070,69 @@ function mascotSVG(w=120, h=132) {
 // === ステータスコメント（リマインド数別・複数バリエーション） ===
 const STATUS_COMMENTS = {
   zero: [
+    // やさしい系
     'うどんでも食べながら\nゆっくりしてください',
     'ええ調子ですわ〜\n今日はのんびりどうぞ',
     'リマインドゼロ！\n余裕あるうちに休んでください',
     'ぴかぴかですよ✨\nこの調子でいきましょ',
+    // 毒づき系
+    'ホンマに仕事してるんですか？\nリマインドゼロって逆にすごい',
+    'こんなに暇でええんですか？\nわたしだけ忙しい気がします',
+    'やることないんやったら\n在庫の整理でもしてはどうですか',
+    'リマインドゼロって\nさぼってませんよね？一応確認です',
+    'ゆとりありますねえ\nわたしにも少し分けてほしいですわ',
   ],
   low: [
+    // やさしい系
     'ぼちぼちありますわ〜\n無理せず片付けてください',
     '少しだけありますね\nさらっと終わりますよ',
     'もう少しで全部片付きます\n頑張れおじさん！',
     '残り少ないです！\nもう少しやで〜',
+    // 毒づき系
+    'これだけでよく残業できますね\n不思議でしかないです',
+    'たったこれだけですか\n業務量が心配になってきましたわ',
+    'ゆったりしてますね\nうらやましい限りですわ',
+    'ちょっとしかないですけど\nちゃんと終わらせてくださいよ',
+    '少ないのはええことですが\nわたしに気を使ってるんですか？',
   ],
   mid: [
+    // やさしい系
     'そこそこありますよ！\n優先順位つけていきましょ',
     'いくつかありますね\n焦らずこなしていきましょ',
     'まあまあありますわ\n一個一個片付けましょ',
     '順番通りやっていけば\n大丈夫ですよ！',
+    // 毒づき系
+    '忙しいですね\nわたしはお茶飲んでますよ',
+    'なんでこんなに溜まったんですか\nわたしには全くわかりません',
+    'そこそこ積んでますね\n計画性はどこへ行ったんですか',
+    'まあまあ大変ですね\nわたしはぬくぬくしてます',
+    '頑張ってください\nわたしは頑張らなくていいので',
   ],
   high: [
+    // やさしい系
     'けっこう多いですね...\n一個ずつ着実にどうぞ',
     '積み上がってきましたね\n着実にいきましょ',
     '結構な量ですよ！\n今日から少しずつ片付けましょ',
     'おじさん、そこそこ忙しいですね\n一緒に頑張りましょ！',
+    // 毒づき系
+    '今まで何やってきたんですか？\nわたしが聞いてもわかりませんが',
+    'おじさんは残業ですけど\nわたしは定時で帰りますね',
+    'これ全部期限守れますか？\n他人事ですが少し心配です',
+    'おじさんの予定表\n見てるだけで疲れますわ',
+    'けっこうしんどそうですね\nわたしはコーヒーでも飲んどきます',
   ],
   overload: [
+    // やさしい系
     'パンパンやないですか！\n気合い入れていきまひょ',
     'うわ〜これは多いですわ\nとにかく一個ずつです！',
     '満載ですね...\n優先順位が大事ですよ！',
     'フル回転ですね\nおじさん、体に気をつけて！',
+    // 毒づき系
+    '今まで何やってきたんですか？\n本気で聞いてます',
+    'おじさんは残業確定ですね\nわたしは定時なのでお先に失礼します',
+    'これ全部終わりますか？\nわたしには無理ですけど頑張って',
+    'パンクしそうですね\nそんな中わたしはお茶タイムです',
+    '見てるだけで胃が痛くなりますわ\nお大事に...',
   ],
 };
 
@@ -996,7 +1155,7 @@ function getCurrentSlideText() {
 }
 
 function advanceSlide() {
-  _statusVariantIdx = (_statusVariantIdx + 1) % 4;
+  _statusVariantIdx++;  // rimaCommentText側でpool.lengthにmodする
 }
 
 function startRimaRotation() {
@@ -1143,6 +1302,7 @@ function switchTab(name,btn) {
   if(name==='schedule') renderSchedule();
   if(name==='calendar') renderCalendar();
   if(name==='gantt')    renderGantt();
+  if(name==='calc')     calcDisplay();
   updateRimaNav();
   window.scrollTo(0,0);
 }
@@ -1713,9 +1873,9 @@ function renderGantt() {
     let bar = dayGridLines + todayLine;
     if (barW>0) bar += `<div style="position:absolute;top:6px;height:15px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColor};z-index:2;"></div>`;
     else if (row.aa>0) bar += `<div style="position:absolute;top:9px;height:9px;left:${barX}px;width:3px;border-radius:2px;background:${barColor};opacity:0.6;z-index:2;"></div>`;
-    if (kX!==null) bar += `<div style="position:absolute;top:0;bottom:0;left:${kX + 30}px;width:1.5px;background:#A32D2D;z-index:3;"></div>`;
-    if (sX!==null) bar += `<div style="position:absolute;top:50%;left:${sX + 18}px;width:14px;height:14px;border-radius:50%;background:#F4C430;transform:translate(-50%,-50%);z-index:6;"></div>`;
-    if (eX!==null) bar += `<div style="position:absolute;top:50%;left:${eX + 18}px;width:14px;height:14px;border-radius:50%;background:#4ADE80;transform:translate(-50%,-50%);z-index:6;"></div>`;
+    if (kX!==null) bar += `<div style="position:absolute;top:0;bottom:0;left:${kX + 18}px;width:1.5px;background:#A32D2D;z-index:3;"></div>`;
+    if (sX!==null) bar += `<span style="position:absolute;top:1px;left:${sX + 18}px;font-size:8px;color:#F4C430;transform:translateX(-50%);z-index:6;line-height:1;">▼</span>`;
+    if (eX!==null) bar += `<span style="position:absolute;bottom:1px;left:${eX + 18}px;font-size:8px;color:#4ADE80;transform:translateX(-50%);z-index:6;line-height:1;">▲</span>`;
 
     html += `<div style="display:flex;height:28px;border-bottom:1px solid var(--border);">
       <div style="${stickyLbl}background:var(--surface);height:28px;font-size:10px;color:var(--text-sub);padding:0 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border-bottom:1px solid var(--border);">${escH(abbrevName(row.n))}</div>
@@ -1741,6 +1901,105 @@ async function forceUpdate() {
     await Promise.all(keys.map(k => caches.delete(k)));
   } catch(e) {}
   setTimeout(() => location.reload(true), 800);
+}
+
+// === CALCULATOR ===
+let _calcVal     = '0';
+let _calcPrev    = null;
+let _calcOp      = null;
+let _calcNew     = false;
+let _calcTouched = false;   // 数字キーを1回以上押したか
+let _calcHistory = [];
+
+function calcFmt(v) {
+  const n = parseFloat(v);
+  if (isNaN(n)) return '0';
+  const neg = n < 0;
+  const abs = Math.abs(n).toString();
+  const parts = abs.split('.');
+  parts[0] = parseInt(parts[0],10).toLocaleString('ja-JP');
+  return (neg?'-':'') + parts.join('.');
+}
+
+function calcDisplay() {
+  const main = document.getElementById('calcMain');
+  const sub  = document.getElementById('calcSub');
+  if (!main) return;
+  main.textContent = calcFmt(_calcVal);
+  sub.textContent  = (_calcPrev!==null && _calcOp)
+    ? calcFmt(String(_calcPrev)) + ' ' + _calcOp : '';
+}
+
+function calcHistoryRender(scroll) {
+  const el = document.getElementById('calcHistoryList');
+  if (!el) return;
+  if (_calcHistory.length === 0) {
+    el.innerHTML = '<div class="calc-history-empty">まだ計算してへん</div>';
+    return;
+  }
+  el.innerHTML = _calcHistory.map((h,i) =>
+    `<div class="calc-history-item" onclick="calcHistoryTap(${i})">
+      <div class="calc-history-expr">${h.expr}</div>
+      <div class="calc-history-result">${calcFmt(h.result)}</div>
+    </div>`
+  ).join('');
+  if (scroll) el.scrollTop = el.scrollHeight;
+}
+
+function calcHistoryTap(i) {
+  _calcVal = String(_calcHistory[i].result);
+  _calcNew = true;
+  calcDisplay();
+}
+
+function calcNum(n) {
+  if (_calcNew) { _calcVal = n==='.'?'0':''; _calcNew=false; }
+  if (n==='.' && _calcVal.includes('.')) return;
+  if (n==='.' && !_calcVal) _calcVal='0';
+  if (_calcVal==='0' && n!=='.') _calcVal=n;
+  else _calcVal+=n;
+  _calcTouched = true;
+  calcDisplay();
+}
+
+function calcFn(fn) {
+  const cur = parseFloat(_calcVal)||0;
+  if (fn==='C') { _calcVal='0';_calcPrev=null;_calcOp=null;_calcNew=false;_calcTouched=false; calcDisplay(); return; }
+  if (fn==='+/-') { _calcVal=String(-cur); calcDisplay(); return; }
+  if (fn==='%')   { _calcVal=String(cur/100); calcDisplay(); return; }
+  if (fn==='=') {
+    if (_calcOp && _calcPrev!==null) {
+      const r = calcApply(_calcPrev, cur, _calcOp);
+      const rounded = Math.round(r*1e10)/1e10;
+      _calcHistory.push({
+        expr: calcFmt(String(_calcPrev)) + ' ' + _calcOp + ' ' + calcFmt(String(cur)) + ' =',
+        result: rounded
+      });
+      if (_calcHistory.length > 30) _calcHistory.shift();
+      calcHistoryRender(true);
+      _calcVal  = String(rounded);
+      _calcPrev = null; _calcOp = null; _calcNew = true; _calcTouched = false;
+    } else if (_calcTouched) {
+      _calcHistory.push({ expr: '', result: cur });
+      if (_calcHistory.length > 30) _calcHistory.shift();
+      calcHistoryRender(true);
+      _calcNew = true; _calcTouched = false;
+    }
+    calcDisplay(); return;
+  }
+  if (_calcOp && !_calcNew) {
+    const r = calcApply(_calcPrev, cur, _calcOp);
+    _calcVal  = String(Math.round(r*1e10)/1e10);
+    _calcPrev = parseFloat(_calcVal);
+  } else { _calcPrev = cur; }
+  _calcOp = fn; _calcNew = true; calcDisplay();
+}
+
+function calcApply(a, b, op) {
+  if(op==='÷') return b===0?0:a/b;
+  if(op==='×') return a*b;
+  if(op==='−') return a-b;
+  return a+b;
 }
 
 // === TOAST ===
