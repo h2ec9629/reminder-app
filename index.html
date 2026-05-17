@@ -150,8 +150,11 @@
     }
     .nav-btn svg { width: 18px; height: 18px; }
     .nav-btn.active { color: var(--accent); }
-    .nav-btn:nth-child(1) { border-left: none; }
-    .nav-btn:nth-child(even) { border-top: 1px solid var(--border); border-left: none; }
+    /* 列1（1・2番目）は左ボーダーなし、それ以外は左ボーダーあり */
+    .nav-btn:nth-child(1),
+    .nav-btn:nth-child(2) { border-left: none; }
+    /* 2行目（偶数）は上ボーダーあり */
+    .nav-btn:nth-child(even) { border-top: 1px solid var(--border); }
     .nav-btn svg { width: 18px; height: 18px; }
     .nav-btn.active { color: var(--accent); }
     .nav-dot {
@@ -475,7 +478,7 @@
     .cal-dot-r  { background: var(--danger); }
     .cal-dot-s  { background: var(--warning); }
     .cal-dot-ok { background: var(--accent); }
-    .cal-dot-ac { background: #FB9070; }
+    .cal-dot-ac { background: #FBB040; }
     .cal-dot-ad { background: #4ADE80; }
     .cal-dot-h  { background: var(--purple); }
     .cal-detail {
@@ -539,7 +542,7 @@
       flex-shrink: 0; margin-top: 2px;
       letter-spacing: 0.3px;
     }
-    .sch-tag-ac { background: var(--accent-dim); color: #FB9070; }
+    .sch-tag-ac { background: var(--warning-dim); color: #FBB040; }
     .sch-tag-ad { background: var(--success-dim); color: #4ADE80; }
     .sch-row-body { flex: 1; }
     .sch-row-main {
@@ -1129,7 +1132,7 @@ function renderSchedule() {
       const hasAc = acItems.length > 0;
       const hasAd = adItems.length > 0;
       const dotColor = (hasAc && hasAd) ? 'var(--warning)'
-                     : hasAc ? 'var(--accent)'
+                     : hasAc ? 'var(--warning)'
                      : 'var(--success)';
       html += `<div class="sch-day-card">
         <div class="sch-day-hd">
@@ -1496,7 +1499,7 @@ function renderCalDetail(iso, reminders, acItems, adItems) {
   } else {
     if(hol) html += `<div class="cal-detail-row"><span class="cal-detail-tag" style="background:var(--purple-dim);color:#A78BFA;">祝日</span><span style="color:var(--text);">${hol}</span></div>`;
     dayAc.forEach(i => {
-      html += `<div class="cal-detail-row"><span class="cal-detail-tag" style="background:var(--accent-dim);color:#FB9070;">引取</span><span style="color:var(--text);">${escH(i.ag||'')}</span></div>`;
+      html += `<div class="cal-detail-row"><span class="cal-detail-tag" style="background:var(--warning-dim);color:#FBB040;">引取</span><span style="color:var(--text);">${escH(i.ag||'')}</span></div>`;
     });
     dayAd.forEach(i => {
       html += `<div class="cal-detail-row"><span class="cal-detail-tag" style="background:var(--success-dim);color:#4ADE80;">納品</span><div><div style="color:var(--text);">${escH(i.d||'')}</div>${i.s||i.u?`<div style="font-size:11px;color:var(--text-sub);">${escH([i.s,i.u].filter(Boolean).join(' · '))}</div>`:''}  </div></div>`;
@@ -1525,7 +1528,7 @@ function abbrevName(n) {
 
 function renderGantt() {
   const SC = 4.5;
-  const LW = 82;
+  const LW = 94;
 
   const d2h = {
     '2026-05-11':-40,'2026-05-12':-32,'2026-05-13':-24,'2026-05-14':-16,
@@ -1620,7 +1623,7 @@ function renderGantt() {
   const maxH   = Math.max(...D.map(r=>r.ab), TODAY_H+24);
   const TL     = Math.max(maxH*SC+48, 620);
   const todayX = h2px(TODAY_H);
-  const stickyLbl = `flex:0 0 ${LW}px;position:sticky;left:0;z-index:6;border-right:1px solid var(--border);`;
+  const stickyLbl = `flex:0 0 ${LW}px;position:sticky;left:0;z-index:8;border-right:1px solid var(--border);`;
 
   const d2hSorted = Object.entries(d2h).filter(([,v])=>v>=0).sort((a,b)=>a[1]-b[1]);
   let dayGridLines = '', axTicks = '';
@@ -1663,7 +1666,7 @@ function renderGantt() {
     if (eX!==null) bar += `<span style="position:absolute;bottom:1px;left:${eX}px;font-size:8px;color:#4ADE80;transform:translateX(-50%);z-index:6;line-height:1;">▲</span>`;
 
     html += `<div style="display:flex;height:28px;border-bottom:1px solid var(--border);">
-      <div style="${stickyLbl}background:var(--surface);height:28px;font-size:10px;color:var(--text-sub);padding:0 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${escH(abbrevName(row.n))}</div>
+      <div style="${stickyLbl}background:var(--surface);height:28px;font-size:10px;color:var(--text-sub);padding:0 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border-bottom:1px solid var(--border);">${escH(abbrevName(row.n))}</div>
       <div style="position:relative;flex:1;height:28px;overflow:hidden;">${bar}</div>
     </div>`;
   });
