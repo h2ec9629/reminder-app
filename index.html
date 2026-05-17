@@ -351,12 +351,36 @@
     }
 
     /* ===== SETTINGS ===== */
+    /* set-group: 設定グループのラッパー */
+    .set-group { margin-bottom: 22px; }
+    .set-section-title {
+      font-size: 11px; font-weight: 700;
+      color: var(--text-faint); text-transform: uppercase;
+      letter-spacing: 0.8px; margin-bottom: 6px; padding: 0 4px;
+    }
     .set-item {
       background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px; padding: 14px 15px;
-      margin-bottom: 8px;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 15px;
+      margin-bottom: 0;
       display: flex; align-items: center;
+    }
+    .set-item:first-of-type,
+    .set-item.set-first {
+      border-top: 1px solid var(--border);
+      border-radius: 12px 12px 0 0;
+    }
+    .set-item.set-last {
+      border-radius: 0 0 12px 12px;
+    }
+    .set-item.set-only {
+      border-top: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .set-item.set-col {
+      flex-direction: column; align-items: stretch; gap: 10px;
     }
     .set-info { flex: 1; }
     .set-label { font-size: 14px; font-weight: 700; color: var(--text); }
@@ -440,7 +464,11 @@
     }
     .cal-grid {
       display: grid; grid-template-columns: repeat(7,1fr);
-      gap: 2px; margin-bottom: 14px;
+      gap: 0; margin-bottom: 14px;
+      border-top: 1px solid var(--border);
+      border-left: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
     }
     .cal-dow {
       text-align: center; font-size: 10px; font-weight: 700;
@@ -449,16 +477,19 @@
     .cal-dow:first-child { color: #F87171; }
     .cal-dow:last-child  { color: #60A5FA; }
     .cal-cell {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 8px; padding: 5px 3px 4px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      border-radius: 0;
+      padding: 5px 3px 4px;
       min-height: 52px; cursor: pointer;
       display: flex; flex-direction: column; align-items: center; gap: 3px;
       transition: background 0.12s;
     }
     .cal-cell:active { background: var(--surface-2); }
     .cal-cell.other-month { opacity: 0.28; }
-    .cal-cell.today { border-color: var(--accent); background: var(--accent-dim); }
-    .cal-cell.selected { border-color: var(--text-sub); background: var(--surface-2); }
+    .cal-cell.today { box-shadow: inset 0 0 0 2px var(--accent); background: var(--accent-dim); }
+    .cal-cell.selected { box-shadow: inset 0 0 0 1.5px var(--text-sub); background: var(--surface-2); }
     .cal-num {
       font-size: 13px; font-weight: 700; color: var(--text);
       line-height: 1;
@@ -596,15 +627,7 @@
       <span>🔔 期限前に通知を受け取りませんか？</span>
       <button onclick="requestNotif()">許可する</button>
     </div>
-    <div id="progressWrap" class="progress-wrap" style="display:none">
-      <div class="progress-top">
-        <span>進捗</span>
-        <span id="progressText"></span>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill" id="progressFill" style="width:0%"></div>
-      </div>
-    </div>
+
     <div id="homeContent"></div>
   </div>
 
@@ -649,71 +672,91 @@
 
   <!-- SETTINGS -->
   <div id="tab-settings" class="tab-content">
-    <div class="set-item">
-      <div class="set-info">
-        <div class="set-label">通知設定</div>
-        <div class="set-sub" id="notifStatus">確認中...</div>
+
+    <!-- グループ1: 通知 -->
+    <div class="set-group">
+      <div class="set-section-title">通知</div>
+      <div class="set-item set-only">
+        <div class="set-info">
+          <div class="set-label">通知設定</div>
+          <div class="set-sub" id="notifStatus">確認中...</div>
+        </div>
+        <div class="set-act">
+          <button class="sm-btn sm-btn-accent" onclick="requestNotif()">設定する</button>
+        </div>
       </div>
-      <div class="set-act">
-        <button class="sm-btn sm-btn-accent" onclick="requestNotif()">設定する</button>
-      </div>
-    </div>
-    <div class="set-item">
-      <div class="set-info">
-        <div class="set-label">完了済みを表示</div>
-        <div class="set-sub">ホームに完了リマインドも出す</div>
-      </div>
-      <div class="set-act">
-        <label class="toggle">
-          <input type="checkbox" id="showCompleted" onchange="renderHome()">
-          <span class="toggle-sl"></span>
-        </label>
-      </div>
-    </div>
-    <div class="set-item" style="flex-direction:column; align-items:stretch; gap:10px;">
-      <div class="set-label">🔗 GitHub Gist 自動同期</div>
-      <div class="set-sub">毎晩23:30にCoworkが自動更新します</div>
-      <div style="font-size:11px; color:var(--text-faint); word-break:break-all; background:var(--bg-2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-family:monospace; line-height:1.6;" id="gistUrlDisplay"></div>
-      <button class="sm-btn sm-btn-accent" style="width:100%; padding:9px;" onclick="syncFromGist(true)">今すぐ同期</button>
     </div>
 
-    <div class="set-item" style="flex-direction:column; align-items:stretch; gap:10px;">
-      <div class="set-label">📬 投函箱Gist設定</div>
-      <div class="set-sub">手動追加をObsidianに届ける仕組み（各デバイスで1回だけ設定）</div>
-      <input type="text" class="form-input" id="mailboxGistId" placeholder="GistID（URLの末尾の英数字）" style="font-size:13px;">
-      <input type="password" class="form-input" id="mailboxPat" placeholder="Fine-grained PAT" style="font-size:13px;">
-      <button class="sm-btn sm-btn-accent" style="width:100%; padding:9px;" onclick="saveMailboxSettings()">保存する</button>
-      <div style="font-size:11px; color:var(--text-faint);" id="mailboxStatus"></div>
+    <!-- グループ2: 表示 -->
+    <div class="set-group">
+      <div class="set-section-title">表示</div>
+      <div class="set-item set-only">
+        <div class="set-info">
+          <div class="set-label">完了済みを表示</div>
+          <div class="set-sub">ホームに完了リマインドも出す</div>
+        </div>
+        <div class="set-act">
+          <label class="toggle">
+            <input type="checkbox" id="showCompleted" onchange="renderHome()">
+            <span class="toggle-sl"></span>
+          </label>
+        </div>
+      </div>
     </div>
 
-    <div class="set-item">
-      <div class="set-info">
-        <div class="set-label">データエクスポート</div>
-        <div class="set-sub">JSONでバックアップ保存</div>
+    <!-- グループ3: GitHub Gist 同期 -->
+    <div class="set-group">
+      <div class="set-section-title">GitHub Gist 同期</div>
+      <div class="set-item set-first set-col">
+        <div class="set-label">🔗 自動同期</div>
+        <div class="set-sub">毎晩23:30にCoworkが自動更新します</div>
+        <div style="font-size:11px; color:var(--text-faint); word-break:break-all; background:var(--bg-2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-family:monospace; line-height:1.6;" id="gistUrlDisplay"></div>
+        <button class="sm-btn sm-btn-accent" style="width:100%; padding:9px;" onclick="syncFromGist(true)">今すぐ同期</button>
       </div>
-      <div class="set-act">
-        <button class="sm-btn sm-btn-sec" onclick="exportData()">書き出す</button>
-      </div>
-    </div>
-    <div class="set-item">
-      <div class="set-info">
-        <div class="set-label">バックアップを復元</div>
-        <div class="set-sub">エクスポートしたJSONを読み込む</div>
-      </div>
-      <div class="set-act">
-        <label class="sm-btn sm-btn-sec" style="cursor:pointer; display:inline-block;">
-          <input type="file" accept=".json" style="display:none" onchange="importBackup(this)">
-          読み込む
-        </label>
+      <div class="set-item set-last set-col">
+        <div class="set-label">📬 投函箱Gist設定</div>
+        <div class="set-sub">手動追加をObsidianに届ける仕組み（各デバイスで1回だけ設定）</div>
+        <input type="text" class="form-input" id="mailboxGistId" placeholder="GistID（URLの末尾の英数字）" style="font-size:13px;">
+        <input type="password" class="form-input" id="mailboxPat" placeholder="Fine-grained PAT" style="font-size:13px;">
+        <button class="sm-btn sm-btn-accent" style="width:100%; padding:9px;" onclick="saveMailboxSettings()">保存する</button>
+        <div style="font-size:11px; color:var(--text-faint);" id="mailboxStatus"></div>
       </div>
     </div>
-    <div style="margin-top:20px;">
+
+    <!-- グループ4: データ管理 -->
+    <div class="set-group">
+      <div class="set-section-title">データ管理</div>
+      <div class="set-item set-first">
+        <div class="set-info">
+          <div class="set-label">データエクスポート</div>
+          <div class="set-sub">JSONでバックアップ保存</div>
+        </div>
+        <div class="set-act">
+          <button class="sm-btn sm-btn-sec" onclick="exportData()">書き出す</button>
+        </div>
+      </div>
+      <div class="set-item set-last">
+        <div class="set-info">
+          <div class="set-label">バックアップを復元</div>
+          <div class="set-sub">エクスポートしたJSONを読み込む</div>
+        </div>
+        <div class="set-act">
+          <label class="sm-btn sm-btn-sec" style="cursor:pointer; display:inline-block;">
+            <input type="file" accept=".json" style="display:none" onchange="importBackup(this)">
+            読み込む
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 操作ボタン群 -->
+    <div style="margin-top:4px;">
       <button class="btn btn-secondary" onclick="forceUpdate()">🔄 最新版に更新</button>
       <button class="btn btn-secondary" onclick="clearCompleted()">完了済みをまとめて削除</button>
       <button class="btn btn-danger" onclick="clearAll()">全データ削除</button>
     </div>
     <div style="text-align:center; margin-top:28px; color:var(--text-faint); font-size:11px; line-height:2;">
-      おじさんリマインダー v1.4<br>
+      おじさんリマインダー v1.5<br>
       データはこのデバイスのみに保存されます
     </div>
   </div>
@@ -900,58 +943,66 @@ function mascotSVG(w=120, h=132) {
 }
 
 // === RIMA ROTATION ===
-const QUIZ_LIST = [
-  { q:'AIが大量のデータを見てパターンを学ぶ仕組みは？',      a:'自律機械学習',                          ans:'機械学習\nデータからパターンをAIが自動で学ぶ仕組み' },
-  { q:'AIが嘘を自信満々に答える現象は？',                    a:'知ったかぶり（惜しい）',                  ans:'ハルシネーション\nAIが自信満々に嘘をつく現象' },
-  { q:'人間のフィードバックでAIを改善する学習法は？',         a:'ローリングロング・ヒューマンファンタジー🏆', ans:'RLHF\n人の評価でAIを改善する学習法' },
-  { q:'APIの正式名称は？',                                   a:'アプリ・ポイント・インド人🏆',             ans:'Application Programming Interface\nアプリ同士をつなぐ接続口' },
-  { q:'MCPの正式名称は？',                                   a:'マルチ・コラボ・ピーちゃん🏆',            ans:'Model Context Protocol\nAIとツールをつなぐ規格' },
-  { q:'npxって何をするコマンド？',                            a:'なんやーそれー。jsonファイル？',            ans:'npx\nNode.jsパッケージを即実行するコマンド' },
-  { q:'VBAでDB接続する仕組みは？',                           a:'辞書化',                                  ans:'ADO\nVBAからDBに接続する仕組み' },
-  { q:'AIが処理する文字のかたまりの単位は？',                 a:'ソシャゲのスタミナみたいな何か（惜しい）',  ans:'トークン\nAIが処理する文字のかたまりの単位' },
-  { q:'AIが一度に扱える情報量の上限は？',                     a:'リミット？（惜しい）',                    ans:'コンテキストウィンドウ\nAIが一度に扱える情報量の上限' },
-  { q:'AIの知識の時間的な境界線は？',                        a:'キャッシュメモリー？',                     ans:'知識カットオフ\nAIが学習した情報の時間的な境界線' },
-];
+// === ステータスコメント（リマインド数別・複数バリエーション） ===
+const STATUS_COMMENTS = {
+  zero: [
+    'うどんでも食べながら\nゆっくりしてください',
+    'ええ調子ですわ〜\n今日はのんびりどうぞ',
+    'リマインドゼロ！\n余裕あるうちに休んでください',
+    'ぴかぴかですよ✨\nこの調子でいきましょ',
+  ],
+  low: [
+    'ぼちぼちありますわ〜\n無理せず片付けてください',
+    '少しだけありますね\nさらっと終わりますよ',
+    'もう少しで全部片付きます\n頑張れおじさん！',
+    '残り少ないです！\nもう少しやで〜',
+  ],
+  mid: [
+    'そこそこありますよ！\n優先順位つけていきましょ',
+    'いくつかありますね\n焦らずこなしていきましょ',
+    'まあまあありますわ\n一個一個片付けましょ',
+    '順番通りやっていけば\n大丈夫ですよ！',
+  ],
+  high: [
+    'けっこう多いですね...\n一個ずつ着実にどうぞ',
+    '積み上がってきましたね\n着実にいきましょ',
+    '結構な量ですよ！\n今日から少しずつ片付けましょ',
+    'おじさん、そこそこ忙しいですね\n一緒に頑張りましょ！',
+  ],
+  overload: [
+    'パンパンやないですか！\n気合い入れていきまひょ',
+    'うわ〜これは多いですわ\nとにかく一個ずつです！',
+    '満載ですね...\n優先順位が大事ですよ！',
+    'フル回転ですね\nおじさん、体に気をつけて！',
+  ],
+};
+
+let _statusVariantIdx = 0;
 
 function rimaCommentText(count) {
-  if(count === 0) return 'うどんでも食べながら\nゆっくりしてください';
-  if(count <= 2)  return 'ぼちぼちありますわ〜\n無理せず片付けてください';
-  if(count <= 5)  return 'そこそこありますよ！\n優先順位つけていきましょ';
-  if(count <= 9)  return 'けっこう多いですね...\n一個ずつ着実にどうぞ';
-  return 'パンパンやないですか！\n気合い入れていきまひょ';
+  const tier = count===0 ? 'zero' : count<=2 ? 'low' : count<=5 ? 'mid' : count<=9 ? 'high' : 'overload';
+  const pool = STATUS_COMMENTS[tier];
+  return pool[_statusVariantIdx % pool.length];
 }
 
 // スライド状態管理
-let _rimaSlide    = 'status'; // 'status' | 'q' | 'a' | 'ans'
-let _currentQuiz  = null;
 let _rimaCycleTimer = null;
 let _rimaTypeTimer  = null;
 const SLIDE_MS = 6000;
 
 function getCurrentSlideText() {
   const n = getAll().filter(r=>!r.completed).length;
-  switch(_rimaSlide) {
-    case 'status': return rimaCommentText(n);
-    case 'q':      return 'Q.\n' + _currentQuiz.q;
-    case 'a':      return 'おじさんの回答\n' + _currentQuiz.a;
-    case 'ans':    return '正解\n' + _currentQuiz.ans;
-  }
+  return rimaCommentText(n);
 }
 
 function advanceSlide() {
-  switch(_rimaSlide) {
-    case 'status': _currentQuiz = QUIZ_LIST[Math.floor(Math.random()*QUIZ_LIST.length)]; _rimaSlide='q';      break;
-    case 'q':      _rimaSlide = 'a';      break;
-    case 'a':      _rimaSlide = 'ans';    break;
-    case 'ans':    _rimaSlide = 'status'; break;
-  }
+  _statusVariantIdx = (_statusVariantIdx + 1) % 4;
 }
 
 function startRimaRotation() {
   clearTimeout(_rimaCycleTimer);
   clearTimeout(_rimaTypeTimer);
-  _rimaSlide   = 'status';
-  _currentQuiz = null;
+  _statusVariantIdx = 0;
   showNextRimaComment();
 }
 
@@ -1025,16 +1076,6 @@ function renderHome() {
   const in3      = sortBy(act.filter(r=>{ const d=daysUntil(r.deadline); return d>0&&d<=3; }));
   const thisWeek = sortBy(act.filter(r=>{ const d=daysUntil(r.deadline); return d>3&&d<=7; }));
   const later    = sortBy(act.filter(r=>daysUntil(r.deadline)>7));
-
-  // progress
-  if(all.length>0) {
-    const pct=Math.round(done.length/all.length*100);
-    document.getElementById('progressWrap').style.display='block';
-    document.getElementById('progressText').textContent=`${done.length} / ${all.length}`;
-    document.getElementById('progressFill').style.width=pct+'%';
-  } else {
-    document.getElementById('progressWrap').style.display='none';
-  }
 
   // urgent badge
   const uc=overdue.length+today.length+in3.length;
@@ -1642,7 +1683,7 @@ function renderGantt() {
     const x  = h2px(h);
     const dt = new Date(iso+'T00:00:00');
     const isMon = dt.getDay()===1, isMth = dt.getDate()===1;
-    const op = (isMon||isMth) ? '0.5' : '0.22';
+    const op = (isMon||isMth) ? '0.75' : '0.45';
     dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x}px;width:1px;background:var(--border);opacity:${op};z-index:1;pointer-events:none;"></div>`;
     const lbl = isMth ? `${dt.getMonth()+1}/1` : String(dt.getDate());
     axTicks += `<span style="position:absolute;font-size:11px;color:#fff;top:3px;left:${x+2}px;white-space:nowrap;">${lbl}</span>`;
@@ -1672,9 +1713,9 @@ function renderGantt() {
     let bar = dayGridLines + todayLine;
     if (barW>0) bar += `<div style="position:absolute;top:6px;height:15px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColor};z-index:2;"></div>`;
     else if (row.aa>0) bar += `<div style="position:absolute;top:9px;height:9px;left:${barX}px;width:3px;border-radius:2px;background:${barColor};opacity:0.6;z-index:2;"></div>`;
-    if (kX!==null) bar += `<div style="position:absolute;top:0;bottom:0;left:${kX}px;width:1.5px;background:#A32D2D;z-index:3;"></div>`;
-    if (sX!==null) bar += `<span style="position:absolute;top:1px;left:${sX}px;font-size:8px;color:#F4C430;transform:translateX(-50%);z-index:6;line-height:1;">▼</span>`;
-    if (eX!==null) bar += `<span style="position:absolute;bottom:1px;left:${eX}px;font-size:8px;color:#4ADE80;transform:translateX(-50%);z-index:6;line-height:1;">▲</span>`;
+    if (kX!==null) bar += `<div style="position:absolute;top:0;bottom:0;left:${kX + 18}px;width:1.5px;background:#A32D2D;z-index:3;"></div>`;
+    if (sX!==null) bar += `<span style="position:absolute;top:1px;left:${sX + 18}px;font-size:8px;color:#F4C430;transform:translateX(-50%);z-index:6;line-height:1;">▼</span>`;
+    if (eX!==null) bar += `<span style="position:absolute;bottom:1px;left:${eX + 18}px;font-size:8px;color:#4ADE80;transform:translateX(-50%);z-index:6;line-height:1;">▲</span>`;
 
     html += `<div style="display:flex;height:28px;border-bottom:1px solid var(--border);">
       <div style="${stickyLbl}background:var(--surface);height:28px;font-size:10px;color:var(--text-sub);padding:0 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border-bottom:1px solid var(--border);">${escH(abbrevName(row.n))}</div>
@@ -1707,22 +1748,28 @@ let _tt;
 function showToast(msg) {
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
-  clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('show'),2600);
+  clearTimeout(_tt);
+  _tt=setTimeout(()=>t.classList.remove('show'),2500);
 }
 
 // === INIT ===
-const now=new Date();
-document.getElementById('headerDate').textContent=
-  `${now.getMonth()+1}/${now.getDate()}(${'日月火水木金土'[now.getDay()]})`;
-document.getElementById('deadlineInput').value=todayStr();
-document.getElementById('gistUrlDisplay').textContent=GIST_RAW_URL;
-updateNotifStatus();
-updateMailboxStatus();
-startRimaRotation();
-syncFromGist();
-renderHome();
-if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
-
+(function(){
+  const today=new Date();
+  document.getElementById('headerDate').textContent=
+    `${today.getMonth()+1}/${today.getDate()}(${'日月火水木金土'[today.getDay()]})`;
+  document.getElementById('deadlineInput').value=todayStr();
+  updateNotifStatus();
+  updateMailboxStatus();
+  const gistEl=document.getElementById('gistUrlDisplay');
+  if(gistEl) gistEl.textContent=GIST_RAW_URL;
+  syncFromGist();
+  startRimaRotation();
+  renderHome();
+  triggerNotifications();
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+})();
 </script>
 </body>
 </html>
