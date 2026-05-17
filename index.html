@@ -1634,7 +1634,7 @@ function renderGantt() {
     const op = (isMon||isMth) ? '0.5' : '0.22';
     dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x}px;width:1px;background:var(--border);opacity:${op};z-index:1;pointer-events:none;"></div>`;
     const lbl = isMth ? `${dt.getMonth()+1}/1` : String(dt.getDate());
-    axTicks += `<span style="position:absolute;font-size:8px;color:var(--text-faint);top:4px;left:${x+2}px;white-space:nowrap;">${lbl}</span>`;
+    axTicks += `<span style="position:absolute;font-size:11px;color:#fff;top:3px;left:${x+2}px;white-space:nowrap;">${lbl}</span>`;
   });
 
   const todayLine = `<div style="position:absolute;top:0;bottom:0;left:${todayX}px;width:2px;background:#E24B4A;z-index:5;pointer-events:none;"></div>`;
