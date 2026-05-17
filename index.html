@@ -643,14 +643,14 @@
       font-size: 34px; font-weight: 300; color: var(--text);
       line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; flex: 1; }
+    .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; flex: 1; align-content: start; }
     .calc-btn {
       border: none; border-radius: 12px;
       font-size: 18px; font-weight: 500;
       cursor: pointer; font-family: inherit;
       transition: opacity 0.1s, transform 0.08s;
       -webkit-tap-highlight-color: transparent;
-      min-height: 50px;
+      min-height: 33px;
     }
     .calc-btn:active { opacity: 0.7; transform: scale(0.94); }
     .calc-btn-num  { background: var(--surface-2); color: var(--text); }
