@@ -854,7 +854,16 @@ function addReminder(r) {
   a.push(r); saveAll(a); return r;
 }
 const markDone  = id => saveAll(getAll().map(r => r.id===id ? {...r, completed:true, completed_at:todayStr()} : r));
-const deleteOne = id => saveAll(getAll().filter(r => r.id!==id));
+
+// === 削除済みグレーブヤード（同期で復活させない） ===
+const GRAVE_KEY   = 'ojisan_deleted_v1';
+const getGrave    = () => { try { return new Set(JSON.parse(localStorage.getItem(GRAVE_KEY)||'[]')); } catch{return new Set();} };
+const addGrave    = key => { const g=getGrave(); g.add(key); localStorage.setItem(GRAVE_KEY, JSON.stringify([...g])); };
+const deleteOne   = id => {
+  const r = getAll().find(r => r.id===id);
+  if (r) addGrave(r.title+'|'+(r.deadline||'null'));
+  saveAll(getAll().filter(r => r.id!==id));
+};
 
 // === DATE ===
 function daysUntil(s) {
@@ -1338,12 +1347,14 @@ async function syncFromGist(manual=false) {
       _schSyncedAt   = data.synced_at || null;
     }
     const list = data.reminders || [];
-    const keys = new Set(getAll().map(r=>r.title+'|'+r.deadline));
+    const keys  = new Set(getAll().map(r=>r.title+'|'+r.deadline));
+    const grave = getGrave();
     let added = 0;
     list.forEach(item => {
       if (!item.title) return;
       const k = item.title+'|'+(item.deadline||'null');
-      if (keys.has(k)) return;
+      if (keys.has(k))  return; // すでにある
+      if (grave.has(k)) return; // 削除済み → 復活させない
       addReminder({ title:item.title, deadline:item.deadline||null,
                     category:'obsidian', advance_days:item.advance_days||3, notes:item.notes||'' });
       keys.add(k); added++;
