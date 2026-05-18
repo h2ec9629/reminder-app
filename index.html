@@ -598,11 +598,30 @@
       text-align: right; margin-top: 10px;
     }
     /* ===== CALC TAB ===== */
-    .calc-container {
-      display: flex; flex-direction: row;
-      height: calc(100dvh - var(--header-h) - var(--nav-h) - 28px);
-      margin: 0 -12px;
-    }
+    .calc-container { display: flex; flex-direction: row; height: 100%; }
+    .calc-pg-wrap { overflow: hidden; margin: 0 -12px; position: relative;
+      height: calc(100dvh - var(--header-h) - var(--nav-h) - 44px); }
+    .calc-pg { position: absolute; top:0; left:0; width:100%; height:100%;
+      transition: transform .28s ease, opacity .28s ease; }
+    .calc-pg.pg-right { transform: translateX(100%); opacity:0; pointer-events:none; }
+    .calc-pg.pg-left  { transform: translateX(-100%); opacity:0; pointer-events:none; }
+    .calc-dots { display:flex; justify-content:center; gap:8px; height:16px;
+      align-items:center; margin-top:4px; }
+    .calc-dot { width:6px; height:6px; border-radius:50%; background:var(--border); transition:background .2s; }
+    .calc-dot.on { background:var(--accent); }
+    .meas-container { height:100%; overflow-y:auto; padding:8px 12px; }
+    .meas-phase { margin-bottom:14px; }
+    .meas-phase-hd { font-size:13px; font-weight:700; color:var(--accent);
+      padding:4px 0; border-bottom:2px solid var(--accent); margin-bottom:6px; }
+    .meas-tbl { width:100%; border-collapse:collapse; font-size:12px; table-layout:fixed; }
+    .meas-tbl th { padding:4px 2px; text-align:center; color:var(--text-sub);
+      font-weight:600; border-bottom:1px solid var(--border); }
+    .meas-tbl td { padding:4px 2px; text-align:center; border-bottom:1px solid var(--border); }
+    .meas-lbl { text-align:left !important; color:var(--text-sub); font-size:11px; white-space:nowrap; width:32%; }
+    .meas-in { width:100%; border:1px solid var(--border); border-radius:4px;
+      background:var(--surface-2); color:var(--text); font-size:13px;
+      padding:4px 2px; text-align:right; font-family:inherit; -webkit-appearance:none; }
+    .meas-diff { font-weight:700; font-size:13px; }
     .calc-conv {
       flex: 0 0 35%; display: flex; flex-direction: column;
       border-right: 1px solid var(--border); overflow-y: auto;
@@ -867,7 +886,9 @@
 
   <!-- CALC -->
   <div id="tab-calc" class="tab-content">
-    <div class="calc-container">
+    <div class="calc-pg-wrap" id="calcPgWrap">
+      <div class="calc-pg" id="calcPg0">
+        <div class="calc-container">
 
       <!-- 変換パネル -->
       <div class="calc-conv">
@@ -903,8 +924,8 @@
         </div>
         <div class="calc-grid">
           <button class="calc-btn calc-btn-func" onclick="calcFn('C')">C</button>
+          <button class="calc-btn calc-btn-func" onclick="calcFn('⌫')">⌫</button>
           <button class="calc-btn calc-btn-func" onclick="calcFn('+/-')">+/−</button>
-          <button class="calc-btn calc-btn-func" onclick="calcFn('%')">%</button>
           <button class="calc-btn calc-btn-op"   onclick="calcFn('÷')">÷</button>
           <button class="calc-btn calc-btn-num"  onclick="calcNum('7')">7</button>
           <button class="calc-btn calc-btn-num"  onclick="calcNum('8')">8</button>
@@ -924,6 +945,70 @@
         </div>
       </div>
 
+        </div>
+      </div>
+      <div class="calc-pg pg-right" id="calcPg1">
+        <div class="meas-container">
+          <div class="meas-phase">
+            <div class="meas-phase-hd">U相</div>
+            <table class="meas-tbl">
+              <tr><th></th><th>R</th><th>A</th><th>B</th></tr>
+              <tr><td class="meas-lbl">ON/開く</td>
+                <td><input class="meas-in" id="mu_on_r" type="number" step="any" inputmode="decimal" oninput="measCalc('u')"></td>
+                <td><input class="meas-in" id="mu_on_a" type="number" step="any" inputmode="decimal" oninput="measCalc('u')"></td>
+                <td><input class="meas-in" id="mu_on_b" type="number" step="any" inputmode="decimal" oninput="measCalc('u')"></td></tr>
+              <tr><td class="meas-lbl">OFF/閉じる</td>
+                <td><input class="meas-in" id="mu_off_r" type="number" step="any" inputmode="decimal" oninput="measCalc('u')"></td>
+                <td><input class="meas-in" id="mu_off_a" type="number" step="any" inputmode="decimal" oninput="measCalc('u')"></td>
+                <td><input class="meas-in" id="mu_off_b" type="number" step="any" inputmode="decimal" oninput="measCalc('u')"></td></tr>
+              <tr><td class="meas-lbl">差数</td>
+                <td class="meas-diff" id="mu_d_r">—</td>
+                <td class="meas-diff" id="mu_d_a">—</td>
+                <td class="meas-diff" id="mu_d_b">—</td></tr>
+            </table>
+          </div>
+          <div class="meas-phase">
+            <div class="meas-phase-hd">V相</div>
+            <table class="meas-tbl">
+              <tr><th></th><th>R</th><th>A</th><th>B</th></tr>
+              <tr><td class="meas-lbl">ON/開く</td>
+                <td><input class="meas-in" id="mv_on_r" type="number" step="any" inputmode="decimal" oninput="measCalc('v')"></td>
+                <td><input class="meas-in" id="mv_on_a" type="number" step="any" inputmode="decimal" oninput="measCalc('v')"></td>
+                <td><input class="meas-in" id="mv_on_b" type="number" step="any" inputmode="decimal" oninput="measCalc('v')"></td></tr>
+              <tr><td class="meas-lbl">OFF/閉じる</td>
+                <td><input class="meas-in" id="mv_off_r" type="number" step="any" inputmode="decimal" oninput="measCalc('v')"></td>
+                <td><input class="meas-in" id="mv_off_a" type="number" step="any" inputmode="decimal" oninput="measCalc('v')"></td>
+                <td><input class="meas-in" id="mv_off_b" type="number" step="any" inputmode="decimal" oninput="measCalc('v')"></td></tr>
+              <tr><td class="meas-lbl">差数</td>
+                <td class="meas-diff" id="mv_d_r">—</td>
+                <td class="meas-diff" id="mv_d_a">—</td>
+                <td class="meas-diff" id="mv_d_b">—</td></tr>
+            </table>
+          </div>
+          <div class="meas-phase">
+            <div class="meas-phase-hd">W相</div>
+            <table class="meas-tbl">
+              <tr><th></th><th>R</th><th>A</th><th>B</th></tr>
+              <tr><td class="meas-lbl">ON/開く</td>
+                <td><input class="meas-in" id="mw_on_r" type="number" step="any" inputmode="decimal" oninput="measCalc('w')"></td>
+                <td><input class="meas-in" id="mw_on_a" type="number" step="any" inputmode="decimal" oninput="measCalc('w')"></td>
+                <td><input class="meas-in" id="mw_on_b" type="number" step="any" inputmode="decimal" oninput="measCalc('w')"></td></tr>
+              <tr><td class="meas-lbl">OFF/閉じる</td>
+                <td><input class="meas-in" id="mw_off_r" type="number" step="any" inputmode="decimal" oninput="measCalc('w')"></td>
+                <td><input class="meas-in" id="mw_off_a" type="number" step="any" inputmode="decimal" oninput="measCalc('w')"></td>
+                <td><input class="meas-in" id="mw_off_b" type="number" step="any" inputmode="decimal" oninput="measCalc('w')"></td></tr>
+              <tr><td class="meas-lbl">差数</td>
+                <td class="meas-diff" id="mw_d_r">—</td>
+                <td class="meas-diff" id="mw_d_a">—</td>
+                <td class="meas-diff" id="mw_d_b">—</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="calc-dots">
+      <span class="calc-dot on" id="cdot0"></span>
+      <span class="calc-dot" id="cdot1"></span>
     </div>
   </div>
 
@@ -2026,7 +2111,11 @@ function calcFn(fn) {
   const cur = parseFloat(_calcVal)||0;
   if (fn==='C') { _calcVal='0';_calcPrev=null;_calcOp=null;_calcNew=false;_calcTouched=false; calcDisplay(); return; }
   if (fn==='+/-') { _calcVal=String(-cur); calcDisplay(); return; }
-  if (fn==='%')   { _calcVal=String(cur/100); calcDisplay(); return; }
+  if (fn==='⌫') {
+    if (_calcVal.length > 1) { _calcVal = _calcVal.slice(0,-1); }
+    else { _calcVal = '0'; _calcTouched = false; }
+    calcDisplay(); return;
+  }
   if (fn==='=') {
     if (_calcOp && _calcPrev!==null) {
       const r = calcApply(_calcPrev, cur, _calcOp);
@@ -2061,6 +2150,40 @@ function calcApply(a, b, op) {
   if(op==='−') return a-b;
   return a+b;
 }
+
+// === MEAS TABLE ===
+function measCalc(ph) {
+  ['r','a','b'].forEach(col => {
+    const onV  = parseFloat(document.getElementById(`m${ph}_on_${col}`)?.value);
+    const offV = parseFloat(document.getElementById(`m${ph}_off_${col}`)?.value);
+    const d    = document.getElementById(`m${ph}_d_${col}`);
+    if (!d) return;
+    if (!isNaN(onV) && !isNaN(offV)) {
+      const diff = Math.round((onV - offV) * 1000) / 1000;
+      d.textContent = diff;
+      d.style.color = diff < 0 ? 'var(--danger)' : diff > 0 ? 'var(--text)' : 'var(--text-faint)';
+    } else { d.textContent = '—'; d.style.color = ''; }
+  });
+}
+
+// === CALC PAGE SWIPE ===
+let _calcPgIdx = 0;
+function calcPgSwitch(dir) {
+  _calcPgIdx = (_calcPgIdx + dir + 2) % 2;
+  ['calcPg0','calcPg1'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    const dot = document.getElementById('cdot'+i);
+    if (el) { el.classList.remove('pg-left','pg-right'); if(i!==_calcPgIdx) el.classList.add(i<_calcPgIdx?'pg-left':'pg-right'); }
+    if (dot) dot.classList.toggle('on', i===_calcPgIdx);
+  });
+}
+(function initSwipe(){
+  let sx=0;
+  const w=document.getElementById('calcPgWrap');
+  if(!w) return;
+  w.addEventListener('touchstart', e=>{ sx=e.touches[0].clientX; },{passive:true});
+  w.addEventListener('touchend',   e=>{ const dx=e.changedTouches[0].clientX-sx; if(Math.abs(dx)>40) calcPgSwitch(dx<0?1:-1); },{passive:true});
+})();
 
 // === TOAST ===
 let _tt;
