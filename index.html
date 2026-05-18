@@ -599,10 +599,20 @@
     }
     /* ===== CALC TAB ===== */
     .calc-container {
-      display: flex; flex-direction: column;
+      display: flex; flex-direction: row;
       height: calc(100dvh - var(--header-h) - var(--nav-h) - 28px);
-      margin: 0 -12px; padding: 0 0 0 25%;
+      margin: 0 -12px;
     }
+    .calc-conv {
+      flex: 0 0 35%; display: flex; flex-direction: column;
+      border-right: 1px solid var(--border); overflow-y: auto;
+      padding: 12px 4px 12px 8px; gap: 0;
+    }
+    .calc-conv-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .calc-conv-value { word-break: break-all; }
+    .calc-conv-input  { font-size: 12px; color: var(--text-sub); margin-bottom: 3px; }
+    .calc-conv-result { font-size: 13px; font-weight: 700; color: var(--text); }
+    .calc-conv-tg { font-size: 13px; color: var(--text); white-space: pre; line-height: 1.8; word-break: break-all; }
     /* 上: 履歴パネル */
     .calc-history {
       display: flex; flex-direction: column;
@@ -629,7 +639,7 @@
     .calc-history-result { font-size: 22px; font-weight: 700; color: var(--text); }
     .calc-history-empty  { text-align: center; color: var(--text-faint); font-size: 11px; padding: 16px 6px; }
     /* 右: 電卓本体 */
-    .calc-right { flex: 1; display: flex; flex-direction: column; min-width: 0; justify-content: flex-end; padding: 0 10px; }
+    .calc-right { flex: 1; display: flex; flex-direction: column; min-width: 0; justify-content: flex-end; padding: 0 8px 0 0; }
     .calc-display {
       background: var(--bg-2); border: 1px solid var(--border);
       border-radius: 0; padding: 10px 14px 8px;
@@ -858,6 +868,25 @@
   <!-- CALC -->
   <div id="tab-calc" class="tab-content">
     <div class="calc-container">
+
+      <!-- 変換パネル -->
+      <div class="calc-conv">
+        <div class="calc-conv-item">
+          <div class="calc-conv-value" id="convKgfNm">—</div>
+        </div>
+        <div class="calc-conv-item">
+          <div class="calc-conv-value" id="convNmKgf">—</div>
+        </div>
+        <div class="calc-conv-item">
+          <div class="calc-conv-value" id="convTg">—</div>
+        </div>
+        <div class="calc-conv-item">
+          <div class="calc-conv-value" id="convSrb">—</div>
+        </div>
+        <div class="calc-conv-item">
+          <div class="calc-conv-value" id="convSra">—</div>
+        </div>
+      </div>
 
       <!-- 電卓本体 -->
       <div class="calc-right">
@@ -1930,6 +1959,35 @@ function calcDisplay() {
   main.textContent = calcFmt(_calcVal);
   sub.textContent  = (_calcPrev!==null && _calcOp)
     ? calcFmt(String(_calcPrev)) + ' ' + _calcOp : '';
+  const v = parseFloat(_calcVal);
+  const e1 = document.getElementById('convKgfNm');
+  const e2 = document.getElementById('convNmKgf');
+  if (e1 && e2) {
+    const e3 = document.getElementById('convTg');
+    const e4 = document.getElementById('convSrb');
+    const e5 = document.getElementById('convSra');
+    if (!isNaN(v) && _calcVal !== '0') {
+      const kgfNm = Math.round(v * 9.80665 * 100) / 100;
+      const nmKgf = Math.round(v / 9.80665 * 100) / 100;
+      const tgPcs = v * 16;
+      const tgBox = Math.round(v / 16 * 100) / 100;
+      e1.innerHTML = `<div class="calc-conv-input">${calcFmt(_calcVal)}kgf</div><div class="calc-conv-result">┗${calcFmt(String(kgfNm))}N·m</div>`;
+      e2.innerHTML = `<div class="calc-conv-input">${calcFmt(_calcVal)}N·m</div><div class="calc-conv-result">┗${calcFmt(String(nmKgf))}kgf</div>`;
+      const srbPcs = v * 42;
+      const srbBox = Math.round(v / 42 * 100) / 100;
+      if(e3) e3.innerHTML = `<div class="calc-conv-tg">灯具\n${calcFmt(_calcVal)}箱（${calcFmt(String(tgPcs))}本）\n${calcFmt(_calcVal)}本（${tgBox}箱）</div>`;
+      const sraPcs = v * 56;
+      const sraBox = Math.round(v / 56 * 100) / 100;
+      if(e4) e4.innerHTML = `<div class="calc-conv-tg">採光ルーバーB\n${calcFmt(_calcVal)}箱（${calcFmt(String(srbPcs))}本）\n${calcFmt(_calcVal)}本（${srbBox}箱）</div>`;
+      if(e5) e5.innerHTML = `<div class="calc-conv-tg">採光ルーバーA\n${calcFmt(_calcVal)}箱（${calcFmt(String(sraPcs))}本）\n${calcFmt(_calcVal)}本（${sraBox}箱）</div>`;
+    } else {
+      e1.textContent = '—';
+      e2.textContent = '—';
+      if(e3) e3.textContent = '—';
+      if(e4) e4.textContent = '—';
+      if(e5) e5.textContent = '—';
+    }
+  }
 }
 
 function calcHistoryRender(scroll) {
