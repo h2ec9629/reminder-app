@@ -607,7 +607,7 @@
     .calc-pg.pg-left  { transform: translateX(-100%); opacity:0; pointer-events:none; }
     .calc-dots { display:flex; justify-content:center; gap:8px; height:16px;
       align-items:center; margin-top:4px; }
-    .calc-dot { width:6px; height:6px; border-radius:50%; background:var(--border); transition:background .2s; }
+    .calc-dot { width:6px; height:6px; border-radius:50%; background:var(--border); transition:background .2s; cursor:pointer; padding:6px; box-sizing:content-box; margin:-6px; }
     .calc-dot.on { background:var(--accent); }
     .meas-container { height:100%; overflow-y:auto; padding:8px 12px; }
     .meas-phase { margin-bottom:14px; }
@@ -954,13 +954,13 @@
             <table class="meas-tbl">
               <tr><th></th><th>R</th><th>A</th><th>B</th></tr>
               <tr><td class="meas-lbl">ON/開く</td>
-                <td><input class="meas-in" id="mu_on_r" type="number" step="any" inputmode="decimal" oninput="measCalc('u')"></td>
-                <td><input class="meas-in" id="mu_on_a" type="number" step="any" inputmode="decimal" oninput="measCalc('u')"></td>
-                <td><input class="meas-in" id="mu_on_b" type="number" step="any" inputmode="decimal" oninput="measCalc('u')"></td></tr>
+                <td><input class="meas-in" id="mu_on_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('u')"></td>
+                <td><input class="meas-in" id="mu_on_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('u')"></td>
+                <td><input class="meas-in" id="mu_on_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('u')"></td></tr>
               <tr><td class="meas-lbl">OFF/閉じる</td>
-                <td><input class="meas-in" id="mu_off_r" type="number" step="any" inputmode="decimal" oninput="measCalc('u')"></td>
-                <td><input class="meas-in" id="mu_off_a" type="number" step="any" inputmode="decimal" oninput="measCalc('u')"></td>
-                <td><input class="meas-in" id="mu_off_b" type="number" step="any" inputmode="decimal" oninput="measCalc('u')"></td></tr>
+                <td><input class="meas-in" id="mu_off_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('u')"></td>
+                <td><input class="meas-in" id="mu_off_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('u')"></td>
+                <td><input class="meas-in" id="mu_off_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('u')"></td></tr>
               <tr><td class="meas-lbl">差数</td>
                 <td class="meas-diff" id="mu_d_r">—</td>
                 <td class="meas-diff" id="mu_d_a">—</td>
@@ -972,13 +972,13 @@
             <table class="meas-tbl">
               <tr><th></th><th>R</th><th>A</th><th>B</th></tr>
               <tr><td class="meas-lbl">ON/開く</td>
-                <td><input class="meas-in" id="mv_on_r" type="number" step="any" inputmode="decimal" oninput="measCalc('v')"></td>
-                <td><input class="meas-in" id="mv_on_a" type="number" step="any" inputmode="decimal" oninput="measCalc('v')"></td>
-                <td><input class="meas-in" id="mv_on_b" type="number" step="any" inputmode="decimal" oninput="measCalc('v')"></td></tr>
+                <td><input class="meas-in" id="mv_on_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('v')"></td>
+                <td><input class="meas-in" id="mv_on_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('v')"></td>
+                <td><input class="meas-in" id="mv_on_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('v')"></td></tr>
               <tr><td class="meas-lbl">OFF/閉じる</td>
-                <td><input class="meas-in" id="mv_off_r" type="number" step="any" inputmode="decimal" oninput="measCalc('v')"></td>
-                <td><input class="meas-in" id="mv_off_a" type="number" step="any" inputmode="decimal" oninput="measCalc('v')"></td>
-                <td><input class="meas-in" id="mv_off_b" type="number" step="any" inputmode="decimal" oninput="measCalc('v')"></td></tr>
+                <td><input class="meas-in" id="mv_off_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('v')"></td>
+                <td><input class="meas-in" id="mv_off_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('v')"></td>
+                <td><input class="meas-in" id="mv_off_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('v')"></td></tr>
               <tr><td class="meas-lbl">差数</td>
                 <td class="meas-diff" id="mv_d_r">—</td>
                 <td class="meas-diff" id="mv_d_a">—</td>
@@ -990,13 +990,13 @@
             <table class="meas-tbl">
               <tr><th></th><th>R</th><th>A</th><th>B</th></tr>
               <tr><td class="meas-lbl">ON/開く</td>
-                <td><input class="meas-in" id="mw_on_r" type="number" step="any" inputmode="decimal" oninput="measCalc('w')"></td>
-                <td><input class="meas-in" id="mw_on_a" type="number" step="any" inputmode="decimal" oninput="measCalc('w')"></td>
-                <td><input class="meas-in" id="mw_on_b" type="number" step="any" inputmode="decimal" oninput="measCalc('w')"></td></tr>
+                <td><input class="meas-in" id="mw_on_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('w')"></td>
+                <td><input class="meas-in" id="mw_on_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('w')"></td>
+                <td><input class="meas-in" id="mw_on_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('w')"></td></tr>
               <tr><td class="meas-lbl">OFF/閉じる</td>
-                <td><input class="meas-in" id="mw_off_r" type="number" step="any" inputmode="decimal" oninput="measCalc('w')"></td>
-                <td><input class="meas-in" id="mw_off_a" type="number" step="any" inputmode="decimal" oninput="measCalc('w')"></td>
-                <td><input class="meas-in" id="mw_off_b" type="number" step="any" inputmode="decimal" oninput="measCalc('w')"></td></tr>
+                <td><input class="meas-in" id="mw_off_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('w')"></td>
+                <td><input class="meas-in" id="mw_off_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('w')"></td>
+                <td><input class="meas-in" id="mw_off_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="measCalc('w')"></td></tr>
               <tr><td class="meas-lbl">差数</td>
                 <td class="meas-diff" id="mw_d_r">—</td>
                 <td class="meas-diff" id="mw_d_a">—</td>
@@ -1007,8 +1007,8 @@
       </div>
     </div>
     <div class="calc-dots">
-      <span class="calc-dot on" id="cdot0"></span>
-      <span class="calc-dot" id="cdot1"></span>
+      <span class="calc-dot on" id="cdot0" onclick="calcPgGoto(0)"></span>
+      <span class="calc-dot" id="cdot1" onclick="calcPgGoto(1)"></span>
     </div>
   </div>
 
@@ -2168,6 +2168,7 @@ function measCalc(ph) {
 
 // === CALC PAGE SWIPE ===
 let _calcPgIdx = 0;
+function calcPgGoto(idx) { calcPgSwitch(idx - _calcPgIdx); }
 function calcPgSwitch(dir) {
   _calcPgIdx = (_calcPgIdx + dir + 2) % 2;
   ['calcPg0','calcPg1'].forEach((id,i) => {
@@ -2211,6 +2212,9 @@ function showToast(msg) {
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
+  document.querySelectorAll('.meas-in').forEach(el=>el.addEventListener('focus',function(){
+    const len=this.value.length; this.setSelectionRange(len,len);
+  }));
 })();
 </script>
 </body>
