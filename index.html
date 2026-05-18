@@ -599,14 +599,15 @@
     }
     /* ===== CALC TAB ===== */
     .calc-container {
-      display: flex; gap: 10px;
+      display: flex; flex-direction: column;
       height: calc(100dvh - var(--header-h) - var(--nav-h) - 28px);
+      margin: 0 -12px;
     }
-    /* 左: 履歴パネル */
+    /* 上: 履歴パネル */
     .calc-history {
-      flex: 0 0 36%; display: flex; flex-direction: column;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 14px; overflow: hidden; min-width: 0;
+      display: flex; flex-direction: column;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      overflow: hidden; min-width: 0; flex-shrink: 0; max-height: 28%;
     }
     .calc-history-title {
       font-size: 10px; font-weight: 700; color: var(--text-faint);
@@ -628,7 +629,7 @@
     .calc-history-result { font-size: 15px; font-weight: 700; color: var(--text); }
     .calc-history-empty  { text-align: center; color: var(--text-faint); font-size: 11px; padding: 16px 6px; }
     /* 右: 電卓本体 */
-    .calc-right { flex: 1; display: flex; flex-direction: column; min-width: 0; justify-content: flex-end; }
+    .calc-right { flex: 1; display: flex; flex-direction: column; min-width: 0; justify-content: flex-end; padding: 0 10px; }
     .calc-display {
       background: var(--bg-2); border: 1px solid var(--border);
       border-radius: 14px; padding: 10px 14px 8px;
@@ -858,16 +859,15 @@
   <div id="tab-calc" class="tab-content">
     <div class="calc-container">
 
-      <!-- 左: 履歴パネル -->
-      <div class="calc-history">
-        <div class="calc-history-title">履歴</div>
-        <div class="calc-history-list" id="calcHistoryList">
-          <div class="calc-history-empty">まだ計算してへん</div>
-        </div>
-      </div>
-
-      <!-- 右: 電卓本体 -->
+      <!-- 電卓本体 -->
       <div class="calc-right">
+        <!-- 上: 履歴パネル -->
+        <div class="calc-history">
+          <div class="calc-history-title">履歴</div>
+          <div class="calc-history-list" id="calcHistoryList">
+            <div class="calc-history-empty">まだ計算してへん</div>
+          </div>
+        </div>
         <div class="calc-display">
           <div class="calc-sub" id="calcSub"></div>
           <div class="calc-main" id="calcMain">0</div>
