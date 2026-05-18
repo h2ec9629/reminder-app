@@ -601,13 +601,13 @@
     .calc-container {
       display: flex; flex-direction: column;
       height: calc(100dvh - var(--header-h) - var(--nav-h) - 28px);
-      margin: 0 -12px;
+      margin: 0 -12px; padding: 0 0 0 25%;
     }
     /* 上: 履歴パネル */
     .calc-history {
       display: flex; flex-direction: column;
       background: var(--surface); border-bottom: 1px solid var(--border);
-      overflow: hidden; min-width: 0; flex-shrink: 0; max-height: 28%;
+      overflow: hidden; min-width: 0; flex: 1;
     }
     .calc-history-title {
       font-size: 10px; font-weight: 700; color: var(--text-faint);
@@ -632,8 +632,8 @@
     .calc-right { flex: 1; display: flex; flex-direction: column; min-width: 0; justify-content: flex-end; padding: 0 10px; }
     .calc-display {
       background: var(--bg-2); border: 1px solid var(--border);
-      border-radius: 14px; padding: 10px 14px 8px;
-      margin-bottom: 10px; text-align: right; flex-shrink: 0;
+      border-radius: 0; padding: 10px 14px 8px;
+      margin-bottom: 0; text-align: right; flex-shrink: 0;
     }
     .calc-sub {
       font-size: 11px; color: var(--text-faint);
