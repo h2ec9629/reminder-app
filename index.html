@@ -2213,10 +2213,12 @@ function measCalc(ph) {
     if (!isNaN(onV) && !isNaN(offV)) {
       const diff = Math.round((onV - offV) * 1000) / 1000;
       const diffStr = diff.toFixed(2);
-      if (diff >= 1.80 && diff <= 2.00) {
+      if (diff >= 1.83 && diff <= 1.97) {
+        // 正常範囲
         d.innerHTML = diffStr + '<br>[正常]';
         d.style.color = 'var(--success, #4caf50)';
       } else {
+        // 角数計算（目標1.90、1角=0.25、半角=0.125）
         const gap = Math.round((1.90 - diff) * 1000) / 1000;
         const dir = gap > 0 ? '緩め' : '締め';
         const absGap = Math.abs(gap);
@@ -2229,7 +2231,8 @@ function measCalc(ph) {
         else if (half)               label = '半角';
         else                         label = '？';
         d.innerHTML = diffStr + '<br>[' + label + dir + ']';
-        d.style.color = 'var(--warning, #ff9800)';
+        // 公差内（1.80~2.00）は白、公差外はオレンジ
+        d.style.color = (diff >= 1.80 && diff <= 2.00) ? '#fff' : 'var(--warning, #ff9800)';
       }
     } else { d.textContent = '—'; d.style.color = ''; }
   });
