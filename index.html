@@ -2160,8 +2160,9 @@ function measCalc(ph) {
     if (!d) return;
     if (!isNaN(onV) && !isNaN(offV)) {
       const diff = Math.round((onV - offV) * 1000) / 1000;
+      const diffStr = diff.toFixed(2);
       if (diff >= 1.80 && diff <= 2.00) {
-        d.textContent = diff + ' [正常]';
+        d.textContent = diffStr + ' [正常]';
         d.style.color = 'var(--success, #4caf50)';
       } else {
         const gap = Math.round((1.90 - diff) * 1000) / 1000;
@@ -2175,7 +2176,7 @@ function measCalc(ph) {
         else if (whole > 0 && !half) label = whole + '角';
         else if (half)               label = '半角';
         else                         label = '？';
-        d.textContent = diff + ' [' + label + dir + ']';
+        d.textContent = diffStr + ' [' + label + dir + ']';
         d.style.color = 'var(--warning, #ff9800)';
       }
     } else { d.textContent = '—'; d.style.color = ''; }
