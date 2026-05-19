@@ -2268,6 +2268,18 @@ function showToast(msg) {
   document.querySelectorAll('.meas-in').forEach(el=>el.addEventListener('focus',function(){
     const len=this.value.length; this.setSelectionRange(len,len);
   }));
+  document.querySelectorAll('.meas-in').forEach(el=>el.addEventListener('blur',function(){
+    var v = this.value.trim();
+    if(v === '') return;
+    // 小数点なし・3桁以上（マイナス除く）なら÷100
+    var digits = v.replace(/^-/,'');
+    if(!v.includes('.') && digits.length >= 3 && !isNaN(Number(v))){
+      this.value = (Number(v) / 100).toFixed(2);
+      // 差数を再計算
+      var ph = this.id.match(/^m([uvw])_/);
+      if(ph) measCalc(ph[1]);
+    }
+  }));
 })();
 
 function clearFormInput(btn) {
