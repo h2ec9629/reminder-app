@@ -2159,10 +2159,25 @@ function measCalc(ph) {
     const d    = document.getElementById(`m${ph}_d_${col}`);
     if (!d) return;
     if (!isNaN(onV) && !isNaN(offV)) {
-      const rawDiff = Math.round((onV - offV) * 1000) / 1000;
-      const diff = Math.round((2.00 - rawDiff / 0.25) * 1000) / 1000;
-      d.textContent = diff;
-      d.style.color = diff < 0 ? 'var(--danger)' : diff > 0 ? 'var(--text)' : 'var(--text-faint)';
+      const diff = Math.round((onV - offV) * 1000) / 1000;
+      if (diff >= 1.80 && diff <= 2.00) {
+        d.textContent = diff + ' [正常]';
+        d.style.color = 'var(--success, #4caf50)';
+      } else {
+        const gap = Math.round((1.90 - diff) * 1000) / 1000;
+        const dir = gap > 0 ? '緩め' : '締め';
+        const absGap = Math.abs(gap);
+        const full = Math.floor(Math.round(absGap / 0.125));
+        const whole = Math.floor(full / 2);
+        const half  = full % 2 === 1;
+        let label = '';
+        if (whole > 0 && half)       label = whole + '角半';
+        else if (whole > 0 && !half) label = whole + '角';
+        else if (half)               label = '半角';
+        else                         label = '？';
+        d.textContent = diff + ' [' + label + dir + ']';
+        d.style.color = 'var(--warning, #ff9800)';
+      }
     } else { d.textContent = '—'; d.style.color = ''; }
   });
 }
