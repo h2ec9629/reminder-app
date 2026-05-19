@@ -609,7 +609,7 @@
       align-items:center; margin-top:4px; }
     .calc-dot { width:12px; height:6px; border-radius:3px; background:var(--border); transition:background .2s; cursor:pointer; padding:6px; box-sizing:content-box; }
     .calc-dot.on { background:var(--accent); }
-    .meas-container { height:100%; overflow-y:auto; padding:8px 12px; }
+    .meas-container { height:100%; overflow-y:auto; padding:8px 6px; }
     .meas-phase { margin-bottom:14px; }
     .meas-phase-hd { font-size:13px; font-weight:700; color:var(--accent);
       padding:4px 0; border-bottom:2px solid currentColor; margin-bottom:6px; }
@@ -620,10 +620,10 @@
     .th-vr { color:#69d469; }
     .th-wr { color:#5bc8ff; }
     .meas-tbl { width:100%; border-collapse:collapse; font-size:12px; table-layout:fixed; }
-    .meas-tbl th { padding:5px 5px; text-align:center; color:var(--text-sub);
+    .meas-tbl th { padding:4px 1px; text-align:center; color:var(--text-sub);
       font-weight:600; border-bottom:1px solid var(--border); }
-    .meas-tbl td { padding:5px 5px; text-align:center; border-bottom:1px solid var(--border); }
-    .meas-lbl { text-align:left !important; color:var(--text-sub); font-size:11px; white-space:nowrap; width:10%; }
+    .meas-tbl td { padding:4px 1px; text-align:center; border-bottom:1px solid var(--border); }
+    .meas-lbl { text-align:left !important; color:var(--text-sub); font-size:11px; white-space:nowrap; width:8%; }
     .meas-in { width:100%; border:1px solid var(--border); border-radius:4px;
       background:var(--surface-2); color:var(--text); font-size:13px;
       padding:4px 2px; text-align:right; font-family:inherit; -webkit-appearance:none; }
@@ -639,16 +639,17 @@
     }
     .is-ta .clear-x { top: 12px; transform: none; }
     .clear-x:active { color: var(--text); }
-    .meas-td-wrap { display: flex; align-items: center; gap: 1px; }
+    .meas-td-wrap { display: flex; align-items: center; gap: 3px; }
     .meas-td-wrap .meas-in { flex: 1; min-width: 0; width: auto; }
     .meas-x {
-      background: none; border: none; color: var(--text-faint);
-      font-size: 15px; line-height: 1; cursor: pointer;
-      padding: 6px 5px; flex-shrink: 0; opacity: 0.75;
-      min-width: 28px; min-height: 28px;
+      width: 24px; height: 24px; flex-shrink: 0;
+      background: var(--danger); border: none; border-radius: 50%;
+      color: #fff; font-size: 13px; font-weight: 700;
+      line-height: 1; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
+      padding: 0; opacity: 0.85;
     }
-    .meas-x:active { opacity: 1; color: var(--danger); }
+    .meas-x:active { opacity: 1; transform: scale(0.9); }
     .calc-conv {
       flex: 0 0 35%; display: flex; flex-direction: column;
       border-right: 1px solid var(--border); overflow-y: auto;
@@ -1455,6 +1456,7 @@ function switchTab(name,btn) {
   if(name==='calendar') renderCalendar();
   if(name==='gantt')    renderGantt();
   if(name==='calc')     calcDisplay();
+  document.querySelector('.main').style.overflowY = (name==='calc') ? 'hidden' : '';
   updateRimaNav();
   window.scrollTo(0,0);
 }
@@ -2271,11 +2273,9 @@ function showToast(msg) {
   document.querySelectorAll('.meas-in').forEach(el=>el.addEventListener('blur',function(){
     var v = this.value.trim();
     if(v === '') return;
-    // 小数点なし・3桁以上（マイナス除く）なら÷100
     var digits = v.replace(/^-/,'');
     if(!v.includes('.') && digits.length >= 3 && !isNaN(Number(v))){
       this.value = (Number(v) / 100).toFixed(2);
-      // 差数を再計算
       var ph = this.id.match(/^m([uvw])_/);
       if(ph) measCalc(ph[1]);
     }
