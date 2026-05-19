@@ -2159,7 +2159,8 @@ function measCalc(ph) {
     const d    = document.getElementById(`m${ph}_d_${col}`);
     if (!d) return;
     if (!isNaN(onV) && !isNaN(offV)) {
-      const diff = Math.round((onV - offV) * 1000) / 1000;
+      const rawDiff = Math.round((onV - offV) * 1000) / 1000;
+      const diff = Math.round((2.00 - rawDiff / 0.25) * 1000) / 1000;
       d.textContent = diff;
       d.style.color = diff < 0 ? 'var(--danger)' : diff > 0 ? 'var(--text)' : 'var(--text-faint)';
     } else { d.textContent = '—'; d.style.color = ''; }
