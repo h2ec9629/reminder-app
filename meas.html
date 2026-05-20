@@ -6,6 +6,9 @@
   <meta name="theme-color" content="#1A1614">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="三相測定">
+  <link rel="manifest" href="meas_manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>三相測定</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -510,7 +513,7 @@ function forceUpdate() {
       });
     }
   } catch(e) {}
-  setTimeout(function() { location.reload(true); }, 800);
+  setTimeout(function() { location.reload(true); }, 1000);
 }
 
 // ===== トースト =====
@@ -521,6 +524,11 @@ function showToast(msg) {
   t.className   = 'toast show';
   clearTimeout(_tt);
   _tt = setTimeout(function(){ t.className = 'toast'; }, 2200);
+}
+
+// ===== SW登録 =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('meas_sw.js').catch(function() {});
 }
 
 // ===== 初期化 =====

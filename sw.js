@@ -1,9 +1,10 @@
-// おじさんリマインダー Service Worker v3.1
-const CACHE_NAME = 'ojisan-reminder-v3.1';
+// おじさんリマインダー Service Worker v3.2
+const CACHE_NAME = 'ojisan-reminder-v3.2';
 const ASSETS = [
   './index.html',
   './style.css',
   './app.js',
+  './meas.html',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png'
@@ -33,19 +34,38 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// ネットワーク優先・オフライン時はキャッシュにフォールバック
+// meas.html はキャッシュ優先・それ以外はネットワーク優先
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        return response;
+  var url = event.request.url;
+  var isMeas = url.indexOf('meas.html') !== -1;
+
+  if (isMeas) {
+    // キャッシュ優先（なければネット）
+    event.respondWith(
+      caches.match(event.request).then(function(cached) {
+        return cached || fetch(event.request).then(function(response) {
+          var clone = response.clone();
+          caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, clone); });
+          return response;
+        });
       })
-      .catch(() =>
-        caches.match(event.request).then(r => r || caches.match('./index.html'))
-      )
-  );
+    );
+  } else {
+    // ネットワーク優先・オフライン時はキャッシュにフォールバック
+    event.respondWith(
+      fetch(event.request)
+        .then(function(response) {
+          var clone = response.clone();
+          caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, clone); });
+          return response;
+        })
+        .catch(function() {
+          return caches.match(event.request).then(function(r) {
+            return r || caches.match('./index.html');
+          });
+        })
+    );
+  }
 });
 
 // 通知クリック時の処理
