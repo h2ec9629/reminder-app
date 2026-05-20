@@ -1196,4 +1196,6 @@ function autoDecimal(inp, ph) {
 
   inp.value = formatted;
   var len = formatted.length;
-  setTi
+  setTimeout(function() { inp.setSelectionRange(len, len); }, 0);
+  measCalc(ph);
+}
