@@ -335,9 +335,56 @@
         </div>
       </div>
     </div>
+      <div class="calc-pg pg-right" id="calcPg2">
+        <div class="vape-container">
+          <div class="vape-title">ニコチン調合計算</div>
+          <div class="vape-section">
+            <div class="vape-label">Liquid</div>
+            <div class="vape-presets">
+              <button class="vape-preset" onclick="vapeSetVol(30,this)">30ml</button>
+              <button class="vape-preset" onclick="vapeSetVol(60,this)">60ml</button>
+              <button class="vape-preset" onclick="vapeSetVol(120,this)">120ml</button>
+            </div>
+            <div class="vape-input-row">
+              <input type="text" inputmode="decimal" pattern="[0-9.]*" class="vape-in" id="vapeVol" placeholder="0" oninput="vapeCalc()">
+              <span class="vape-unit">ml</span>
+            </div>
+          </div>
+          <div class="vape-section">
+            <div class="vape-label">目標ニコチン濃度</div>
+            <div class="vape-target-grid">
+              <button class="vape-preset" onclick="vapeSetTarget(5,this)">5</button>
+              <button class="vape-preset" onclick="vapeSetTarget(6,this)">6</button>
+              <button class="vape-preset" onclick="vapeSetTarget(7,this)">7</button>
+              <button class="vape-preset" onclick="vapeSetTarget(8,this)">8</button>
+              <button class="vape-preset" onclick="vapeSetTarget(9,this)">9</button>
+              <button class="vape-preset" onclick="vapeSetTarget(10,this)">10</button>
+              <button class="vape-preset" onclick="vapeSetTarget(11,this)">11</button>
+              <button class="vape-preset" onclick="vapeSetTarget(12,this)">12</button>
+            </div>
+            <div class="vape-unit" style="text-align:right; margin-top:6px;">mg/ml</div>
+          </div>
+          <div class="vape-section">
+            <div class="vape-label">ニコチン原液濃度</div>
+            <div class="vape-fixed-val">200 mg/ml</div>
+          </div>
+          <div class="vape-result-box">
+            <div class="vape-result-row">
+              <span class="vape-result-label">原液</span>
+              <span class="vape-result-val" id="vapeResNic">—</span>
+            </div>
+            <div class="vape-result-divider"></div>
+            <div class="vape-result-row">
+              <span class="vape-result-label">ベースリキッド</span>
+              <span class="vape-result-val" id="vapeResBase">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
     <div class="calc-dots">
       <span class="calc-dot on" id="cdot0" onclick="calcPgGoto(0)"></span>
       <span class="calc-dot" id="cdot1" onclick="calcPgGoto(1)"></span>
+      <span class="calc-dot" id="cdot2" onclick="calcPgGoto(2)"></span>
     </div>
   </div>
 

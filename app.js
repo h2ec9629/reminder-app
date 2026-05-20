@@ -1067,8 +1067,8 @@ function measCalc(ph) {
 let _calcPgIdx = 0;
 function calcPgGoto(idx) { calcPgSwitch(idx - _calcPgIdx); }
 function calcPgSwitch(dir) {
-  _calcPgIdx = (_calcPgIdx + dir + 2) % 2;
-  ['calcPg0','calcPg1'].forEach((id,i) => {
+  _calcPgIdx = (_calcPgIdx + dir + 3) % 3;
+  ['calcPg0','calcPg1','calcPg2'].forEach((id,i) => {
     const el = document.getElementById(id);
     const dot = document.getElementById('cdot'+i);
     if (el) { el.classList.remove('pg-left','pg-right'); if(i!==_calcPgIdx) el.classList.add(i<_calcPgIdx?'pg-left':'pg-right'); }
@@ -1082,6 +1082,53 @@ function calcPgSwitch(dir) {
   w.addEventListener('touchstart', e=>{ sx=e.touches[0].clientX; },{passive:true});
   w.addEventListener('touchend',   e=>{ const dx=e.changedTouches[0].clientX-sx; if(Math.abs(dx)>40) calcPgSwitch(dx<0?1:-1); },{passive:true});
 })();
+
+// === VAPE CALC ===
+let _vapeTarget = null;
+
+function vapeSetVol(v, btn) {
+  document.getElementById('vapeVol').value = v;
+  document.querySelectorAll('#calcPg2 .vape-presets .vape-preset').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  vapeCalc();
+}
+
+function vapeSetTarget(v, btn) {
+  _vapeTarget = v;
+  document.querySelectorAll('.vape-target-grid .vape-preset').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  vapeCalc();
+}
+
+function vapeCalc() {
+  const vol    = parseFloat(document.getElementById('vapeVol')?.value);
+  const target = _vapeTarget;
+  const base   = 200;
+  const resNic  = document.getElementById('vapeResNic');
+  const resBase = document.getElementById('vapeResBase');
+  if (!resNic || !resBase) return;
+
+  if (isNaN(vol) || isNaN(target) || vol <= 0 || target <= 0) {
+    resNic.textContent  = '—';
+    resNic.className    = 'vape-result-val';
+    resBase.textContent = '—';
+    resBase.className   = 'vape-result-val';
+    return;
+  }
+  const nicAmt  = (target * vol) / base;
+  const baseAmt = vol - nicAmt;
+  if (nicAmt > vol) {
+    resNic.textContent  = '濃度オーバー';
+    resNic.className    = 'vape-result-val error';
+    resBase.textContent = '—';
+    resBase.className   = 'vape-result-val';
+    return;
+  }
+  resNic.textContent  = (Math.round(nicAmt  * 100) / 100) + ' ml';
+  resNic.className    = 'vape-result-val';
+  resBase.textContent = (Math.round(baseAmt * 100) / 100) + ' ml';
+  resBase.className   = 'vape-result-val';
+}
 
 // === TOAST ===
 let _tt;

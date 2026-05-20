@@ -721,3 +721,86 @@
     .calc-btn-func { background: var(--surface); color: var(--text-sub); font-size: 14px; }
     .calc-btn-eq   { background: var(--accent); color: #fff; }
     .calc-btn-wide { grid-column: span 2; }
+
+    /* ===== VAPE CALC ===== */
+    .vape-container {
+      height: 100%; overflow-y: auto;
+      padding: 16px 14px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .vape-title {
+      font-size: 11px; font-weight: 700;
+      color: var(--text-faint);
+      text-transform: uppercase; letter-spacing: 1px;
+      text-align: center; padding-top: 2px;
+    }
+    .vape-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px;
+    }
+    .vape-label {
+      font-size: 11px; font-weight: 700;
+      color: var(--text-sub); margin-bottom: 10px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .vape-presets {
+      display: flex; gap: 8px; margin-bottom: 10px;
+    }
+    .vape-preset {
+      flex: 1; padding: 8px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--surface-2); color: var(--text-sub);
+      font-size: 14px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: all 0.15s;
+    }
+    .vape-preset.active {
+      background: var(--accent-dim);
+      border-color: var(--accent); color: var(--accent);
+    }
+    .vape-preset:active { opacity: 0.7; }
+    .vape-input-row {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .vape-in {
+      flex: 1; padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--surface-2); color: var(--text);
+      font-size: 22px; font-weight: 300;
+      text-align: right; font-family: inherit;
+      -webkit-appearance: none;
+    }
+    .vape-in:focus { outline: none; border-color: var(--accent); }
+    .vape-unit {
+      font-size: 12px; color: var(--text-faint);
+      font-weight: 600; flex-shrink: 0; min-width: 44px;
+    }
+    .vape-fixed-val {
+      font-size: 22px; font-weight: 300;
+      color: var(--text-faint); text-align: right; padding: 4px 0;
+    }
+    .vape-result-box {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+    }
+    .vape-result-row {
+      display: flex; justify-content: space-between;
+      align-items: center; padding: 16px 16px;
+    }
+    .vape-result-divider { height: 1px; background: var(--border); margin: 0 14px; }
+    .vape-result-label {
+      font-size: 12px; font-weight: 700;
+      color: var(--text-sub);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .vape-result-val {
+      font-size: 26px; font-weight: 700; color: var(--accent);
+    }
+    .vape-result-val.error { font-size: 14px; color: var(--danger); }
+    .vape-target-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
