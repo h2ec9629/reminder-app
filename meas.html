@@ -498,22 +498,25 @@ function showToast(msg) {
 
 // ===== 初期化 =====
 window.onload = function() {
-  var i, inp, btns, btn;
+  var i, inputs, btns;
 
   // 入力欄タップ → フォーカス
-  var inputs = document.getElementsByClassName('meas-in');
+  inputs = document.getElementsByTagName('input');
   for (i = 0; i < inputs.length; i++) {
-    inputs[i].addEventListener('click', function() { focusInp(this); });
+    if (inputs[i].getAttribute('data-ph')) {
+      inputs[i].onclick = function() { focusInp(this); };
+    }
   }
 
-  // ×ボタン：イベント委譲
-  var main = document.getElementById('mainArea') || document.querySelector('.main');
-  main.onclick = function(e) {
-    var btn = e.target;
-    if (btn.tagName === 'BUTTON' && btn.getAttribute('data-clear')) {
-      clearOne(btn.getAttribute('data-clear'), btn.getAttribute('data-ph'));
+  // ×ボタン
+  btns = document.getElementsByTagName('button');
+  for (i = 0; i < btns.length; i++) {
+    if (btns[i].getAttribute('data-clear')) {
+      btns[i].onclick = (function(id, ph) {
+        return function() { clearOne(id, ph); };
+      })(btns[i].getAttribute('data-clear'), btns[i].getAttribute('data-ph'));
     }
-  };
+  }
 
   // テンキー：イベント委譲1か所
   document.getElementById('numpadGrid').onclick = function(e) {
