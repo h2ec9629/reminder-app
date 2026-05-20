@@ -745,7 +745,7 @@ function abbrevName(n) {
 }
 
 function renderGantt() {
-  const SC = 4.5;
+  const SC = 9;
   const LW = 94;
 
   const d2h = {
@@ -825,6 +825,8 @@ function renderGantt() {
   ];
 
   const h2px = h => Math.round(h * SC);
+  const halfDayPx    = h2px(4); // 1日の前半・後半の境界（4h = 1マス分）
+  const quarterDayPx = h2px(2); // 2マス目の中央オフセット
 
   function d2px(iso) {
     if (!iso) return null;
@@ -849,8 +851,12 @@ function renderGantt() {
     const x  = h2px(h);
     const dt = new Date(iso+'T00:00:00');
     const isMon = dt.getDay()===1, isMth = dt.getDate()===1;
-    const op = (isMon||isMth) ? '0.75' : '0.45';
-    dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x}px;width:1px;background:var(--border);opacity:${op};z-index:1;pointer-events:none;"></div>`;
+    // 日境界線：月初は青2px・月曜は白45%・通常は白22%・半日線は白7%
+    const lineColor = isMth ? '#6B9FD4' : (isMon ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.22)');
+    const lineW     = isMth ? '2' : '1';
+    dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x}px;width:${lineW}px;background:${lineColor};opacity:1;z-index:1;pointer-events:none;"></div>`;
+    // 1日2マス：中間グリッド線（半日）
+    dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x + halfDayPx}px;width:1px;background:rgba(255,255,255,0.07);opacity:1;z-index:1;pointer-events:none;"></div>`;
     const lbl = isMth ? `${dt.getMonth()+1}/1` : String(dt.getDate());
     axTicks += `<span style="position:absolute;font-size:11px;color:#fff;top:3px;left:${x+2}px;white-space:nowrap;">${lbl}</span>`;
   });
@@ -879,9 +885,12 @@ function renderGantt() {
     let bar = dayGridLines + todayLine;
     if (barW>0) bar += `<div style="position:absolute;top:6px;height:15px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColor};z-index:2;"></div>`;
     else if (row.aa>0) bar += `<div style="position:absolute;top:9px;height:9px;left:${barX}px;width:3px;border-radius:2px;background:${barColor};opacity:0.6;z-index:2;"></div>`;
-    if (kX!==null) bar += `<div style="position:absolute;top:0;bottom:0;left:${kX + 18}px;width:1.5px;background:#A32D2D;z-index:3;"></div>`;
-    if (sX!==null) bar += `<span style="position:absolute;top:1px;left:${sX + 18}px;font-size:8px;color:#F4C430;transform:translateX(-50%);z-index:6;line-height:1;">▼</span>`;
-    if (eX!==null) bar += `<span style="position:absolute;bottom:1px;left:${eX + 18}px;font-size:8px;color:#4ADE80;transform:translateX(-50%);z-index:6;line-height:1;">▲</span>`;
+    // 納品期限（k / 赤）: 日付の先頭に期限ライン
+    if (kX!==null) bar += `<div style="position:absolute;top:0;bottom:0;left:${kX + 2}px;width:1.5px;background:#A32D2D;z-index:3;"></div>`;
+    // 材料支給日＝引取（s / 黄▼）: 2マス目の中央
+    if (sX!==null) bar += `<span style="position:absolute;top:1px;left:${sX + halfDayPx + quarterDayPx}px;font-size:8px;color:#F4C430;transform:translateX(-50%);z-index:6;line-height:1;">▼</span>`;
+    // 納品日（e / 緑▲）: 2マス目の左端
+    if (eX!==null) bar += `<span style="position:absolute;bottom:1px;left:${eX + halfDayPx}px;font-size:8px;color:#4ADE80;transform:translateX(-50%);z-index:6;line-height:1;">▲</span>`;
 
     html += `<div style="display:flex;height:28px;border-bottom:1px solid var(--border);">
       <div style="${stickyLbl}background:var(--surface);height:28px;font-size:10px;color:var(--text-sub);padding:0 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border-bottom:1px solid var(--border);">${escH(abbrevName(row.n))}</div>
@@ -1187,36 +1196,4 @@ function autoDecimal(inp, ph) {
 
   inp.value = formatted;
   var len = formatted.length;
-  setTimeout(function(){ inp.setSelectionRange(len, len); }, 0);
-  measCalc(ph);
-}
-function clearFormInput(btn) {
-  var inp = btn.previousElementSibling;
-  inp.value = '';
-  inp.focus();
-}
-function clearMeasInput(btn, ph) {
-  var inp = btn.nextElementSibling;
-  inp.value = '';
-  measCalc(ph);
-}
-function clearMeasCol(ph, col) {
-  ['on','off'].forEach(function(row) {
-    var el = document.getElementById('m'+ph+'_'+row+'_'+col);
-    if(el) el.value = '';
-  });
-  measCalc(ph);
-}
-
-  // iOS rubber-band bounce 防止（電卓タブのみ）
-  document.addEventListener('touchmove', function(e) {
-    if (!document.getElementById('tab-calc').classList.contains('active')) return;
-    var el = e.target;
-    while (el && el !== document.body) {
-      var s = window.getComputedStyle(el);
-      var ov = s.overflowY;
-      if ((ov === 'auto' || ov === 'scroll') && el.scrollHeight > el.clientHeight) return;
-      el = el.parentElement;
-    }
-    e.preventDefault();
-  }, { passive: false });
+  setTi

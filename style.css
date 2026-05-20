@@ -130,6 +130,10 @@
       -webkit-overflow-scrolling: touch;
     }
     .nav-grid::-webkit-scrollbar { display: none; }
+    @media (hover: hover) {
+      .nav-grid  { cursor: grab; }
+      #ganttOuter { cursor: grab; }
+    }
     .nav-btn {
       display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 2px;
