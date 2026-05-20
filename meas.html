@@ -21,7 +21,7 @@
       --text-faint: #615D5A;
       --accent:     #C85C3A;
       --header-h:   44px;
-      --numpad-h:   260px;
+      --numpad-h:   325px;
     }
 
     html, body {
@@ -187,8 +187,8 @@
       -webkit-tap-highlight-color: transparent;
     }
     .np-btn:active { background: var(--border); }
-    .np-btn-minus { background: var(--bg-2); color: var(--text-sub); font-size: 22px; }
     .np-btn-bs    { background: var(--bg-2); color: #F87171; font-size: 22px; }
+    .np-btn-ok    { background: var(--accent); color: #fff; border-color: var(--accent); font-size: 22px; }
   </style>
 </head>
 <body>
@@ -318,9 +318,9 @@
     <button class="np-btn" data-key="1">1</button>
     <button class="np-btn" data-key="2">2</button>
     <button class="np-btn" data-key="3">3</button>
-    <button class="np-btn np-btn-minus" data-key="-">±</button>
+    <button class="np-btn np-btn-bs"    data-key="BS">⌫</button>
     <button class="np-btn" data-key="0">0</button>
-    <button class="np-btn np-btn-bs"   data-key="BS">⌫</button>
+    <button class="np-btn np-btn-ok"   data-key="OK">↵</button>
   </div>
 </div>
 
@@ -364,12 +364,33 @@ function _npTap(key) {
   if (key === 'BS') {
     if (_padRaw.length > 0) _padRaw = _padRaw.slice(0, -1);
     else _padNeg = false;
-  } else if (key === '-') {
-    _padNeg = !_padNeg;
+    _refreshPadVal();
+  } else if (key === 'OK') {
+    // 判定更新して次の欄へフォーカス移動
+    if (_padPh) measCalc(_padPh);
+    _nextFocus();
   } else {
     if (_padRaw.length < 6) _padRaw += key;
+    _refreshPadVal();
   }
-  _refreshPadVal();
+}
+
+function _nextFocus() {
+  var inputs = document.getElementsByClassName('meas-in');
+  var i;
+  for (i = 0; i < inputs.length - 1; i++) {
+    if (inputs[i] === _padTarget) {
+      focusInp(inputs[i + 1]);
+      return;
+    }
+  }
+  // 最後の欄ならハイライトだけ外す
+  if (_padTarget) {
+    _padTarget.className = _padTarget.className.replace(' active-inp','').replace('active-inp','');
+    _padTarget = null;
+    document.getElementById('padLabel').textContent = '欄をタップして入力';
+    document.getElementById('padVal').textContent   = '—';
+  }
 }
 
 function _refreshPadVal() {
