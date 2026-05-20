@@ -158,52 +158,35 @@
     .summary-cell-val { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.3; }
 
     /* ===== NUMPAD ===== */
-    /* 半透明オーバーレイ（タップで閉じる） */
     .numpad-overlay {
       display: none;
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       z-index: 198;
-      background: rgba(0,0,0,0.25);
     }
     .numpad-overlay.show { display: block; }
 
-    /* テンキー本体：右下に浮かせる */
     .numpad {
+      display: none;
       position: fixed;
       right: 12px; bottom: 20px;
       width: 220px;
       background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+      border: 2px solid var(--accent);
+      border-radius: 12px;
       z-index: 199;
-      padding: 10px;
-      -webkit-transform: scale(0.85) translateY(20px);
-      transform: scale(0.85) translateY(20px);
-      opacity: 0;
-      pointer-events: none;
-      -webkit-transform-origin: bottom right;
-      transform-origin: bottom right;
-      -webkit-transition: -webkit-transform 0.22s ease, opacity 0.22s ease;
-      transition: transform 0.22s ease, opacity 0.22s ease;
+      padding: 8px;
     }
-    .numpad.show {
-      -webkit-transform: scale(1) translateY(0);
-      transform: scale(1) translateY(0);
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .numpad.show { display: block; }
 
     /* 現在値バー */
     .numpad-val-bar {
       background: var(--bg-2);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 6px 10px;
-      margin-bottom: 8px;
+      border-radius: 8px;
+      padding: 4px 8px;
+      margin-bottom: 6px;
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-align-items: center; align-items: center;
-      gap: 6px;
     }
     .numpad-target-label {
       font-size: 11px; color: var(--text-faint);
@@ -219,20 +202,19 @@
     .numpad-grid {
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-flex-wrap: wrap; flex-wrap: wrap;
-      gap: 6px;
+      gap: 5px;
     }
     .np-btn {
       -webkit-box-flex: 1; -webkit-flex: 1 1 28%; flex: 1 1 28%;
       min-width: 0; height: 58px;
       background: var(--surface-2); border: 1px solid var(--border);
       color: var(--text); font-size: 28px; font-weight: 600;
-      border-radius: 10px;
+      border-radius: 8px;
       cursor: pointer; font-family: inherit;
       text-align: center; line-height: 1;
       -webkit-tap-highlight-color: transparent;
-      -webkit-transition: background 0.08s; transition: background 0.08s;
     }
-    .np-btn:active { background: var(--border); -webkit-transform: scale(0.93); transform: scale(0.93); }
+    .np-btn:active { background: var(--border); }
     .np-btn-minus { background: var(--bg-2); color: var(--text-sub); font-size: 22px; }
     .np-btn-bs    { background: var(--bg-2); color: #F87171; font-size: 22px; }
     .np-btn-ok    { background: var(--accent); color: #fff; border-color: var(--accent); font-size: 18px; }
@@ -267,15 +249,15 @@
       <tbody>
         <tr>
           <td class="col-lbl">ON</td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mu_on_r" type="text" readonly onfocus="openPad(this,'u')" onclick="openPad(this,'u')"><button class="meas-x" onclick="clearOne(this,'u')">×</button></div></td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mu_on_a" type="text" readonly onfocus="openPad(this,'u')" onclick="openPad(this,'u')"><button class="meas-x" onclick="clearOne(this,'u')">×</button></div></td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mu_on_b" type="text" readonly onfocus="openPad(this,'u')" onclick="openPad(this,'u')"><button class="meas-x" onclick="clearOne(this,'u')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mu_on_r" type="text" readonly data-ph="u"><button class="meas-x" onclick="clearOne(this,'u')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mu_on_a" type="text" readonly data-ph="u"><button class="meas-x" onclick="clearOne(this,'u')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mu_on_b" type="text" readonly data-ph="u"><button class="meas-x" onclick="clearOne(this,'u')">×</button></div></td>
         </tr>
         <tr>
           <td class="col-lbl">OFF</td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mu_off_r" type="text" readonly onfocus="openPad(this,'u')" onclick="openPad(this,'u')"><button class="meas-x" onclick="clearOne(this,'u')">×</button></div></td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mu_off_a" type="text" readonly onfocus="openPad(this,'u')" onclick="openPad(this,'u')"><button class="meas-x" onclick="clearOne(this,'u')">×</button></div></td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mu_off_b" type="text" readonly onfocus="openPad(this,'u')" onclick="openPad(this,'u')"><button class="meas-x" onclick="clearOne(this,'u')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mu_off_r" type="text" readonly data-ph="u"><button class="meas-x" onclick="clearOne(this,'u')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mu_off_a" type="text" readonly data-ph="u"><button class="meas-x" onclick="clearOne(this,'u')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mu_off_b" type="text" readonly data-ph="u"><button class="meas-x" onclick="clearOne(this,'u')">×</button></div></td>
         </tr>
         <tr>
           <td class="col-lbl">判定</td>
@@ -300,15 +282,15 @@
       <tbody>
         <tr>
           <td class="col-lbl">ON</td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mv_on_r" type="text" readonly onfocus="openPad(this,'v')" onclick="openPad(this,'v')"><button class="meas-x" onclick="clearOne(this,'v')">×</button></div></td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mv_on_a" type="text" readonly onfocus="openPad(this,'v')" onclick="openPad(this,'v')"><button class="meas-x" onclick="clearOne(this,'v')">×</button></div></td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mv_on_b" type="text" readonly onfocus="openPad(this,'v')" onclick="openPad(this,'v')"><button class="meas-x" onclick="clearOne(this,'v')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mv_on_r" type="text" readonly data-ph="v"><button class="meas-x" onclick="clearOne(this,'v')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mv_on_a" type="text" readonly data-ph="v"><button class="meas-x" onclick="clearOne(this,'v')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mv_on_b" type="text" readonly data-ph="v"><button class="meas-x" onclick="clearOne(this,'v')">×</button></div></td>
         </tr>
         <tr>
           <td class="col-lbl">OFF</td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mv_off_r" type="text" readonly onfocus="openPad(this,'v')" onclick="openPad(this,'v')"><button class="meas-x" onclick="clearOne(this,'v')">×</button></div></td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mv_off_a" type="text" readonly onfocus="openPad(this,'v')" onclick="openPad(this,'v')"><button class="meas-x" onclick="clearOne(this,'v')">×</button></div></td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mv_off_b" type="text" readonly onfocus="openPad(this,'v')" onclick="openPad(this,'v')"><button class="meas-x" onclick="clearOne(this,'v')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mv_off_r" type="text" readonly data-ph="v"><button class="meas-x" onclick="clearOne(this,'v')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mv_off_a" type="text" readonly data-ph="v"><button class="meas-x" onclick="clearOne(this,'v')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mv_off_b" type="text" readonly data-ph="v"><button class="meas-x" onclick="clearOne(this,'v')">×</button></div></td>
         </tr>
         <tr>
           <td class="col-lbl">判定</td>
@@ -333,15 +315,15 @@
       <tbody>
         <tr>
           <td class="col-lbl">ON</td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mw_on_r" type="text" readonly onfocus="openPad(this,'w')" onclick="openPad(this,'w')"><button class="meas-x" onclick="clearOne(this,'w')">×</button></div></td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mw_on_a" type="text" readonly onfocus="openPad(this,'w')" onclick="openPad(this,'w')"><button class="meas-x" onclick="clearOne(this,'w')">×</button></div></td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mw_on_b" type="text" readonly onfocus="openPad(this,'w')" onclick="openPad(this,'w')"><button class="meas-x" onclick="clearOne(this,'w')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mw_on_r" type="text" readonly data-ph="w"><button class="meas-x" onclick="clearOne(this,'w')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mw_on_a" type="text" readonly data-ph="w"><button class="meas-x" onclick="clearOne(this,'w')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mw_on_b" type="text" readonly data-ph="w"><button class="meas-x" onclick="clearOne(this,'w')">×</button></div></td>
         </tr>
         <tr>
           <td class="col-lbl">OFF</td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mw_off_r" type="text" readonly onfocus="openPad(this,'w')" onclick="openPad(this,'w')"><button class="meas-x" onclick="clearOne(this,'w')">×</button></div></td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mw_off_a" type="text" readonly onfocus="openPad(this,'w')" onclick="openPad(this,'w')"><button class="meas-x" onclick="clearOne(this,'w')">×</button></div></td>
-          <td><div class="meas-td-wrap"><input class="meas-in" id="mw_off_b" type="text" readonly onfocus="openPad(this,'w')" onclick="openPad(this,'w')"><button class="meas-x" onclick="clearOne(this,'w')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mw_off_r" type="text" readonly data-ph="w"><button class="meas-x" onclick="clearOne(this,'w')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mw_off_a" type="text" readonly data-ph="w"><button class="meas-x" onclick="clearOne(this,'w')">×</button></div></td>
+          <td><div class="meas-td-wrap"><input class="meas-in" id="mw_off_b" type="text" readonly data-ph="w"><button class="meas-x" onclick="clearOne(this,'w')">×</button></div></td>
         </tr>
         <tr>
           <td class="col-lbl">判定</td>
@@ -356,27 +338,25 @@
 </main>
 
 <!-- ===== 数字パッド ===== -->
-<div class="numpad-overlay" id="padOverlay" onclick="closePad()"></div>
+<div class="numpad-overlay" id="padOverlay"></div>
 <div class="numpad" id="numpad">
-  <!-- 現在値バー -->
   <div class="numpad-val-bar">
     <span class="numpad-target-label" id="padLabel">—</span>
     <span class="numpad-target-val"   id="padVal">—</span>
   </div>
-  <!-- 電卓配列 4行×3列 -->
-  <div class="numpad-grid">
-    <button class="np-btn" onclick="npInput('7')">7</button>
-    <button class="np-btn" onclick="npInput('8')">8</button>
-    <button class="np-btn" onclick="npInput('9')">9</button>
-    <button class="np-btn" onclick="npInput('4')">4</button>
-    <button class="np-btn" onclick="npInput('5')">5</button>
-    <button class="np-btn" onclick="npInput('6')">6</button>
-    <button class="np-btn" onclick="npInput('1')">1</button>
-    <button class="np-btn" onclick="npInput('2')">2</button>
-    <button class="np-btn" onclick="npInput('3')">3</button>
-    <button class="np-btn np-btn-minus" onclick="npInput('-')">±</button>
-    <button class="np-btn" onclick="npInput('0')">0</button>
-    <button class="np-btn np-btn-bs"   onclick="npInput('BS')">⌫</button>
+  <div class="numpad-grid" id="numpadGrid">
+    <button class="np-btn" data-key="7">7</button>
+    <button class="np-btn" data-key="8">8</button>
+    <button class="np-btn" data-key="9">9</button>
+    <button class="np-btn" data-key="4">4</button>
+    <button class="np-btn" data-key="5">5</button>
+    <button class="np-btn" data-key="6">6</button>
+    <button class="np-btn" data-key="1">1</button>
+    <button class="np-btn" data-key="2">2</button>
+    <button class="np-btn" data-key="3">3</button>
+    <button class="np-btn np-btn-minus" data-key="-">±</button>
+    <button class="np-btn" data-key="0">0</button>
+    <button class="np-btn np-btn-bs"   data-key="BS">⌫</button>
   </div>
 </div>
 
@@ -387,26 +367,24 @@ var PHASES = ['u','v','w'];
 var COLS   = ['r','a','b'];
 
 // ===== 数字パッド =====
-var _padTarget = null;  // 現在フォーカス中の input 要素
-var _padPh     = '';    // 相（u/v/w）
-var _padRaw    = '';    // 数字列（マイナス記号除く）
-var _padNeg    = false; // マイナスフラグ
+var _padTarget = null;
+var _padPh     = '';
+var _padRaw    = '';
+var _padNeg    = false;
 
 function openPad(inp, ph) {
   _padTarget = inp;
   _padPh     = ph;
-  // 既存値から復元
   var cur = inp.value || '';
   _padNeg = (cur.charAt(0) === '-');
   _padRaw = cur.replace(/[^0-9]/g, '');
 
-  // ラベル生成
-  var id    = inp.id; // 例: mu_on_r
-  var parts = id.split('_'); // ['mu','on','r'] or ['mw','off','b']
-  var phMap = { u:'U相', v:'V相', w:'W相' };
+  var id     = inp.id;
+  var parts  = id.split('_');
+  var phMap  = { u:'U相', v:'V相', w:'W相' };
   var rowLbl = parts[1] === 'on' ? 'ON' : 'OFF';
   var colLbl = parts[2].toUpperCase();
-  document.getElementById('padLabel').textContent = phMap[ph] + ' - ' + rowLbl + ' - ' + colLbl;
+  document.getElementById('padLabel').textContent = phMap[ph] + ' ' + rowLbl + '-' + colLbl;
 
   _refreshPadVal();
   _setActiveInp(inp);
@@ -422,40 +400,35 @@ function closePad() {
   _padTarget = null;
   document.getElementById('padOverlay').className = 'numpad-overlay';
   document.getElementById('numpad').className      = 'numpad';
+  updateSummary(); // 閉じたタイミングで1回だけ更新
 }
 
-function npInput(key) {
+function _npTap(key) {
   if (!_padTarget) return;
-
   if (key === 'BS') {
     if (_padRaw.length > 0) _padRaw = _padRaw.slice(0, -1);
     else _padNeg = false;
   } else if (key === '-') {
     _padNeg = !_padNeg;
   } else {
-    // 数字は最大6桁まで
     if (_padRaw.length < 6) _padRaw += key;
   }
-
   _refreshPadVal();
-  measCalc(_padPh);
+  measCalc(_padPh); // 判定だけ即時更新、サマリーは閉じ時
 }
 
 function _refreshPadVal() {
-  var digits = _padRaw;
-  var formatted;
-  if (digits.length === 0)      formatted = '';
-  else if (digits.length === 1) formatted = '0.0' + digits;
-  else if (digits.length === 2) formatted = '0.' + digits;
-  else                          formatted = digits.slice(0,-2) + '.' + digits.slice(-2);
-  if (_padNeg && formatted) formatted = '-' + formatted;
-
-  if (_padTarget) _padTarget.value = formatted;
-  document.getElementById('padVal').textContent = formatted || '—';
+  var d = _padRaw, fmt;
+  if (d.length === 0)      fmt = '';
+  else if (d.length === 1) fmt = '0.0' + d;
+  else if (d.length === 2) fmt = '0.' + d;
+  else                     fmt = d.slice(0,-2) + '.' + d.slice(-2);
+  if (_padNeg && fmt) fmt = '-' + fmt;
+  if (_padTarget) _padTarget.value = fmt;
+  document.getElementById('padVal').textContent = fmt || '—';
 }
 
 function _setActiveInp(inp) {
-  // 前のハイライトを消す
   var alls = document.getElementsByClassName('meas-in');
   var i;
   for (i = 0; i < alls.length; i++) {
@@ -587,6 +560,24 @@ function showToast(msg) {
 
 // ===== 初期化 =====
 window.onload = function() {
+  // テンキー：グリッド1か所でイベント委譲
+  var grid = document.getElementById('numpadGrid');
+  grid.onclick = function(e) {
+    var btn = e.target;
+    if (btn.tagName !== 'BUTTON') return;
+    _npTap(btn.getAttribute('data-key'));
+  };
+
+  // オーバーレイタップで閉じる
+  document.getElementById('padOverlay').onclick = closePad;
+
+  // フォーカス時ハイライト
+  var alls = document.getElementsByClassName('meas-in');
+  var i;
+  for (i = 0; i < alls.length; i++) {
+    alls[i].addEventListener('focus', function() { openPad(this, this.getAttribute('data-ph')); });
+  }
+
   updateSummary();
 };
 </script>
