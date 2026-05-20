@@ -60,6 +60,15 @@ function mascotSVG(w=120, h=132) {
 
 // === RIMA ROTATION ===
 // === ステータスコメント（リマインド数別・複数バリエーション） ===
+const VAPE_COMMENTS = [
+  'ガンク落としは\n毎日やりなはれ',
+  'あ"あぁ"竜巻ぃぃ！',
+  '吸いすぎると\n喉カラッカラになりますよ',
+  'いいかげん\nコイル交換したらどうですか',
+  'Modの充電は\nこまめにしなはれ',
+  '会社、家に\n忘れるべからず',
+];
+
 const STATUS_COMMENTS = {
   zero: [
     // やさしい系
@@ -142,6 +151,10 @@ let _rimaTypeTimer  = null;
 const SLIDE_MS = 6000;
 
 function getCurrentSlideText() {
+  const calcActive = document.getElementById('tab-calc')?.classList.contains('active');
+  if (calcActive && _calcPgIdx === 2) {
+    return VAPE_COMMENTS[Math.floor(Math.random() * VAPE_COMMENTS.length)];
+  }
   const n = getAll().filter(r=>!r.completed).length;
   return rimaCommentText(n);
 }
@@ -1104,30 +1117,22 @@ function vapeCalc() {
   const vol    = parseFloat(document.getElementById('vapeVol')?.value);
   const target = _vapeTarget;
   const base   = 200;
-  const resNic  = document.getElementById('vapeResNic');
-  const resBase = document.getElementById('vapeResBase');
-  if (!resNic || !resBase) return;
+  const resNic = document.getElementById('vapeResNic');
+  if (!resNic) return;
 
-  if (isNaN(vol) || isNaN(target) || vol <= 0 || target <= 0) {
-    resNic.textContent  = '—';
-    resNic.className    = 'vape-result-val';
-    resBase.textContent = '—';
-    resBase.className   = 'vape-result-val';
+  if (isNaN(vol) || target === null || vol <= 0) {
+    resNic.textContent = '—';
+    resNic.className   = 'vape-result-val';
     return;
   }
-  const nicAmt  = (target * vol) / base;
-  const baseAmt = vol - nicAmt;
+  const nicAmt = (target * vol) / base;
   if (nicAmt > vol) {
-    resNic.textContent  = '濃度オーバー';
-    resNic.className    = 'vape-result-val error';
-    resBase.textContent = '—';
-    resBase.className   = 'vape-result-val';
+    resNic.textContent = '濃度オーバー';
+    resNic.className   = 'vape-result-val error';
     return;
   }
-  resNic.textContent  = (Math.round(nicAmt  * 100) / 100) + ' ml';
-  resNic.className    = 'vape-result-val';
-  resBase.textContent = (Math.round(baseAmt * 100) / 100) + ' ml';
-  resBase.className   = 'vape-result-val';
+  resNic.textContent = (Math.round(nicAmt * 100) / 100) + ' ml';
+  resNic.className   = 'vape-result-val';
 }
 
 // === TOAST ===

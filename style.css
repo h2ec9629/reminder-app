@@ -799,6 +799,12 @@
       font-size: 26px; font-weight: 700; color: var(--accent);
     }
     .vape-result-val.error { font-size: 14px; color: var(--danger); }
+    .vape-nicbase-row {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 10px;
+    }
+    .vape-nicbase-row .vape-fixed-val { margin: 0; }
+    .vape-nicbase-row .vape-result-val { font-size: 28px; }
     .vape-target-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
