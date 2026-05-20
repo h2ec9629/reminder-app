@@ -45,6 +45,7 @@
       -webkit-align-items: center; align-items: center;
       padding: 0 14px; z-index: 100;
     }
+    .header-ver   { font-size: 10px; font-weight: 700; color: var(--text-faint); background: var(--bg-2); border: 1px solid var(--border); border-radius: 5px; padding: 2px 6px; margin-right: 8px; }
     .header-title { font-size: 14px; font-weight: 700; color: var(--text); }
     .header-sub   { margin-left: 10px; font-size: 11px; color: var(--text-faint); }
     .header-reset {
@@ -122,6 +123,8 @@
 
     /* ===== DIFF CELL ===== */
     .meas-diff { font-weight: 700; font-size: 12px; line-height: 1.4; vertical-align: middle; padding: 5px 3px; }
+    .d-num { display: block; }
+    .d-lbl { display: block; font-size: 11px; font-weight: 600; }
 
     /* ===== COL HEADER ===== */
     .col-hd-wrap {
@@ -203,6 +206,7 @@
 <body>
 
 <header class="header">
+  <span class="header-ver">v1.1</span>
   <span class="header-title">三相測定</span>
   <span class="header-sub">U / V / W</span>
   <button class="header-reset" onclick="resetAll()">全リセット</button>
@@ -236,9 +240,9 @@
         </tr>
         <tr>
           <td class="col-lbl">判定</td>
-          <td class="meas-diff" id="mu_d_r">—</td>
-          <td class="meas-diff" id="mu_d_a">—</td>
-          <td class="meas-diff" id="mu_d_b">—</td>
+          <td class="meas-diff" id="mu_d_r"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mu_d_a"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mu_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
         </tr>
       </tbody>
     </table>
@@ -269,9 +273,9 @@
         </tr>
         <tr>
           <td class="col-lbl">判定</td>
-          <td class="meas-diff" id="mv_d_r">—</td>
-          <td class="meas-diff" id="mv_d_a">—</td>
-          <td class="meas-diff" id="mv_d_b">—</td>
+          <td class="meas-diff" id="mv_d_r"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mv_d_a"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mv_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
         </tr>
       </tbody>
     </table>
@@ -302,9 +306,9 @@
         </tr>
         <tr>
           <td class="col-lbl">判定</td>
-          <td class="meas-diff" id="mw_d_r">—</td>
-          <td class="meas-diff" id="mw_d_a">—</td>
-          <td class="meas-diff" id="mw_d_b">—</td>
+          <td class="meas-diff" id="mw_d_r"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mw_d_a"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mw_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
         </tr>
       </tbody>
     </table>
@@ -345,12 +349,11 @@ var _padTarget = null;
 var _padPh     = '';
 var _padRaw    = '';
 var _padNeg    = false;
+var _inputs    = [];  // ① 起動時にキャッシュ
 
 function focusInp(inp) {
-  // 前のハイライト解除
   if (_padTarget) {
     _padTarget.className = _padTarget.className.replace(' active-inp','').replace('active-inp','');
-    // フォーカスが外れたら判定更新
     measCalc(_padPh);
   }
   _padTarget = inp;
@@ -361,9 +364,9 @@ function focusInp(inp) {
 
   inp.className += ' active-inp';
 
-  var id     = inp.id;
-  var parts  = id.split('_');
-  var phMap  = { u:'U相', v:'V相', w:'W相' };
+  var id    = inp.id;
+  var parts = id.split('_');
+  var phMap = { u:'U相', v:'V相', w:'W相' };
   document.getElementById('padLabel').textContent = phMap[_padPh] + ' ' + (parts[1] === 'on' ? 'ON' : 'OFF') + '-' + parts[2].toUpperCase();
   _refreshPadVal();
 }
@@ -376,7 +379,6 @@ function _npTap(key) {
     else _padNeg = false;
     _refreshPadVal();
   } else if (key === 'OK') {
-    // 判定更新して次の欄へフォーカス移動
     if (_padPh) measCalc(_padPh);
     _nextFocus();
   } else {
@@ -386,15 +388,13 @@ function _npTap(key) {
 }
 
 function _nextFocus() {
-  var inputs = document.getElementsByClassName('meas-in');
   var i;
-  for (i = 0; i < inputs.length - 1; i++) {
-    if (inputs[i] === _padTarget) {
-      focusInp(inputs[i + 1]);
+  for (i = 0; i < _inputs.length - 1; i++) {  // ① キャッシュ済み配列を使用
+    if (_inputs[i] === _padTarget) {
+      focusInp(_inputs[i + 1]);
       return;
     }
   }
-  // 最後の欄ならハイライトだけ外す
   if (_padTarget) {
     _padTarget.className = _padTarget.className.replace(' active-inp','').replace('active-inp','');
     _padTarget = null;
@@ -414,7 +414,19 @@ function _refreshPadVal() {
   document.getElementById('padVal').textContent = fmt || '—';
 }
 
-// ===== 判定計算 =====
+// ===== 判定計算（③ textContent で DOM更新）=====
+function _setDiff(dEl, numStr, lblStr, color) {
+  var spans = dEl.getElementsByTagName('span');
+  dEl.style.color = color;
+  if (spans.length >= 2) {
+    spans[0].textContent = numStr;
+    spans[1].textContent = lblStr;
+  } else {
+    // フォールバック（念のため）
+    dEl.textContent = numStr + ' ' + lblStr;
+  }
+}
+
 function measCalc(ph) {
   var i, col, onEl, offEl, dEl, onV, offV, diff, diffStr;
   var gap, dir, absGap, full, whole, half, label;
@@ -430,8 +442,7 @@ function measCalc(ph) {
       diff    = Math.round((onV - offV) * 1000) / 1000;
       diffStr = diff.toFixed(2);
       if (diff >= 1.83 && diff <= 1.97) {
-        dEl.innerHTML   = diffStr + '<br><span style="font-size:11px;">[正常]</span>';
-        dEl.style.color = '#4ADE80';
+        _setDiff(dEl, diffStr, '[正常]', '#4ADE80');
       } else {
         gap    = Math.round((1.90 - diff) * 1000) / 1000;
         dir    = gap > 0 ? '緩め' : '締め';
@@ -442,12 +453,10 @@ function measCalc(ph) {
         label  = whole > 0 && half  ? whole + '角半'
                : whole > 0 && !half ? whole + '角'
                : half                ? '半角' : '？';
-        dEl.innerHTML   = diffStr + '<br><span style="font-size:11px;">[' + label + dir + ']</span>';
-        dEl.style.color = (diff >= 1.80 && diff <= 2.00) ? '#fff' : '#ff9800';
+        _setDiff(dEl, diffStr, '[' + label + dir + ']', (diff >= 1.80 && diff <= 2.00) ? '#fff' : '#ff9800');
       }
     } else {
-      dEl.textContent = '—';
-      dEl.style.color = '';
+      _setDiff(dEl, '—', '', '');
     }
   }
 }
@@ -487,7 +496,7 @@ function resetAll() {
         if (el) el.value = '';
       }
       dEl = document.getElementById('m' + ph + '_d_' + col);
-      if (dEl) { dEl.textContent = '—'; dEl.style.color = ''; }
+      if (dEl) { _setDiff(dEl, '—', '', ''); }
     }
   }
   _padTarget = null; _padRaw = ''; _padNeg = false;
@@ -533,28 +542,51 @@ if ('serviceWorker' in navigator) {
 
 // ===== 初期化 =====
 window.onload = function() {
-  var i, inputs, btns;
+  var i, allInputs, btns, grid;
 
-  // 入力欄タップ → フォーカス
-  inputs = document.getElementsByTagName('input');
-  for (i = 0; i < inputs.length; i++) {
-    if (inputs[i].getAttribute('data-ph')) {
-      inputs[i].onclick = function() { focusInp(this); };
+  // ① 入力欄を起動時にキャッシュ（meas-in クラスのみ）
+  allInputs = document.getElementsByTagName('input');
+  for (i = 0; i < allInputs.length; i++) {
+    if (allInputs[i].getAttribute('data-ph')) {
+      _inputs.push(allInputs[i]);
     }
   }
 
-  // ×ボタン
+  // ② 入力欄タップ → ontouchend で300ms遅延解消
+  for (i = 0; i < _inputs.length; i++) {
+    _inputs[i].ontouchend = (function(inp) {
+      return function(e) { e.preventDefault(); focusInp(inp); };
+    })(_inputs[i]);
+    // PC/マウス用フォールバック
+    _inputs[i].onclick = (function(inp) {
+      return function() { focusInp(inp); };
+    })(_inputs[i]);
+  }
+
+  // ×ボタン → ontouchend
   btns = document.getElementsByTagName('button');
   for (i = 0; i < btns.length; i++) {
     if (btns[i].getAttribute('data-clear')) {
+      btns[i].ontouchend = (function(id, ph) {
+        return function(e) { e.preventDefault(); clearOne(id, ph); };
+      })(btns[i].getAttribute('data-clear'), btns[i].getAttribute('data-ph'));
       btns[i].onclick = (function(id, ph) {
         return function() { clearOne(id, ph); };
       })(btns[i].getAttribute('data-clear'), btns[i].getAttribute('data-ph'));
     }
   }
 
-  // テンキー：イベント委譲1か所
-  document.getElementById('numpadGrid').onclick = function(e) {
+  // ② テンキー：ontouchend でイベント委譲（300ms遅延解消）
+  grid = document.getElementById('numpadGrid');
+  grid.ontouchend = function(e) {
+    var b = e.target;
+    if (b.tagName === 'BUTTON') {
+      e.preventDefault();
+      _npTap(b.getAttribute('data-key'));
+    }
+  };
+  // PC/マウス用フォールバック
+  grid.onclick = function(e) {
     var b = e.target;
     if (b.tagName === 'BUTTON') _npTap(b.getAttribute('data-key'));
   };
