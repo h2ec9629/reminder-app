@@ -337,10 +337,8 @@
 <div class="toast" id="toast"></div>
 
 <script>
-'use strict';
-
-const PHASES = ['u','v','w'];
-const COLS   = ['r','a','b'];
+var PHASES = ['u','v','w'];
+var COLS   = ['r','a','b'];
 
 // ===== 自動小数点入力 =====
 function autoDecimal(inp, ph) {
@@ -361,39 +359,41 @@ function autoDecimal(inp, ph) {
 
 // ===== 判定計算 =====
 function measCalc(ph) {
-  COLS.forEach(function(col) {
+  var i, col;
+  for (i = 0; i < COLS.length; i++) {
+    col = COLS[i];
     var onEl  = document.getElementById('m' + ph + '_on_'  + col);
     var offEl = document.getElementById('m' + ph + '_off_' + col);
     var dEl   = document.getElementById('m' + ph + '_d_'   + col);
-    if (!dEl) return;
-    var onV  = parseFloat(onEl ? onEl.value : '');
-    var offV = parseFloat(offEl ? offEl.value : '');
+    if (!dEl) continue;
+    var onV  = onEl  ? parseFloat(onEl.value)  : NaN;
+    var offV = offEl ? parseFloat(offEl.value) : NaN;
     if (!isNaN(onV) && !isNaN(offV)) {
       var diff    = Math.round((onV - offV) * 1000) / 1000;
       var diffStr = diff.toFixed(2);
       if (diff >= 1.83 && diff <= 1.97) {
-        dEl.innerHTML  = diffStr + '<br><span style="font-size:11px;">[正常]</span>';
+        dEl.innerHTML   = diffStr + '<br><span style="font-size:11px;">[正常]</span>';
         dEl.style.color = '#4ADE80';
       } else {
-        var gap     = Math.round((1.90 - diff) * 1000) / 1000;
-        var dir     = gap > 0 ? '緩め' : '締め';
-        var absGap  = Math.abs(gap);
-        var full    = Math.floor(Math.round(absGap / 0.125));
-        var whole   = Math.floor(full / 2);
-        var half    = (full % 2 === 1);
-        var label   = '';
+        var gap    = Math.round((1.90 - diff) * 1000) / 1000;
+        var dir    = gap > 0 ? '緩め' : '締め';
+        var absGap = Math.abs(gap);
+        var full   = Math.floor(Math.round(absGap / 0.125));
+        var whole  = Math.floor(full / 2);
+        var half   = (full % 2 === 1);
+        var label  = '';
         if (whole > 0 && half)       label = whole + '角半';
         else if (whole > 0 && !half) label = whole + '角';
         else if (half)               label = '半角';
         else                         label = '？';
-        dEl.innerHTML  = diffStr + '<br><span style="font-size:11px;">[' + label + dir + ']</span>';
+        dEl.innerHTML   = diffStr + '<br><span style="font-size:11px;">[' + label + dir + ']</span>';
         dEl.style.color = (diff >= 1.80 && diff <= 2.00) ? '#fff' : '#ff9800';
       }
     } else {
       dEl.textContent = '—';
       dEl.style.color = '';
     }
-  });
+  }
   updateSummary();
 }
 
@@ -402,19 +402,23 @@ function updateSummary() {
   var grid = document.getElementById('summaryGrid');
   if (!grid) return;
   var html = '';
-  PHASES.forEach(function(ph) {
-    var phLabel = ph.toUpperCase() + '相';
-    var phColor = ph==='u' ? '#ff9800' : ph==='v' ? '#69d469' : '#5bc8ff';
-    COLS.forEach(function(col) {
-      var dEl = document.getElementById('m' + ph + '_d_' + col);
-      var val = dEl ? dEl.textContent.trim() : '—';
-      var color = dEl ? dEl.style.color : '';
+  var pi, ci, ph, col, phLabel, phColor, dEl, val, color;
+  for (pi = 0; pi < PHASES.length; pi++) {
+    ph      = PHASES[pi];
+    phLabel = ph.toUpperCase() + '相';
+    phColor = ph === 'u' ? '#ff9800' : ph === 'v' ? '#69d469' : '#5bc8ff';
+    for (ci = 0; ci < COLS.length; ci++) {
+      col   = COLS[ci];
+      dEl   = document.getElementById('m' + ph + '_d_' + col);
+      val   = dEl ? (dEl.textContent || dEl.innerText || '').replace(/\s/g,'') : '—';
+      color = dEl ? dEl.style.color : '';
+      if (!val) val = '—';
       html += '<div class="summary-cell">'
             + '<div class="summary-cell-label" style="color:' + phColor + ';">' + phLabel + '-' + col.toUpperCase() + '</div>'
-            + '<div class="summary-cell-val" style="color:' + (color||'var(--text-faint)') + ';">' + (val || '—') + '</div>'
+            + '<div class="summary-cell-val" style="color:' + (color || '#615D5A') + ';">' + val + '</div>'
             + '</div>';
-    });
-  });
+    }
+  }
   grid.innerHTML = html;
 }
 
@@ -426,25 +430,32 @@ function clearOne(btn, ph) {
 }
 
 function clearCol(ph, col) {
-  ['on','off'].forEach(function(row) {
-    var el = document.getElementById('m' + ph + '_' + row + '_' + col);
+  var rows = ['on','off'];
+  var i, el;
+  for (i = 0; i < rows.length; i++) {
+    el = document.getElementById('m' + ph + '_' + rows[i] + '_' + col);
     if (el) el.value = '';
-  });
+  }
   measCalc(ph);
 }
 
 function resetAll() {
   if (!confirm('全ての入力をリセットしますか？')) return;
-  PHASES.forEach(function(ph) {
-    COLS.forEach(function(col) {
-      ['on','off'].forEach(function(row) {
-        var el = document.getElementById('m' + ph + '_' + row + '_' + col);
+  var pi, ci, ri, ph, col, row, el, dEl;
+  var rows = ['on','off'];
+  for (pi = 0; pi < PHASES.length; pi++) {
+    ph = PHASES[pi];
+    for (ci = 0; ci < COLS.length; ci++) {
+      col = COLS[ci];
+      for (ri = 0; ri < rows.length; ri++) {
+        row = rows[ri];
+        el  = document.getElementById('m' + ph + '_' + row + '_' + col);
         if (el) el.value = '';
-      });
-      var dEl = document.getElementById('m' + ph + '_d_' + col);
+      }
+      dEl = document.getElementById('m' + ph + '_d_' + col);
       if (dEl) { dEl.textContent = '—'; dEl.style.color = ''; }
-    });
-  });
+    }
+  }
   updateSummary();
   showToast('リセットしました');
 }
@@ -454,22 +465,23 @@ var _tt;
 function showToast(msg) {
   var t = document.getElementById('toast');
   t.textContent = msg;
-  t.classList.add('show');
+  t.className   = 'toast show';
   clearTimeout(_tt);
-  _tt = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+  _tt = setTimeout(function(){ t.className = 'toast'; }, 2200);
 }
 
 // ===== 初期化 =====
-(function init() {
-  // フォーカス時に末尾カーソル
-  document.querySelectorAll('.meas-in').forEach(function(el) {
-    el.addEventListener('focus', function() {
+window.onload = function() {
+  var inputs = document.getElementsByClassName('meas-in');
+  var i;
+  for (i = 0; i < inputs.length; i++) {
+    inputs[i].addEventListener('focus', function() {
       var len = this.value.length;
       this.setSelectionRange(len, len);
     });
-  });
+  }
   updateSummary();
-})();
+};
 </script>
 </body>
 </html>
