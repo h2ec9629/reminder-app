@@ -51,6 +51,12 @@
       padding: 6px 13px; border-radius: 8px;
       cursor: pointer; font-family: inherit;
     }
+    .header-update {
+      margin-left: 8px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      font-size: 16px; padding: 5px 10px; border-radius: 8px;
+      cursor: pointer;
+    }
 
     /* ===== MAIN ===== */
     .main {
@@ -197,6 +203,7 @@
   <span class="header-title">三相測定</span>
   <span class="header-sub">U / V / W</span>
   <button class="header-reset" onclick="resetAll()">全リセット</button>
+  <button class="header-update" onclick="forceUpdate()">🔄</button>
 </header>
 
 <main class="main">
@@ -484,6 +491,26 @@ function resetAll() {
   document.getElementById('padLabel').textContent = '欄をタップして入力';
   document.getElementById('padVal').textContent   = '—';
   showToast('リセットしました');
+}
+
+// ===== 強制更新 =====
+function forceUpdate() {
+  showToast('更新中...');
+  try {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        var i;
+        for (i = 0; i < regs.length; i++) regs[i].unregister();
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(keys) {
+        var i;
+        for (i = 0; i < keys.length; i++) caches.delete(keys[i]);
+      });
+    }
+  } catch(e) {}
+  setTimeout(function() { location.reload(true); }, 800);
 }
 
 // ===== トースト =====
