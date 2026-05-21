@@ -201,16 +201,164 @@
     .np-btn:active { background: var(--border); }
     .np-btn-bs    { background: var(--bg-2); color: #F87171; font-size: 22px; }
     .np-btn-ok    { background: var(--accent); color: #fff; border-color: var(--accent); font-size: 22px; }
+
+    /* ===== HEADER SAVE / HISTORY ===== */
+    .header-save {
+      margin-left: 8px;
+      background: var(--accent); border: 1px solid var(--accent);
+      color: #fff; font-size: 12px; font-weight: 700;
+      padding: 6px 13px; border-radius: 8px;
+      cursor: pointer; font-family: inherit;
+    }
+    .header-hist {
+      margin-left: 8px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text-sub); font-size: 12px; font-weight: 700;
+      padding: 6px 11px; border-radius: 8px;
+      cursor: pointer; font-family: inherit;
+    }
+    .header-hist.active {
+      background: var(--surface-2); border-color: var(--accent); color: var(--accent);
+    }
+
+    /* ===== 履歴画面 ===== */
+    .hist-view {
+      display: none;
+      margin-top: var(--header-h);
+      height: calc(100vh - var(--header-h));
+      display: -webkit-box; display: -webkit-flex; display: flex;
+    }
+    .hist-view.hidden { display: none !important; }
+
+    /* サイドバー */
+    .hist-sidebar {
+      width: 38%;
+      min-width: 110px;
+      max-width: 160px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      -webkit-flex-shrink: 0; flex-shrink: 0;
+    }
+    .hist-sidebar-hd {
+      font-size: 11px; font-weight: 700; color: var(--text-faint);
+      padding: 8px 10px 6px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-2);
+      position: sticky; top: 0;
+    }
+    .hist-item {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .hist-item.selected { background: var(--surface-2); border-left: 3px solid var(--accent); }
+    .hist-item-date { font-size: 11px; color: var(--text-sub); }
+    .hist-item-memo { font-size: 12px; font-weight: 700; color: var(--text); margin-top: 2px; word-break: break-all; }
+    .hist-item-del  { float: right; background: none; border: none; color: var(--text-faint); font-size: 14px; cursor: pointer; padding: 0 2px; }
+    .hist-empty     { font-size: 12px; color: var(--text-faint); padding: 16px 10px; text-align: center; }
+
+    /* 結果エリア */
+    .hist-detail {
+      -webkit-flex: 1; flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 10px 10px 20px;
+      background: var(--bg);
+    }
+    .hist-detail-empty { font-size: 13px; color: var(--text-faint); padding: 30px 10px; text-align: center; }
+    .hist-detail-date  { font-size: 11px; color: var(--text-faint); margin-bottom: 4px; }
+    .hist-detail-memo  { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+
+    /* 結果テーブル */
+    .hr-tbl { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px; table-layout: fixed; }
+    .hr-tbl th {
+      background: var(--bg-2); color: var(--text-sub); font-weight: 600;
+      padding: 4px 5px; border: 1px solid var(--border); text-align: center;
+    }
+    .hr-tbl td {
+      padding: 4px 5px; border: 1px solid var(--border); text-align: right;
+      color: var(--text); background: var(--surface);
+    }
+    .hr-tbl td.lbl { text-align: left; color: var(--text-sub); font-size: 11px; background: var(--bg-2); }
+    .hr-tbl td.diff-ok  { color: #4ADE80; font-weight: 700; }
+    .hr-tbl td.diff-warn { color: #fff; font-weight: 700; }
+    .hr-tbl td.diff-ng  { color: #ff9800; font-weight: 700; }
+    .hr-ph-hd { font-size: 12px; font-weight: 700; padding: 6px 2px 3px; }
+    .hr-ph-u  { color: #ff9800; }
+    .hr-ph-v  { color: #69d469; }
+    .hr-ph-w  { color: #5bc8ff; }
+
+    /* ===== 保存パネル（テンキー上） ===== */
+    .save-panel {
+      display: none;
+      position: fixed; left: 0; right: 0;
+      bottom: var(--numpad-h);
+      background: var(--surface);
+      border-top: 2px solid var(--accent);
+      border-bottom: 1px solid var(--border);
+      z-index: 210;
+      padding: 10px 12px;
+    }
+    .save-panel.show { display: block; }
+    .save-panel-title { font-size: 12px; font-weight: 700; color: var(--text-faint); margin-bottom: 8px; }
+    /* 機番行 */
+    .save-kiban-row {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      gap: 8px; margin-bottom: 8px;
+    }
+    .save-kiban-label { font-size: 11px; color: var(--text-sub); font-weight: 600; -webkit-flex-shrink: 0; flex-shrink: 0; }
+    .save-kiban-val {
+      -webkit-flex: 1; flex: 1;
+      background: var(--surface-2); border: 1px solid var(--accent);
+      border-radius: 6px; color: #FFB899;
+      font-size: 20px; font-weight: 700;
+      padding: 4px 10px; text-align: right;
+      min-height: 34px;
+    }
+    /* 状態ボタン行 */
+    .save-status-row {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      gap: 5px; margin-bottom: 8px;
+    }
+    .save-status-btn {
+      -webkit-flex: 1; flex: 1;
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text-sub); font-size: 11px; font-weight: 700;
+      padding: 6px 2px; border-radius: 6px;
+      cursor: pointer; font-family: inherit; text-align: center;
+    }
+    .save-status-btn.sel { background: var(--accent); border-color: var(--accent); color: #fff; }
+    /* 操作ボタン行 */
+    .save-act-row {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      gap: 8px;
+    }
+    .save-act-cancel {
+      -webkit-flex: 1; flex: 1;
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text-sub); font-size: 13px; font-weight: 700;
+      padding: 7px; border-radius: 7px; cursor: pointer; font-family: inherit;
+    }
+    .save-act-ok {
+      -webkit-flex: 2; flex: 2;
+      background: var(--accent); border: 1px solid var(--accent);
+      color: #fff; font-size: 13px; font-weight: 700;
+      padding: 7px; border-radius: 7px; cursor: pointer; font-family: inherit;
+    }
   </style>
 </head>
 <body>
 
 <header class="header">
-  <span class="header-ver">v1.1</span>
+  <span class="header-ver">v1.2</span>
   <span class="header-title">三相測定</span>
-  <span class="header-sub">U / V / W</span>
+  <button class="header-save" onclick="saveMeas()">SAVE</button>
+  <button class="header-hist" id="histBtn" onclick="toggleHist()">LOG</button>
   <button class="header-reset" onclick="resetAll()">全リセット</button>
-  <button class="header-update" onclick="forceUpdate()">🔄</button>
+  <button class="header-update" onclick="forceUpdate()">Update</button>
 </header>
 
 <main class="main">
@@ -316,6 +464,17 @@
 
 </main>
 
+<!-- ===== 履歴画面 ===== -->
+<div class="hist-view hidden" id="histView">
+  <div class="hist-sidebar" id="histSidebar">
+    <div class="hist-sidebar-hd">保存履歴</div>
+    <div id="histList"></div>
+  </div>
+  <div class="hist-detail" id="histDetail">
+    <div class="hist-detail-empty">←履歴を選択</div>
+  </div>
+</div>
+
 <!-- ===== 常駐テンキー ===== -->
 <div class="numpad">
   <div class="numpad-val-bar">
@@ -335,6 +494,25 @@
     <button class="np-btn np-btn-bs"    data-key="BS">⌫</button>
     <button class="np-btn" data-key="0">0</button>
     <button class="np-btn np-btn-ok"   data-key="OK">↵</button>
+  </div>
+</div>
+
+<!-- ===== 保存パネル（テンキー上） ===== -->
+<div class="save-panel" id="savePanel">
+  <div class="save-panel-title">SAVE — テンキーで機番入力 → ↵で保存</div>
+  <div class="save-kiban-row">
+    <span class="save-kiban-label">機番</span>
+    <span class="save-kiban-val" id="saveKibanVal">—</span>
+  </div>
+  <div class="save-status-row" id="saveStatusRow">
+    <button class="save-status-btn sel" data-status="完成時">完成時</button>
+    <button class="save-status-btn"     data-status="出荷前">出荷前</button>
+    <button class="save-status-btn"     data-status="エイジング途中">AG中</button>
+    <button class="save-status-btn"     data-status="エイジング後">AG後</button>
+  </div>
+  <div class="save-act-row">
+    <button class="save-act-cancel" onclick="closeSaveDialog()">キャンセル</button>
+    <button class="save-act-ok"     onclick="confirmSave()">保存する</button>
   </div>
 </div>
 
@@ -373,6 +551,8 @@ function focusInp(inp) {
 
 // ===== テンキー入力 =====
 function _npTap(key) {
+  // 保存モード中は機番入力に横取り
+  if (_saveMode) { _savePadKey(key); return; }
   if (!_padTarget) return;
   if (key === 'BS') {
     if (_padRaw.length > 0) _padRaw = _padRaw.slice(0, -1);
@@ -535,6 +715,284 @@ function showToast(msg) {
   _tt = setTimeout(function(){ t.className = 'toast'; }, 2200);
 }
 
+// ===== 保存・履歴機能 =====
+var STORE_KEY = 'meas_history';
+var _histMode = false;
+var _selIdx   = -1;
+
+function _loadHistory() {
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function _saveHistory(arr) {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+// ===== 保存パネル（テンキー横取りモード） =====
+var _pendingData  = null;
+var _saveMode     = false;   // テンキーを機番入力に横取り中
+var _saveRaw      = '';      // 機番の生文字列
+var _saveStatus   = '完成時'; // 選択中の状態
+
+function saveMeas() {
+  var ph, col, i, ci, onEl, offEl, onV, offV, diff;
+  var data = { date: '', memo: '', phases: {} };
+
+  // 日時
+  var now = new Date();
+  var yy  = now.getFullYear();
+  var mm  = ('0' + (now.getMonth() + 1)).slice(-2);
+  var dd  = ('0' + now.getDate()).slice(-2);
+  var hh  = ('0' + now.getHours()).slice(-2);
+  var mi  = ('0' + now.getMinutes()).slice(-2);
+  data.date = yy + '/' + mm + '/' + dd + ' ' + hh + ':' + mi;
+
+  // 入力値収集
+  var hasAny = false;
+  for (i = 0; i < PHASES.length; i++) {
+    ph = PHASES[i];
+    data.phases[ph] = {};
+    for (ci = 0; ci < COLS.length; ci++) {
+      col   = COLS[ci];
+      onEl  = document.getElementById('m' + ph + '_on_'  + col);
+      offEl = document.getElementById('m' + ph + '_off_' + col);
+      onV   = onEl  ? onEl.value  : '';
+      offV  = offEl ? offEl.value : '';
+      diff  = '';
+      if (onV !== '' && offV !== '') {
+        diff = (Math.round((parseFloat(onV) - parseFloat(offV)) * 1000) / 1000).toFixed(2);
+        hasAny = true;
+      }
+      data.phases[ph][col] = { on: onV, off: offV, diff: diff };
+    }
+  }
+
+  if (!hasAny) { showToast('入力がありません'); return; }
+
+  _pendingData = data;
+  _saveRaw     = '';
+  _saveStatus  = '完成時';
+  _saveMode    = true;
+
+  // 測定欄のハイライトを外す
+  if (_padTarget) {
+    _padTarget.className = _padTarget.className.replace(' active-inp','').replace('active-inp','');
+    _padTarget = null;
+  }
+
+  // val-bar のラベルを書き換え
+  document.getElementById('padLabel').textContent = '機番を入力';
+  document.getElementById('padVal').textContent   = '—';
+
+  // パネル表示・状態ボタン初期化
+  _refreshSaveStatus();
+  document.getElementById('saveKibanVal').textContent = '—';
+  document.getElementById('savePanel').className = 'save-panel show';
+}
+
+function _refreshSaveKiban() {
+  var v = _saveRaw || '—';
+  document.getElementById('saveKibanVal').textContent = v;
+  document.getElementById('padVal').textContent       = v;
+}
+
+function _refreshSaveStatus() {
+  var btns = document.getElementById('saveStatusRow').getElementsByTagName('button');
+  var k;
+  for (k = 0; k < btns.length; k++) {
+    if (btns[k].getAttribute('data-status') === _saveStatus) {
+      btns[k].className = 'save-status-btn sel';
+    } else {
+      btns[k].className = 'save-status-btn';
+    }
+  }
+}
+
+// テンキーから横取りして呼ばれる
+function _savePadKey(key) {
+  if (key === 'BS') {
+    if (_saveRaw.length > 0) _saveRaw = _saveRaw.slice(0, -1);
+  } else if (key === 'OK') {
+    confirmSave();
+    return;
+  } else {
+    if (_saveRaw.length < 8) _saveRaw += key;
+  }
+  _refreshSaveKiban();
+}
+
+function closeSaveDialog() {
+  _saveMode    = false;
+  _pendingData = null;
+  document.getElementById('savePanel').className = 'save-panel';
+  document.getElementById('padLabel').textContent = '欄をタップして入力';
+  document.getElementById('padVal').textContent   = '—';
+}
+
+function confirmSave() {
+  if (!_pendingData) return;
+  if (_saveRaw === '') { showToast('機番を入力してください'); return; }
+
+  _pendingData.memo   = '機番 ' + _saveRaw + '　' + _saveStatus;
+  _pendingData.kiban  = _saveRaw;
+  _pendingData.status = _saveStatus;
+
+  var arr = _loadHistory();
+  arr.unshift(_pendingData);
+  if (arr.length > 50) arr = arr.slice(0, 50);
+  _saveHistory(arr);
+  closeSaveDialog();
+  showToast('保存しました');
+  _renderSidebar();
+}
+
+// 履歴画面 ON/OFF
+function toggleHist() {
+  _histMode = !_histMode;
+  var mv   = document.getElementById('histView');
+  var main = document.getElementsByTagName('main')[0];
+  var np   = document.getElementsByClassName('numpad')[0];
+  var btn  = document.getElementById('histBtn');
+  if (_histMode) {
+    main.style.display = 'none';
+    np.style.display   = 'none';
+    mv.className       = 'hist-view';
+    btn.className      = 'header-hist active';
+    _selIdx = -1;
+    _renderSidebar();
+  } else {
+    mv.className       = 'hist-view hidden';
+    main.style.display = '';
+    np.style.display   = '';
+    btn.className      = 'header-hist';
+  }
+}
+
+// サイドバー描画
+function _renderSidebar() {
+  var arr  = _loadHistory();
+  var list = document.getElementById('histList');
+  var html = '', i, it;
+  if (arr.length === 0) {
+    list.innerHTML = '<div class="hist-empty">保存データなし</div>';
+    return;
+  }
+  for (i = 0; i < arr.length; i++) {
+    it = arr[i];
+    html += '<div class="hist-item' + (i === _selIdx ? ' selected' : '') + '" id="hi_' + i + '">'
+          + '<button class="hist-item-del" data-didx="' + i + '">×</button>'
+          + '<div class="hist-item-date">' + _esc(it.date) + '</div>'
+          + '<div class="hist-item-memo">' + _esc(it.memo) + '</div>'
+          + '</div>';
+  }
+  list.innerHTML = html;
+
+  // タップ処理（ontouchend + onclick フォールバック）
+  var items = list.getElementsByClassName('hist-item');
+  var k;
+  for (k = 0; k < items.length; k++) {
+    items[k].ontouchend = (function(idx) {
+      return function(e) {
+        // ×ボタンタップは無視
+        if (e.target.getAttribute('data-didx') !== null) return;
+        e.preventDefault();
+        _selIdx = idx;
+        _renderSidebar();
+        _renderDetail(idx);
+      };
+    })(k);
+    items[k].onclick = (function(idx) {
+      return function(e) {
+        if (e.target.getAttribute('data-didx') !== null) return;
+        _selIdx = idx;
+        _renderSidebar();
+        _renderDetail(idx);
+      };
+    })(k);
+  }
+
+  // ×削除ボタン
+  var dels = list.getElementsByClassName('hist-item-del');
+  for (k = 0; k < dels.length; k++) {
+    dels[k].ontouchend = (function(idx) {
+      return function(e) {
+        e.preventDefault(); e.stopPropagation();
+        _deleteHist(idx);
+      };
+    })(k);
+    dels[k].onclick = (function(idx) {
+      return function(e) {
+        e.stopPropagation();
+        _deleteHist(idx);
+      };
+    })(k);
+  }
+
+  // 選択中があれば詳細を維持
+  if (_selIdx >= 0 && _selIdx < arr.length) _renderDetail(_selIdx);
+}
+
+function _deleteHist(idx) {
+  if (!confirm('この記録を削除しますか？')) return;
+  var arr = _loadHistory();
+  arr.splice(idx, 1);
+  _saveHistory(arr);
+  if (_selIdx >= arr.length) _selIdx = arr.length - 1;
+  _renderSidebar();
+  if (_selIdx < 0) {
+    document.getElementById('histDetail').innerHTML = '<div class="hist-detail-empty">←履歴を選択</div>';
+  }
+}
+
+// 詳細エリア描画
+function _renderDetail(idx) {
+  var arr = _loadHistory();
+  if (idx < 0 || idx >= arr.length) return;
+  var it = arr[idx];
+  var phNames = { u:'U相', v:'V相', w:'W相' };
+  var phColors= { u:'hr-ph-u', v:'hr-ph-v', w:'hr-ph-w' };
+  var html = '<div class="hist-detail-date">' + _esc(it.date) + '</div>'
+           + '<div class="hist-detail-memo">' + _esc(it.memo) + '</div>';
+
+  var ph, col, ci, row, dv, cls;
+  for (var pi = 0; pi < PHASES.length; pi++) {
+    ph = PHASES[pi];
+    html += '<div class="hr-ph-hd ' + phColors[ph] + '">' + phNames[ph] + '</div>';
+    html += '<table class="hr-tbl"><thead><tr>'
+          + '<th style="width:20%"></th><th>R</th><th>A</th><th>B</th>'
+          + '</tr></thead><tbody>';
+    var rows2 = [['ON','on'],['OFF','off'],['差数','diff']];
+    for (var ri = 0; ri < rows2.length; ri++) {
+      row = rows2[ri];
+      html += '<tr><td class="lbl">' + row[0] + '</td>';
+      for (ci = 0; ci < COLS.length; ci++) {
+        col = COLS[ci];
+        dv  = it.phases[ph] && it.phases[ph][col] ? it.phases[ph][col][row[1]] : '';
+        if (row[1] === 'diff' && dv !== '') {
+          var dNum = parseFloat(dv);
+          cls = dNum >= 1.83 && dNum <= 1.97 ? 'diff-ok'
+              : dNum >= 1.80 && dNum <= 2.00 ? 'diff-warn'
+              : 'diff-ng';
+          html += '<td class="' + cls + '">' + _esc(dv) + '</td>';
+        } else {
+          html += '<td>' + _esc(dv || '—') + '</td>';
+        }
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+  }
+
+  document.getElementById('histDetail').innerHTML = html;
+}
+
+function _esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 // ===== SW登録 =====
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('meas_sw.js').catch(function() {});
@@ -589,6 +1047,24 @@ window.onload = function() {
   grid.onclick = function(e) {
     var b = e.target;
     if (b.tagName === 'BUTTON') _npTap(b.getAttribute('data-key'));
+  };
+
+  // 状態選択ボタン（委譲）
+  var srow = document.getElementById('saveStatusRow');
+  srow.ontouchend = function(e) {
+    var b = e.target;
+    if (b.tagName === 'BUTTON') {
+      e.preventDefault();
+      _saveStatus = b.getAttribute('data-status');
+      _refreshSaveStatus();
+    }
+  };
+  srow.onclick = function(e) {
+    var b = e.target;
+    if (b.tagName === 'BUTTON') {
+      _saveStatus = b.getAttribute('data-status');
+      _refreshSaveStatus();
+    }
   };
 };
 </script>
