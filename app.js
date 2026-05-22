@@ -876,14 +876,17 @@ function renderGantt() {
   D.forEach(row => {
     const barColor = row.b==='灯具' ? '#85B7EB' : '#C8C8C8';
     const barX = h2px(row.aa);
-    const barW = row.ab>row.aa ? Math.max(h2px(row.ab-row.aa),2) : 0;
+    // 1マス=4時間単位で切り上げ、最小1マス保証
+    const CELL_H = 4;
+    const rawDur = row.ab - row.aa;
+    const dispDur = Math.max(Math.ceil(rawDur / CELL_H), 1) * CELL_H;
+    const barW = h2px(dispDur);
     const kX = d2px(row.k);
     const sX = row.s ? Math.max(0, d2px(row.s)) : null;
     const eX = d2px(row.e);
 
     let bar = dayGridLines + todayLine;
-    if (barW>0) bar += `<div style="position:absolute;top:6px;height:15px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColor};z-index:2;"></div>`;
-    else if (row.aa>0) bar += `<div style="position:absolute;top:9px;height:9px;left:${barX}px;width:3px;border-radius:2px;background:${barColor};opacity:0.6;z-index:2;"></div>`;
+    bar += `<div style="position:absolute;top:6px;height:15px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColor};z-index:2;"></div>`;
     // 期日と納品日の重複チェック
     const kOverlapsE = row.k && row.e && row.k === row.e;
     // 納品日（e）: 2マス目を緑ブロックで塗る
