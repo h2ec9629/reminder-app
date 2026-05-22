@@ -216,8 +216,8 @@
     /* ===== 履歴画面 ===== */
     .hist-view {
       display: none;
-      margin-top: var(--header-h);
-      height: calc(100vh - var(--header-h));
+      margin-top: 0;
+      height: 100vh;
       display: -webkit-box; display: -webkit-flex; display: flex;
     }
     .hist-view.hidden { display: none !important; }
@@ -240,6 +240,18 @@
       background: var(--bg-2);
       position: sticky; top: 0;
     }
+    .hist-back-btn {
+      display: block; width: 100%;
+      background: var(--accent); border: none;
+      color: #fff; font-size: 15px; font-weight: 700;
+      padding: 12px 10px;
+      cursor: pointer; font-family: inherit;
+      text-align: center; letter-spacing: 1px;
+      border-bottom: 2px solid rgba(0,0,0,0.25);
+      position: sticky; top: 0; z-index: 10;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hist-back-btn:active { opacity: 0.8; }
     .hist-item {
       padding: 9px 10px;
       border-bottom: 1px solid var(--border);
@@ -452,6 +464,7 @@
 <!-- ===== 履歴画面 ===== -->
 <div class="hist-view hidden" id="histView">
   <div class="hist-sidebar" id="histSidebar">
+    <button class="hist-back-btn" onclick="toggleHist()">◀ 測定へ戻る</button>
     <div class="hist-sidebar-hd">保存履歴</div>
     <div id="histList"></div>
   </div>
