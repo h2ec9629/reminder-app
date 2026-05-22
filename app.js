@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 // === DATA ===
 const KEY = 'ojisan_reminders_v1';
@@ -832,28 +832,29 @@ function renderGantt() {
 
   const h2px = h => Math.round(h * SC);
   const halfDayPx    = h2px(4); // 1日の前半・後半の境界（4h = 1マス分）
+  const todayOffset = h2px(TODAY_H); // 今日を左端の基準点にするオフセット
 
   function d2px(iso) {
     if (!iso) return null;
-    if (d2h[iso] !== undefined) return h2px(d2h[iso]);
+    if (d2h[iso] !== undefined) return h2px(d2h[iso]) - todayOffset;
     const keys = Object.keys(d2h).sort();
     let prev = null, next = null;
     for (const k of keys) { if (k <= iso) prev = k; else if (!next) next = k; }
-    if (!prev) return 0;
-    if (!next)  return h2px(d2h[keys[keys.length-1]]);
+    if (!prev) return -todayOffset;
+    if (!next)  return h2px(d2h[keys[keys.length-1]]) - todayOffset;
     const frac = (new Date(iso)-new Date(prev))/(new Date(next)-new Date(prev));
-    return Math.round((d2h[prev]+frac*(d2h[next]-d2h[prev]))*SC);
+    return Math.round((d2h[prev]+frac*(d2h[next]-d2h[prev]))*SC) - todayOffset;
   }
 
   const maxH   = Math.max(...D.map(r=>r.ab), TODAY_H+24);
-  const TL     = Math.max(maxH*SC+48, 620);
-  const todayX = h2px(TODAY_H);
+  const TL     = Math.max((maxH - TODAY_H)*SC+48, 620);
+  const todayX = 0;
   const stickyLbl = `flex:0 0 ${LW}px;position:sticky;left:0;z-index:8;border-right:1px solid var(--border);`;
 
   const d2hSorted = Object.entries(d2h).filter(([iso,v])=>v>=0 && iso>=TODAY_ISO).sort((a,b)=>a[1]-b[1]);
   let dayGridLines = '', axTicks = '';
   d2hSorted.forEach(([iso, h]) => {
-    const x  = h2px(h);
+    const x  = h2px(h) - todayOffset;
     const dt = new Date(iso+'T00:00:00');
     const isMon = dt.getDay()===1, isMth = dt.getDate()===1;
     // 日境界線：月初は青2px・月曜は白45%・通常は白22%・半日線は白7%
@@ -881,7 +882,7 @@ function renderGantt() {
 
   D.forEach(row => {
     const barColor = row.b==='灯具' ? '#85B7EB' : '#C8C8C8';
-    const barX = h2px(row.aa);
+    const barX = Math.max(0, h2px(row.aa) - todayOffset);
     // 1マス=4時間単位で切り上げ、最小1マス保証
     const CELL_H = 4;
     const rawDur = row.ab - row.aa;
@@ -922,7 +923,7 @@ function renderGantt() {
   html += '</div>';
   document.getElementById('ganttInner').innerHTML = html;
   const outer = document.getElementById('ganttOuter');
-  outer.scrollLeft = Math.max(0, todayX - 60);
+  outer.scrollLeft = 0;
 }
 
 // === FORCE UPDATE ===
