@@ -814,3 +814,26 @@
       grid-template-columns: repeat(4, 1fr);
       gap: 8px;
     }
+/* ===== LANDSCAPE (スマホ横向き) ===== */
+@media (orientation: landscape) and (max-height: 500px) {
+  :root {
+    --nav-h: 0px;
+  }
+  .bottom-nav {
+    transform: translateY(100%);
+    transition: transform 0.28s ease;
+    pointer-events: none;
+  }
+  .main {
+    margin-bottom: 0 !important;
+  }
+  .gantt-outer {
+    max-height: calc(100dvh - var(--header-h) - 28px);
+  }
+  /* safe-area上書き */
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .bottom-nav { height: var(--nav-h); }
+    .main { margin-bottom: 0 !important; }
+    .toast { bottom: 14px; }
+  }
+}
