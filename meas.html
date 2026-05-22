@@ -45,20 +45,20 @@
       -webkit-align-items: center; align-items: center;
       padding: 0 14px; z-index: 100;
     }
-    .header-ver   { font-size: 10px; font-weight: 700; color: var(--text-faint); background: var(--bg-2); border: 1px solid var(--border); border-radius: 5px; padding: 2px 6px; margin-right: 8px; }
-    .header-title { font-size: 14px; font-weight: 700; color: var(--text); }
-    .header-sub   { margin-left: 10px; font-size: 11px; color: var(--text-faint); }
+    .header-ver   { font-size: 12px; font-weight: 700; color: var(--text-faint); background: var(--bg-2); border: 1px solid var(--border); border-radius: 5px; padding: 2px 6px; margin-right: 8px; }
+    .header-title { font-size: 16px; font-weight: 700; color: var(--text); }
+    .header-sub   { margin-left: 10px; font-size: 13px; color: var(--text-faint); }
     .header-reset {
       margin-left: auto;
       background: var(--surface-2); border: 1px solid var(--border);
-      color: var(--text-sub); font-size: 12px; font-weight: 700;
+      color: var(--text-sub); font-size: 14px; font-weight: 700;
       padding: 6px 13px; border-radius: 8px;
       cursor: pointer; font-family: inherit;
     }
     .header-update {
       margin-left: 8px;
       background: var(--surface-2); border: 1px solid var(--border);
-      font-size: 16px; padding: 5px 10px; border-radius: 8px;
+      font-size: 18px; padding: 5px 10px; border-radius: 8px;
       cursor: pointer;
     }
 
@@ -83,7 +83,7 @@
     .th-w { color: #5bc8ff; }
 
     /* ===== TABLE ===== */
-    .meas-tbl { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+    .meas-tbl { width: 100%; border-collapse: collapse; font-size: 15px; table-layout: fixed; }
     .meas-tbl th {
       padding: 5px 6px; text-align: left;
       color: var(--text-sub); font-weight: 600;
@@ -92,7 +92,7 @@
     }
     .meas-tbl td { padding: 4px 5px; text-align: center; border-bottom: 1px solid var(--border); }
     .meas-tbl tr:last-child td { border-bottom: none; }
-    .col-lbl { text-align: left !important; color: var(--text-sub); font-size: 12px; white-space: nowrap; width: 14%; padding: 4px 3px !important; }
+    .col-lbl { text-align: left !important; color: var(--text-sub); font-size: 14px; white-space: nowrap; width: 14%; padding: 4px 3px !important; }
 
     /* ===== INPUT CELL ===== */
     .meas-td-wrap {
@@ -115,16 +115,16 @@
     .meas-in {
       width: 100%; border: 1px solid var(--border); border-radius: 4px;
       background: var(--surface-2); color: var(--text);
-      font-size: 14px; padding: 5px 3px;
+      font-size: 16px; padding: 5px 3px;
       text-align: right; font-family: inherit;
       -webkit-appearance: none; appearance: none; outline: none;
     }
     .meas-in.active-inp { border-color: var(--accent) !important; background: #5C2A15 !important; color: #FFB899 !important; }
 
     /* ===== DIFF CELL ===== */
-    .meas-diff { font-weight: 700; font-size: 12px; line-height: 1.4; vertical-align: middle; padding: 5px 3px; }
+    .meas-diff { font-weight: 700; font-size: 14px; line-height: 1.4; vertical-align: middle; padding: 5px 3px; }
     .d-num { display: block; }
-    .d-lbl { display: block; font-size: 11px; font-weight: 600; }
+    .d-lbl { display: block; font-size: 13px; font-weight: 600; }
 
     /* ===== COL HEADER ===== */
     .col-hd-wrap {
@@ -135,7 +135,7 @@
     .col-reset {
       background: none; border: 1px solid var(--border);
       border-radius: 4px; color: var(--text-faint);
-      font-size: 10px; padding: 2px 5px;
+      font-size: 12px; padding: 2px 5px;
       cursor: pointer; font-family: inherit;
     }
 
@@ -147,7 +147,7 @@
       background: var(--surface-2); color: var(--text);
       border: 1px solid var(--border);
       padding: 8px 18px; border-radius: 10px;
-      font-size: 13px; font-weight: 600;
+      font-size: 15px; font-weight: 600;
       z-index: 999; white-space: nowrap;
       display: none;
     }
@@ -175,7 +175,7 @@
       -webkit-flex-shrink: 0; flex-shrink: 0;
     }
     .numpad-target-label {
-      font-size: 12px; color: var(--text-faint);
+      font-size: 24px; font-weight: 700; color: #fff;
       -webkit-flex: 1; flex: 1;
     }
     .numpad-target-val {
@@ -206,14 +206,14 @@
     .header-save {
       margin-left: 8px;
       background: var(--accent); border: 1px solid var(--accent);
-      color: #fff; font-size: 12px; font-weight: 700;
+      color: #fff; font-size: 14px; font-weight: 700;
       padding: 6px 13px; border-radius: 8px;
       cursor: pointer; font-family: inherit;
     }
     .header-hist {
       margin-left: 8px;
       background: var(--surface-2); border: 1px solid var(--border);
-      color: var(--text-sub); font-size: 12px; font-weight: 700;
+      color: var(--text-sub); font-size: 14px; font-weight: 700;
       padding: 6px 11px; border-radius: 8px;
       cursor: pointer; font-family: inherit;
     }
@@ -586,9 +586,9 @@ function _nextFocus() {
 function _refreshPadVal() {
   var d = _padRaw, fmt;
   if (d.length === 0)      fmt = '';
-  else if (d.length === 1) fmt = '0.0' + d;
-  else if (d.length === 2) fmt = '0.' + d;
-  else                     fmt = d.slice(0,-2) + '.' + d.slice(-2);
+  else if (d.length <= 2)  fmt = d;
+  else if (d.length === 3) fmt = d.slice(0, 2) + '.' + d.slice(2);
+  else                     fmt = d.slice(0, 2) + '.' + d.slice(2);
   if (_padNeg && fmt) fmt = '-' + fmt;
   if (_padTarget) _padTarget.value = fmt;
   document.getElementById('padVal').textContent = fmt || '—';
