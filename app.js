@@ -316,6 +316,7 @@ function switchTab(name,btn) {
 // === SCHEDULE ===
 let _excelSchedule = null;
 let _schSyncedAt   = null;
+let _ganttData     = null;
 
 function renderSchedule() {
   const grid  = document.getElementById('scheduleGrid');
@@ -553,6 +554,9 @@ async function syncFromGist(manual=false) {
       _excelSchedule = data.excel_schedule;
       _schSyncedAt   = data.synced_at || null;
     }
+    if (data.gantt_data) {
+      _ganttData = data.gantt_data;
+    }
     const list = data.reminders || [];
     const keys  = new Set(getAll().map(r=>r.title+'|'+r.deadline));
     const grave = getGrave();
@@ -748,7 +752,7 @@ function renderGantt() {
   const SC = 9;
   const LW = 94;
 
-  const d2h = {
+  let d2h = {
     '2026-05-11':-40,'2026-05-12':-32,'2026-05-13':-24,'2026-05-14':-16,
     '2026-05-16':0,  '2026-05-18':8,  '2026-05-19':16, '2026-05-20':24,
     '2026-05-21':32, '2026-05-22':40, '2026-05-25':48, '2026-05-26':56,
@@ -759,6 +763,7 @@ function renderGantt() {
     '2026-06-17':184,'2026-06-18':192,'2026-06-19':200,
     '2026-06-22':208,'2026-06-23':216,'2026-07-02':272
   };
+  if (_ganttData && _ganttData.d2h) d2h = Object.assign({}, d2h, _ganttData.d2h);
 
   const TODAY_ISO = new Date().toISOString().split('T')[0];
   const TODAY_H = (function() {
@@ -772,7 +777,7 @@ function renderGantt() {
     return d2h[prev] + Math.round(frac*(d2h[next]-d2h[prev]));
   })();
 
-  const D = [
+  let D = [
     {n:"採光ルーバーパネルB　L=1996",b:"LED",s:"2026-05-13",e:"2026-05-19",k:"2026-05-19",aa:0,ab:4},
     {n:"8FL281304 6110　L=1478",b:"LED",s:"2026-05-11",e:"2026-05-19",k:"2026-05-21",aa:4,ab:4},
     {n:"採光ルーバーパネルB　L=1996",b:"LED",s:"2026-05-14",e:"2026-05-20",k:"2026-05-20",aa:4,ab:20},
@@ -823,6 +828,7 @@ function renderGantt() {
     {n:"752GPSB　415",b:"樹脂",s:null,e:"2026-06-23",k:"2026-07-02",aa:200,ab:204},
     {n:"752GPSB　265",b:"樹脂",s:null,e:"2026-06-23",k:"2026-07-02",aa:204,ab:208},
   ];
+  if (_ganttData && _ganttData.rows && _ganttData.rows.length > 0) D = _ganttData.rows;
 
   const h2px = h => Math.round(h * SC);
   const halfDayPx    = h2px(4); // 1日の前半・後半の境界（4h = 1マス分）
@@ -844,7 +850,7 @@ function renderGantt() {
   const todayX = h2px(TODAY_H);
   const stickyLbl = `flex:0 0 ${LW}px;position:sticky;left:0;z-index:8;border-right:1px solid var(--border);`;
 
-  const d2hSorted = Object.entries(d2h).filter(([,v])=>v>=0).sort((a,b)=>a[1]-b[1]);
+  const d2hSorted = Object.entries(d2h).filter(([iso,v])=>v>=0 && iso>=TODAY_ISO).sort((a,b)=>a[1]-b[1]);
   let dayGridLines = '', axTicks = '';
   d2hSorted.forEach(([iso, h]) => {
     const x  = h2px(h);
@@ -1211,6 +1217,4 @@ function autoDecimal(inp, ph) {
 
   inp.value = formatted;
   var len = formatted.length;
-  setTimeout(function() { inp.setSelectionRange(len, len); }, 0);
-  measCalc(ph);
-}
+  setTimeout(function() { inp.setSelectionRange(len, len); }, 
