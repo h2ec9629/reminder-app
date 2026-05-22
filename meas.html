@@ -35,36 +35,12 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ===== HEADER ===== */
-    .header {
-      position: fixed; top: 0; left: 0; right: 0;
-      height: var(--header-h);
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      display: -webkit-box; display: -webkit-flex; display: flex;
-      -webkit-align-items: center; align-items: center;
-      padding: 0 14px; z-index: 100;
-    }
-    .header-ver   { font-size: 12px; font-weight: 700; color: var(--text-faint); background: var(--bg-2); border: 1px solid var(--border); border-radius: 5px; padding: 2px 6px; margin-right: 8px; }
-    .header-title { font-size: 16px; font-weight: 700; color: var(--text); }
-    .header-sub   { margin-left: 10px; font-size: 13px; color: var(--text-faint); }
-    .header-reset {
-      margin-left: auto;
-      background: var(--surface-2); border: 1px solid var(--border);
-      color: var(--text-sub); font-size: 14px; font-weight: 700;
-      padding: 6px 13px; border-radius: 8px;
-      cursor: pointer; font-family: inherit;
-    }
-    .header-update {
-      margin-left: 8px;
-      background: var(--surface-2); border: 1px solid var(--border);
-      font-size: 18px; padding: 5px 10px; border-radius: 8px;
-      cursor: pointer;
-    }
+    /* ===== HEADER 廃止 ===== */
+    .header { display: none; }
 
     /* ===== MAIN ===== */
     .main {
-      margin-top: var(--header-h);
+      margin-top: 0;
       padding: 12px 10px;
       margin-bottom: var(--numpad-h);
     }
@@ -160,10 +136,45 @@
       background: var(--surface);
       border-top: 2px solid var(--accent);
       z-index: 200;
-      padding: 8px 8px 12px;
+      padding: 6px 6px 10px;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-flex-direction: row; flex-direction: row;
+      gap: 6px;
+    }
+
+    /* 左パネル：サイドメニュー */
+    .numpad-side {
+      -webkit-flex: 0 0 50%; flex: 0 0 50%;
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-flex-direction: column; flex-direction: column;
-      gap: 6px;
+      gap: 4px;
+    }
+    .numpad-app-title {
+      font-size: 11px; font-weight: 700;
+      color: var(--text-faint);
+      padding: 2px 4px;
+      letter-spacing: 0.5px;
+    }
+    .numpad-side-btn {
+      -webkit-flex: 1; flex: 1;
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text-sub); font-size: 14px; font-weight: 700;
+      border-radius: 8px; cursor: pointer; font-family: inherit;
+      text-align: center; line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .numpad-side-btn:active { background: var(--border); }
+    .numpad-side-btn.btn-save { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .numpad-side-btn.btn-hist { }
+    .numpad-side-btn.btn-hist.active { border-color: var(--accent); color: var(--accent); }
+    .numpad-side-btn.btn-reset { color: #F87171; border-color: #2A1010; }
+
+    /* 右パネル：テンキー */
+    .numpad-right {
+      -webkit-flex: 0 0 50%; flex: 0 0 50%;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-flex-direction: column; flex-direction: column;
+      gap: 4px;
     }
 
     /* 現在値バー */
@@ -171,55 +182,36 @@
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-align-items: center; align-items: center;
       background: var(--bg-2); border: 1px solid var(--border);
-      border-radius: 8px; padding: 4px 10px; gap: 8px;
+      border-radius: 8px; padding: 4px 8px; gap: 6px;
       -webkit-flex-shrink: 0; flex-shrink: 0;
     }
     .numpad-target-label {
-      font-size: 24px; font-weight: 700; color: #fff;
-      -webkit-flex: 1; flex: 1;
+      font-size: 13px; font-weight: 700; color: #fff;
+      -webkit-flex: 1; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .numpad-target-val {
-      font-size: 24px; font-weight: 700; color: var(--text);
-      text-align: right; min-width: 80px;
+      font-size: 20px; font-weight: 700; color: var(--text);
+      text-align: right; min-width: 60px;
     }
 
     /* 4×3 グリッド */
     .numpad-grid {
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-flex-wrap: wrap; flex-wrap: wrap;
-      gap: 5px; -webkit-flex: 1; flex: 1;
+      gap: 4px; -webkit-flex: 1; flex: 1;
     }
     .np-btn {
       -webkit-box-flex: 1; -webkit-flex: 1 1 28%; flex: 1 1 28%;
       min-width: 0;
       background: var(--surface-2); border: 1px solid var(--border);
-      color: var(--text); font-size: 28px; font-weight: 600;
+      color: var(--text); font-size: 24px; font-weight: 600;
       border-radius: 8px; cursor: pointer; font-family: inherit;
       text-align: center; line-height: 1;
       -webkit-tap-highlight-color: transparent;
     }
     .np-btn:active { background: var(--border); }
-    .np-btn-bs    { background: var(--bg-2); color: #F87171; font-size: 22px; }
-    .np-btn-ok    { background: var(--accent); color: #fff; border-color: var(--accent); font-size: 22px; }
-
-    /* ===== HEADER SAVE / HISTORY ===== */
-    .header-save {
-      margin-left: 8px;
-      background: var(--accent); border: 1px solid var(--accent);
-      color: #fff; font-size: 14px; font-weight: 700;
-      padding: 6px 13px; border-radius: 8px;
-      cursor: pointer; font-family: inherit;
-    }
-    .header-hist {
-      margin-left: 8px;
-      background: var(--surface-2); border: 1px solid var(--border);
-      color: var(--text-sub); font-size: 14px; font-weight: 700;
-      padding: 6px 11px; border-radius: 8px;
-      cursor: pointer; font-family: inherit;
-    }
-    .header-hist.active {
-      background: var(--surface-2); border-color: var(--accent); color: var(--accent);
-    }
+    .np-btn-bs    { background: var(--bg-2); color: #F87171; font-size: 20px; }
+    .np-btn-ok    { background: var(--accent); color: #fff; border-color: var(--accent); font-size: 20px; }
 
     /* ===== 履歴画面 ===== */
     .hist-view {
@@ -352,14 +344,7 @@
 </head>
 <body>
 
-<header class="header">
-  <span class="header-ver">v1.2</span>
-  <span class="header-title">三相測定</span>
-  <button class="header-save" onclick="saveMeas()">SAVE</button>
-  <button class="header-hist" id="histBtn" onclick="toggleHist()">LOG</button>
-  <button class="header-reset" onclick="resetAll()">全リセット</button>
-  <button class="header-update" onclick="forceUpdate()">Update</button>
-</header>
+<header class="header"></header>
 
 <main class="main">
 
@@ -477,24 +462,38 @@
 
 <!-- ===== 常駐テンキー ===== -->
 <div class="numpad">
-  <div class="numpad-val-bar">
-    <span class="numpad-target-label" id="padLabel">欄をタップして入力</span>
-    <span class="numpad-target-val"   id="padVal">—</span>
+
+  <!-- 左：サイドメニュー -->
+  <div class="numpad-side">
+    <div class="numpad-app-title">v1.2　三相測定</div>
+    <button class="numpad-side-btn btn-save" onclick="saveMeas()">SAVE</button>
+    <button class="numpad-side-btn btn-hist" id="histBtn" onclick="toggleHist()">LOG</button>
+    <button class="numpad-side-btn btn-reset" onclick="resetAll()">全リセット</button>
+    <button class="numpad-side-btn" onclick="forceUpdate()">Update</button>
   </div>
-  <div class="numpad-grid" id="numpadGrid">
-    <button class="np-btn" data-key="7">7</button>
-    <button class="np-btn" data-key="8">8</button>
-    <button class="np-btn" data-key="9">9</button>
-    <button class="np-btn" data-key="4">4</button>
-    <button class="np-btn" data-key="5">5</button>
-    <button class="np-btn" data-key="6">6</button>
-    <button class="np-btn" data-key="1">1</button>
-    <button class="np-btn" data-key="2">2</button>
-    <button class="np-btn" data-key="3">3</button>
-    <button class="np-btn np-btn-bs"    data-key="BS">⌫</button>
-    <button class="np-btn" data-key="0">0</button>
-    <button class="np-btn np-btn-ok"   data-key="OK">↵</button>
+
+  <!-- 右：テンキー -->
+  <div class="numpad-right">
+    <div class="numpad-val-bar">
+      <span class="numpad-target-label" id="padLabel">欄をタップ</span>
+      <span class="numpad-target-val"   id="padVal">—</span>
+    </div>
+    <div class="numpad-grid" id="numpadGrid">
+      <button class="np-btn" data-key="7">7</button>
+      <button class="np-btn" data-key="8">8</button>
+      <button class="np-btn" data-key="9">9</button>
+      <button class="np-btn" data-key="4">4</button>
+      <button class="np-btn" data-key="5">5</button>
+      <button class="np-btn" data-key="6">6</button>
+      <button class="np-btn" data-key="1">1</button>
+      <button class="np-btn" data-key="2">2</button>
+      <button class="np-btn" data-key="3">3</button>
+      <button class="np-btn np-btn-bs"  data-key="BS">⌫</button>
+      <button class="np-btn" data-key="0">0</button>
+      <button class="np-btn np-btn-ok"  data-key="OK">↵</button>
+    </div>
   </div>
+
 </div>
 
 <!-- ===== 保存パネル（テンキー上） ===== -->
@@ -860,14 +859,14 @@ function toggleHist() {
     main.style.display = 'none';
     np.style.display   = 'none';
     mv.className       = 'hist-view';
-    btn.className      = 'header-hist active';
+    btn.classList.add('active');
     _selIdx = -1;
     _renderSidebar();
   } else {
     mv.className       = 'hist-view hidden';
     main.style.display = '';
     np.style.display   = '';
-    btn.className      = 'header-hist';
+    btn.classList.remove('active');
   }
 }
 
