@@ -826,7 +826,6 @@ function renderGantt() {
 
   const h2px = h => Math.round(h * SC);
   const halfDayPx    = h2px(4); // 1日の前半・後半の境界（4h = 1マス分）
-  const quarterDayPx = h2px(2); // 2マス目の中央オフセット
 
   function d2px(iso) {
     if (!iso) return null;
@@ -885,12 +884,25 @@ function renderGantt() {
     let bar = dayGridLines + todayLine;
     if (barW>0) bar += `<div style="position:absolute;top:6px;height:15px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColor};z-index:2;"></div>`;
     else if (row.aa>0) bar += `<div style="position:absolute;top:9px;height:9px;left:${barX}px;width:3px;border-radius:2px;background:${barColor};opacity:0.6;z-index:2;"></div>`;
-    // 納品期限（k / 赤）: 日付の先頭に期限ライン
-    if (kX!==null) bar += `<div style="position:absolute;top:0;bottom:0;left:${kX + 2}px;width:1.5px;background:#A32D2D;z-index:3;"></div>`;
-    // 材料支給日＝引取（s / 黄▼）: 2マス目の中央
-    if (sX!==null) bar += `<span style="position:absolute;top:1px;left:${sX + halfDayPx + quarterDayPx}px;font-size:8px;color:#F4C430;transform:translateX(-50%);z-index:6;line-height:1;">▼</span>`;
-    // 納品日（e / 緑▲）: 2マス目の左端
-    if (eX!==null) bar += `<span style="position:absolute;bottom:1px;left:${eX + halfDayPx}px;font-size:8px;color:#4ADE80;transform:translateX(-50%);z-index:6;line-height:1;">▲</span>`;
+    // 期日と納品日の重複チェック
+    const kOverlapsE = row.k && row.e && row.k === row.e;
+    // 納品日（e）: 2マス目を緑ブロックで塗る
+    if (eX !== null) {
+      if (kOverlapsE) {
+        // 期日と重複: 左半分=緑・右半分=赤、外枠付き
+        bar += `<div style="position:absolute;top:0;bottom:0;left:${eX + halfDayPx}px;width:${halfDayPx}px;z-index:4;border:1.5px solid rgba(255,255,255,0.28);border-radius:2px;box-sizing:border-box;overflow:hidden;"><div style="position:absolute;top:0;bottom:0;left:0;width:50%;background:rgba(74,222,128,0.78);"></div><div style="position:absolute;top:0;bottom:0;right:0;width:50%;background:rgba(180,50,50,0.78);"></div></div>`;
+      } else {
+        bar += `<div style="position:absolute;top:0;bottom:0;left:${eX + halfDayPx}px;width:${halfDayPx}px;background:rgba(74,222,128,0.75);z-index:4;border-radius:2px;border:1px solid rgba(255,255,255,0.18);"></div>`;
+      }
+    }
+    // 支給日（s）: 2マス目を黄ブロックで塗る
+    if (sX !== null) {
+      bar += `<div style="position:absolute;top:0;bottom:0;left:${sX + halfDayPx}px;width:${halfDayPx}px;background:rgba(244,196,48,0.75);z-index:4;border-radius:2px;border:1px solid rgba(255,255,255,0.18);"></div>`;
+    }
+    // 期日（k）: 2マス目を赤ブロックで塗る（納品日と重複の場合は上で処理済み）
+    if (kX !== null && !kOverlapsE) {
+      bar += `<div style="position:absolute;top:0;bottom:0;left:${kX + halfDayPx}px;width:${halfDayPx}px;background:rgba(180,50,50,0.75);z-index:4;border-radius:2px;border:1px solid rgba(255,255,255,0.18);"></div>`;
+    }
 
     html += `<div style="display:flex;height:28px;border-bottom:1px solid var(--border);">
       <div style="${stickyLbl}background:var(--surface);height:28px;font-size:10px;color:var(--text-sub);padding:0 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border-bottom:1px solid var(--border);">${escH(abbrevName(row.n))}</div>
