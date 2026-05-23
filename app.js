@@ -837,7 +837,7 @@ function renderGantt() {
   ];
   if (_ganttData && _ganttData.rows && _ganttData.rows.length > 0) D = _ganttData.rows;
   // 納品日(e)が昨日以前の行を除外（納品日なしはそのまま表示）
-  const yesterdayISO = (d => { d.setDate(d.getDate() - 1); return d.toISOString().slice(0, 10); })(new Date());
+  const yesterdayISO = (d => { d.setDate(d.getDate() - 1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(new Date());
   D = D.filter(r => !r.e || r.e >= yesterdayISO);
 
   const h2px = h => Math.round(h * SC);
