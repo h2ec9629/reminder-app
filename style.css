@@ -616,7 +616,7 @@
       font-weight:600; border-bottom:1px solid var(--border); }
     .meas-tbl td { padding:4px 7px; text-align:center; border-bottom:1px solid var(--border); }
     .meas-sep-th { width:5%; padding:0; }
-    .meas-sep-lbl { width:5%; text-align:center; font-size:11px; font-weight:700; color:var(--text-sub); padding:2px; white-space:nowrap; }
+    .meas-sep-lbl { width:5%; text-align:left; font-size:11px; font-weight:700; color:var(--text-sub); padding:2px 0 2px 2px; white-space:nowrap; }
     .meas-sep-td { width:5%; border-bottom:1px solid var(--border); }
     .meas-lbl { text-align:left !important; color:var(--text-sub); font-size:11px; white-space:nowrap; width:8%; padding: 4px 2px !important; }
     .meas-in { width:100%; border:1px solid var(--border); border-radius:4px;
