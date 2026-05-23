@@ -901,7 +901,7 @@ function renderGantt() {
     const eX = d2px(row.e);
 
     let bar = dayGridLines + todayLine;
-    bar += `<div style="position:absolute;top:11px;height:15px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColor};z-index:2;"></div>`;
+    bar += `<div style="position:absolute;top:17px;height:16px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColor};z-index:2;"></div>`;
     // 期日と納品日の重複チェック
     const kOverlapsE = row.k && row.e && row.k === row.e;
     // 納品日（e）: 2マス目を緑ブロックで塗る
@@ -925,12 +925,18 @@ function renderGantt() {
     const dispD = iso => iso ? iso.slice(5).replace('-', '/') : '-';
     const uV = row.u != null ? String(row.u) : '-';
     const wV = row.w != null ? String(row.w) : '-';
-    html += `<div style="display:flex;height:38px;border-bottom:1px solid var(--border);">
-      <div style="${stickyLbl}background:var(--surface);height:38px;padding:2px 4px;display:flex;flex-direction:column;justify-content:center;overflow:hidden;border-bottom:1px solid var(--border);">
-        <div style="font-size:10px;color:var(--text-sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escH(abbrevName(row.n))}</div>
-        <div style="font-size:9px;color:var(--text-faint);white-space:nowrap;margin-top:2px;">依${uV}/進${wV}｜${dispD(row.s)}｜${dispD(row.e)}｜${dispD(row.af)}</div>
+    html += `<div style="display:flex;height:50px;border-bottom:1px solid var(--border);">
+      <div style="${stickyLbl}background:var(--surface);height:50px;padding:3px 6px;display:flex;flex-direction:column;justify-content:center;gap:4px;overflow:hidden;border-bottom:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">${escH(abbrevName(row.n))}</div>
+          <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;padding-left:4px;flex-shrink:0;">${uV}/${wV}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <div style="font-size:10px;white-space:nowrap;"><span style="color:#FBB040;font-weight:700;">引</span><span style="color:var(--text-sub);"> ${dispD(row.s)}</span><span style="color:var(--text-faint);"> ・ </span><span style="color:#4ADE80;font-weight:700;">納</span><span style="color:var(--text-sub);"> ${dispD(row.e)}</span></div>
+          <div style="font-size:10px;white-space:nowrap;padding-left:4px;"><span style="color:#F87171;font-weight:700;">期</span><span style="color:#F87171;"> ${dispD(row.af)}</span></div>
+        </div>
       </div>
-      <div style="position:relative;flex:1;height:38px;overflow:hidden;">${bar}</div>
+      <div style="position:relative;flex:1;height:50px;overflow:hidden;">${bar}</div>
     </div>`;
   });
 
