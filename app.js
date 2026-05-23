@@ -757,7 +757,7 @@ function abbrevName(n) {
 
 function renderGantt() {
   const SC = 9;
-  const LW = 94;
+  const LW = 200;
 
   let d2h = {
     '2026-05-11':-40,'2026-05-12':-32,'2026-05-13':-24,'2026-05-14':-16,
@@ -884,7 +884,7 @@ function renderGantt() {
   </div>`;
 
   html += `<div style="display:flex;height:22px;position:sticky;top:22px;z-index:9;border-bottom:1px solid var(--border);">
-    <div style="${stickyLbl}background:var(--bg-2);height:22px;z-index:10;display:flex;align-items:center;font-size:10px;font-weight:700;color:var(--text-faint);padding:0 5px;">完了済 22件</div>
+    <div style="${stickyLbl}background:var(--bg-2);height:22px;z-index:10;display:flex;align-items:center;font-size:10px;font-weight:700;color:var(--text-faint);padding:0 5px;">品名 / 依頼・進捗・支給日・納品日・期日</div>
     <div style="position:relative;flex:1;height:22px;background:var(--bg-2);overflow:hidden;">${dayGridLines}${todayLine}</div>
   </div>`;
 
@@ -901,7 +901,7 @@ function renderGantt() {
     const eX = d2px(row.e);
 
     let bar = dayGridLines + todayLine;
-    bar += `<div style="position:absolute;top:6px;height:15px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColor};z-index:2;"></div>`;
+    bar += `<div style="position:absolute;top:11px;height:15px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColor};z-index:2;"></div>`;
     // 期日と納品日の重複チェック
     const kOverlapsE = row.k && row.e && row.k === row.e;
     // 納品日（e）: 2マス目を緑ブロックで塗る
@@ -922,9 +922,15 @@ function renderGantt() {
       bar += `<div style="position:absolute;top:0;bottom:0;left:${kX + halfDayPx}px;width:${halfDayPx}px;background:rgba(180,50,50,0.75);z-index:4;border-radius:2px;border:1px solid rgba(255,255,255,0.18);"></div>`;
     }
 
-    html += `<div style="display:flex;height:28px;border-bottom:1px solid var(--border);">
-      <div style="${stickyLbl}background:var(--surface);height:28px;font-size:10px;color:var(--text-sub);padding:0 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border-bottom:1px solid var(--border);">${escH(abbrevName(row.n))}</div>
-      <div style="position:relative;flex:1;height:28px;overflow:hidden;">${bar}</div>
+    const dispD = iso => iso ? iso.slice(5).replace('-', '/') : '-';
+    const uV = row.u != null ? String(row.u) : '-';
+    const wV = row.w != null ? String(row.w) : '-';
+    html += `<div style="display:flex;height:38px;border-bottom:1px solid var(--border);">
+      <div style="${stickyLbl}background:var(--surface);height:38px;padding:2px 4px;display:flex;flex-direction:column;justify-content:center;overflow:hidden;border-bottom:1px solid var(--border);">
+        <div style="font-size:10px;color:var(--text-sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escH(abbrevName(row.n))}</div>
+        <div style="font-size:9px;color:var(--text-faint);white-space:nowrap;margin-top:2px;">依${uV}/進${wV}｜${dispD(row.s)}｜${dispD(row.e)}｜${dispD(row.af)}</div>
+      </div>
+      <div style="position:relative;flex:1;height:38px;overflow:hidden;">${bar}</div>
     </div>`;
   });
 
