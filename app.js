@@ -328,20 +328,27 @@ function renderSchedule() {
   const ac = _excelSchedule.ac_side || [];
   const ad = _excelSchedule.ad_side || [];
 
+  // 当日以降14日以内でフィルタ
+  const todayStr14 = todayStr();
+  const limitDate  = new Date(); limitDate.setDate(limitDate.getDate() + 14);
+  const limitStr   = limitDate.toISOString().slice(0, 10);
+
   // 日付でグルーピング
   const dateMap = {};
   ac.forEach(item => {
+    if (item.date < todayStr14 || item.date > limitStr) return;
     if (!dateMap[item.date]) dateMap[item.date] = { ac: [], ad: [] };
     dateMap[item.date].ac.push(item);
   });
   ad.forEach(item => {
+    if (item.date < todayStr14 || item.date > limitStr) return;
     if (!dateMap[item.date]) dateMap[item.date] = { ac: [], ad: [] };
     dateMap[item.date].ad.push(item);
   });
   const dates = Object.keys(dateMap).sort();
 
   if (dates.length === 0) {
-    grid.innerHTML = '<div class="sch-empty-msg">7日以内の日程はありません</div>';
+    grid.innerHTML = '<div class="sch-empty-msg">14日以内の日程はありません</div>';
   } else {
     let html = '';
     dates.forEach(date => {
