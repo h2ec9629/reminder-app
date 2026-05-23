@@ -772,7 +772,7 @@ function renderGantt() {
   };
   if (_ganttData && _ganttData.d2h) d2h = Object.assign({}, d2h, _ganttData.d2h);
 
-  const TODAY_ISO = new Date().toISOString().split('T')[0];
+  const _td = new Date(); const TODAY_ISO = `${_td.getFullYear()}-${String(_td.getMonth()+1).padStart(2,'0')}-${String(_td.getDate()).padStart(2,'0')}`;
   const TODAY_H = (function() {
     if (d2h[TODAY_ISO] !== undefined) return d2h[TODAY_ISO];
     const keys = Object.keys(d2h).sort();
@@ -944,7 +944,7 @@ function renderGantt() {
       <div style="${stickyLbl}background:var(--surface);height:50px;padding:3px 6px;display:flex;flex-direction:column;justify-content:center;gap:4px;overflow:hidden;border-bottom:1px solid rgba(255,255,255,0.12);">
         <div style="display:flex;justify-content:space-between;align-items:baseline;">
           <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">${escH(abbrevName(row.n))}</div>
-          <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;padding-left:4px;flex-shrink:0;">${uV}/${wV}</div>
+          <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;padding-left:4px;flex-shrink:0;">${uV} / ${wV}</div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:baseline;">
           <div style="font-size:10px;white-space:nowrap;"><span style="color:#FBB040;font-weight:700;">引</span><span style="color:var(--text-sub);"> ${dispD(row.s)}</span><span style="color:var(--text-faint);"> ・ </span><span style="color:#4ADE80;font-weight:700;">納</span><span style="color:var(--text-sub);"> ${dispD(row.e)}</span></div>
