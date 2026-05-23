@@ -909,31 +909,32 @@ function renderGantt() {
     const eX = d2px(row.e);
 
     let bar = dayGridLines + todayLine;
-    // 進捗バー（w/u の達成率を明暗2層で表示）
-    const barColorDim = row.b==='灯具' ? 'rgba(133,183,235,0.28)' : 'rgba(200,200,200,0.28)';
+    // 【上段】進捗バー：グレー背景＋進捗フィル（top:4px, height:14px）
     const progress  = (row.u > 0 && row.w != null) ? Math.min(row.w / row.u, 1.0) : 0;
     const progressW = Math.round(barW * progress);
-    bar += `<div style="position:absolute;top:4px;height:18px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColorDim};z-index:2;overflow:hidden;">` +
-           `<div style="position:absolute;top:0;left:0;height:100%;width:${progressW}px;background:${barColor};border-radius:3px;"></div>` +
+    bar += `<div style="position:absolute;top:4px;height:14px;left:${barX}px;width:${barW}px;border-radius:3px;background:rgba(160,160,160,0.55);z-index:2;overflow:hidden;">` +
+           `<div style="position:absolute;top:0;left:0;height:100%;width:${progressW}px;background:rgba(210,210,210,0.95);border-radius:3px;"></div>` +
            `</div>`;
     // 期日と納品日の重複チェック
     const kOverlapsE = row.k && row.e && row.k === row.e;
-    // 納品日（e）: 2マス目を緑ブロックで塗る
+    // 【下段】3色マーカー（top:22px〜bottom:4px）
+    const mkStyle = `position:absolute;top:22px;bottom:4px;width:${halfDayPx}px;z-index:4;border-radius:2px;border:1px solid rgba(255,255,255,0.25);`;
+    // 納品日（e）: 緑マーカー
     if (eX !== null) {
       if (kOverlapsE) {
-        // 期日と重複: 左半分=緑・右半分=赤、外枠付き
-        bar += `<div style="position:absolute;top:0;bottom:0;left:${eX + halfDayPx}px;width:${halfDayPx}px;z-index:4;border:1.5px solid rgba(255,255,255,0.28);border-radius:2px;box-sizing:border-box;overflow:hidden;"><div style="position:absolute;top:0;bottom:0;left:0;width:50%;background:rgba(74,222,128,0.78);"></div><div style="position:absolute;top:0;bottom:0;right:0;width:50%;background:rgba(180,50,50,0.78);"></div></div>`;
+        // 期日と重複: 左半分=緑・右半分=赤
+        bar += `<div style="${mkStyle}left:${eX + halfDayPx}px;overflow:hidden;"><div style="position:absolute;top:0;bottom:0;left:0;width:50%;background:rgba(74,222,128,0.88);"></div><div style="position:absolute;top:0;bottom:0;right:0;width:50%;background:rgba(220,60,60,0.88);"></div></div>`;
       } else {
-        bar += `<div style="position:absolute;top:0;bottom:0;left:${eX + halfDayPx}px;width:${halfDayPx}px;background:rgba(74,222,128,0.75);z-index:4;border-radius:2px;border:1px solid rgba(255,255,255,0.18);"></div>`;
+        bar += `<div style="${mkStyle}left:${eX + halfDayPx}px;background:rgba(74,222,128,0.85);"></div>`;
       }
     }
-    // 支給日（s）: 2マス目を黄ブロックで塗る
+    // 支給日（s）: 黄マーカー
     if (sX !== null) {
-      bar += `<div style="position:absolute;top:0;bottom:0;left:${sX + halfDayPx}px;width:${halfDayPx}px;background:rgba(244,196,48,0.75);z-index:4;border-radius:2px;border:1px solid rgba(255,255,255,0.18);"></div>`;
+      bar += `<div style="${mkStyle}left:${sX + halfDayPx}px;background:rgba(244,196,48,0.85);"></div>`;
     }
-    // 期日（k）: 2マス目を赤ブロックで塗る（納品日と重複の場合は上で処理済み）
+    // 期日（k）: 赤マーカー
     if (kX !== null && !kOverlapsE) {
-      bar += `<div style="position:absolute;top:0;bottom:0;left:${kX + halfDayPx}px;width:${halfDayPx}px;background:rgba(180,50,50,0.75);z-index:4;border-radius:2px;border:1px solid rgba(255,255,255,0.18);"></div>`;
+      bar += `<div style="${mkStyle}left:${kX + halfDayPx}px;background:rgba(220,60,60,0.85);"></div>`;
     }
 
     const dispD = iso => iso ? iso.slice(5).replace('-', '/') : '-';
