@@ -1107,6 +1107,17 @@ function calcApply(a, b, op) {
 }
 
 // === MEAS TABLE ===
+function _setMeasDiff(d, numStr, lblStr, color) {
+  var spans = d.getElementsByTagName('span');
+  d.style.color = color;
+  if (spans.length >= 2) {
+    spans[0].textContent = numStr;
+    spans[1].textContent = lblStr;
+  } else {
+    d.textContent = numStr + ' ' + lblStr;
+  }
+}
+
 function measCalc(ph) {
   ['r','a','b'].forEach(col => {
     const onV  = parseFloat(document.getElementById(`m${ph}_on_${col}`)?.value);
@@ -1117,11 +1128,8 @@ function measCalc(ph) {
       const diff = Math.round((onV - offV) * 1000) / 1000;
       const diffStr = diff.toFixed(2);
       if (diff >= 1.83 && diff <= 1.97) {
-        // 正常範囲
-        d.innerHTML = diffStr + '<br>[正常]';
-        d.style.color = 'var(--success, #4caf50)';
+        _setMeasDiff(d, diffStr, '[正常]', '#4ADE80');
       } else {
-        // 角数計算（目標1.90、1角=0.25、半角=0.125）
         const gap = Math.round((1.90 - diff) * 1000) / 1000;
         const dir = gap > 0 ? '緩め' : '締め';
         const absGap = Math.abs(gap);
@@ -1133,12 +1141,63 @@ function measCalc(ph) {
         else if (whole > 0 && !half) label = whole + '角';
         else if (half)               label = '半角';
         else                         label = '？';
-        d.innerHTML = diffStr + '<br>[' + label + dir + ']';
-        // 公差内（1.80~2.00）は白、公差外はオレンジ
-        d.style.color = (diff >= 1.80 && diff <= 2.00) ? '#fff' : 'var(--warning, #ff9800)';
+        const color = (diff >= 1.80 && diff <= 2.00) ? '#fff' : '#ff9800';
+        _setMeasDiff(d, diffStr, '[' + label + dir + ']', color);
       }
-    } else { d.textContent = '—'; d.style.color = ''; }
+    } else { _setMeasDiff(d, '—', '', ''); }
   });
+}
+
+// === MEAS CLEAR / RESET ===
+function clearMeasInput(btn, ph) {
+  var inp = btn.parentNode.querySelector('.meas-in');
+  if (inp) inp.value = '';
+  measCalc(ph);
+}
+
+function clearMeasCol(ph, col) {
+  ['on','off'].forEach(row => {
+    var el = document.getElementById('m' + ph + '_' + row + '_' + col);
+    if (el) el.value = '';
+  });
+  measCalc(ph);
+}
+
+function resetAllMeas() {
+  if (!confirm('三相測定の全入力をリセットしますか？')) return;
+  ['u','v','w'].forEach(ph => {
+    ['r','a','b'].forEach(col => {
+      ['on','off'].forEach(row => {
+        var el = document.getElementById('m' + ph + '_' + row + '_' + col);
+        if (el) el.value = '';
+      });
+      var d = document.getElementById('m' + ph + '_d_' + col);
+      if (d) _setMeasDiff(d, '—', '', '');
+    });
+  });
+  showToast('三相測定をリセットしました');
+}
+
+// === MEAS AUTO DECIMAL (meas.html方式: 2桁整数+小数) ===
+function autoDecimalMeas(inp, ph) {
+  var raw = inp.value;
+  var neg = raw.charAt(0) === '-';
+  var digits = raw.replace(/[^0-9]/g, '').replace(/^0+/, '') || '';
+  var formatted;
+  if (digits.length === 0) {
+    formatted = neg ? '-' : '';
+  } else if (digits.length <= 2) {
+    formatted = digits;
+  } else {
+    formatted = digits.slice(0, 2) + '.' + digits.slice(2);
+  }
+  if (neg && formatted && formatted !== '-') formatted = '-' + formatted;
+  inp.value = formatted;
+  var len = formatted.length;
+  setTimeout(function() {
+    try { inp.setSelectionRange(len, len); } catch(e) {}
+  }, 0);
+  measCalc(ph);
 }
 
 // === CALC PAGE SWIPE ===
