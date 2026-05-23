@@ -285,17 +285,20 @@
           <div class="meas-phase">
             <div class="meas-phase-hd th-u">U相</div>
             <table class="meas-tbl">
-              <tr><th style="width:8%"></th><th class="th-ur"><span class="meas-th-inner">R<button class="col-reset" onclick="clearMeasCol('u','r')">CLR</button></span></th><th><span class="meas-th-inner">A<button class="col-reset" onclick="clearMeasCol('u','a')">CLR</button></span></th><th><span class="meas-th-inner">B<button class="col-reset" onclick="clearMeasCol('u','b')">CLR</button></span></th></tr>
+              <tr><th style="width:8%"></th><th class="th-ur"><span class="meas-th-inner">R<button class="col-reset" onclick="clearMeasCol('u','r')">CLR</button></span></th><th class="meas-sep-th"></th><th><span class="meas-th-inner">A<button class="col-reset" onclick="clearMeasCol('u','a')">CLR</button></span></th><th><span class="meas-th-inner">B<button class="col-reset" onclick="clearMeasCol('u','b')">CLR</button></span></th></tr>
               <tr><td class="meas-lbl">ON</td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mu_on_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'u')"><button class="meas-x" onclick="clearMeasInput(this,'u')">×</button></div></td>
+                <td class="meas-sep-lbl">OFF</td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mu_on_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'u')"><button class="meas-x" onclick="clearMeasInput(this,'u')">×</button></div></td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mu_on_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'u')"><button class="meas-x" onclick="clearMeasInput(this,'u')">×</button></div></td></tr>
               <tr><td class="meas-lbl">OFF</td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mu_off_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'u')"><button class="meas-x" onclick="clearMeasInput(this,'u')">×</button></div></td>
+                <td class="meas-sep-lbl">ON</td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mu_off_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'u')"><button class="meas-x" onclick="clearMeasInput(this,'u')">×</button></div></td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mu_off_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'u')"><button class="meas-x" onclick="clearMeasInput(this,'u')">×</button></div></td></tr>
               <tr><td class="meas-lbl">判定</td>
                 <td class="meas-diff" id="mu_d_r"><span class="d-num">—</span><span class="d-lbl"></span></td>
+                <td class="meas-sep-td"></td>
                 <td class="meas-diff" id="mu_d_a"><span class="d-num">—</span><span class="d-lbl"></span></td>
                 <td class="meas-diff" id="mu_d_b"><span class="d-num">—</span><span class="d-lbl"></span></td></tr>
             </table>
@@ -303,17 +306,20 @@
           <div class="meas-phase">
             <div class="meas-phase-hd th-v">V相</div>
             <table class="meas-tbl">
-              <tr><th style="width:8%"></th><th class="th-vr"><span class="meas-th-inner">R<button class="col-reset" onclick="clearMeasCol('v','r')">CLR</button></span></th><th><span class="meas-th-inner">A<button class="col-reset" onclick="clearMeasCol('v','a')">CLR</button></span></th><th><span class="meas-th-inner">B<button class="col-reset" onclick="clearMeasCol('v','b')">CLR</button></span></th></tr>
+              <tr><th style="width:8%"></th><th class="th-vr"><span class="meas-th-inner">R<button class="col-reset" onclick="clearMeasCol('v','r')">CLR</button></span></th><th class="meas-sep-th"></th><th><span class="meas-th-inner">A<button class="col-reset" onclick="clearMeasCol('v','a')">CLR</button></span></th><th><span class="meas-th-inner">B<button class="col-reset" onclick="clearMeasCol('v','b')">CLR</button></span></th></tr>
               <tr><td class="meas-lbl">ON</td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mv_on_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'v')"><button class="meas-x" onclick="clearMeasInput(this,'v')">×</button></div></td>
+                <td class="meas-sep-lbl">OFF</td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mv_on_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'v')"><button class="meas-x" onclick="clearMeasInput(this,'v')">×</button></div></td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mv_on_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'v')"><button class="meas-x" onclick="clearMeasInput(this,'v')">×</button></div></td></tr>
               <tr><td class="meas-lbl">OFF</td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mv_off_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'v')"><button class="meas-x" onclick="clearMeasInput(this,'v')">×</button></div></td>
+                <td class="meas-sep-lbl">ON</td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mv_off_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'v')"><button class="meas-x" onclick="clearMeasInput(this,'v')">×</button></div></td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mv_off_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'v')"><button class="meas-x" onclick="clearMeasInput(this,'v')">×</button></div></td></tr>
               <tr><td class="meas-lbl">判定</td>
                 <td class="meas-diff" id="mv_d_r"><span class="d-num">—</span><span class="d-lbl"></span></td>
+                <td class="meas-sep-td"></td>
                 <td class="meas-diff" id="mv_d_a"><span class="d-num">—</span><span class="d-lbl"></span></td>
                 <td class="meas-diff" id="mv_d_b"><span class="d-num">—</span><span class="d-lbl"></span></td></tr>
             </table>
@@ -321,17 +327,20 @@
           <div class="meas-phase">
             <div class="meas-phase-hd th-w">W相</div>
             <table class="meas-tbl">
-              <tr><th style="width:8%"></th><th class="th-wr"><span class="meas-th-inner">R<button class="col-reset" onclick="clearMeasCol('w','r')">CLR</button></span></th><th><span class="meas-th-inner">A<button class="col-reset" onclick="clearMeasCol('w','a')">CLR</button></span></th><th><span class="meas-th-inner">B<button class="col-reset" onclick="clearMeasCol('w','b')">CLR</button></span></th></tr>
+              <tr><th style="width:8%"></th><th class="th-wr"><span class="meas-th-inner">R<button class="col-reset" onclick="clearMeasCol('w','r')">CLR</button></span></th><th class="meas-sep-th"></th><th><span class="meas-th-inner">A<button class="col-reset" onclick="clearMeasCol('w','a')">CLR</button></span></th><th><span class="meas-th-inner">B<button class="col-reset" onclick="clearMeasCol('w','b')">CLR</button></span></th></tr>
               <tr><td class="meas-lbl">ON</td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mw_on_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'w')"><button class="meas-x" onclick="clearMeasInput(this,'w')">×</button></div></td>
+                <td class="meas-sep-lbl">OFF</td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mw_on_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'w')"><button class="meas-x" onclick="clearMeasInput(this,'w')">×</button></div></td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mw_on_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'w')"><button class="meas-x" onclick="clearMeasInput(this,'w')">×</button></div></td></tr>
               <tr><td class="meas-lbl">OFF</td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mw_off_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'w')"><button class="meas-x" onclick="clearMeasInput(this,'w')">×</button></div></td>
+                <td class="meas-sep-lbl">ON</td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mw_off_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'w')"><button class="meas-x" onclick="clearMeasInput(this,'w')">×</button></div></td>
                 <td><div class="meas-td-wrap"><input class="meas-in" id="mw_off_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'w')"><button class="meas-x" onclick="clearMeasInput(this,'w')">×</button></div></td></tr>
               <tr><td class="meas-lbl">判定</td>
                 <td class="meas-diff" id="mw_d_r"><span class="d-num">—</span><span class="d-lbl"></span></td>
+                <td class="meas-sep-td"></td>
                 <td class="meas-diff" id="mw_d_a"><span class="d-num">—</span><span class="d-lbl"></span></td>
                 <td class="meas-diff" id="mw_d_b"><span class="d-num">—</span><span class="d-lbl"></span></td></tr>
             </table>
