@@ -862,7 +862,11 @@ function renderGantt() {
   const stickyLbl = `flex:0 0 ${LW}px;position:sticky;left:0;z-index:8;border-right:1px solid var(--border);`;
 
   const d2hSorted = Object.entries(d2h).filter(([iso,v])=>v>=0 && iso>=TODAY_ISO).sort((a,b)=>a[1]-b[1]);
-  let dayGridLines = '', axTicks = '';
+  let dayGridLines = '';
+  // 今日ラベルをx=0に赤で強制表示
+  const _todayDt = new Date(TODAY_ISO+'T00:00:00');
+  const _todayLbl = `${_todayDt.getMonth()+1}/${_todayDt.getDate()}`;
+  let axTicks = `<span style="position:absolute;font-size:11px;color:#E24B4A;font-weight:700;top:3px;left:2px;white-space:nowrap;">${_todayLbl}</span>`;
   d2hSorted.forEach(([iso, h]) => {
     const x  = h2px(h) - todayOffset;
     const dt = new Date(iso+'T00:00:00');
@@ -873,6 +877,8 @@ function renderGantt() {
     dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x}px;width:${lineW}px;background:${lineColor};opacity:1;z-index:1;pointer-events:none;"></div>`;
     // 1日2マス：中間グリッド線（半日）
     dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x + halfDayPx}px;width:1px;background:rgba(255,255,255,0.07);opacity:1;z-index:1;pointer-events:none;"></div>`;
+    // 今日ラベル（x<20）と重なる場合はラベルをスキップ（グリッド線は残す）
+    if (x < 20) return;
     const lbl = isMth ? `${dt.getMonth()+1}/1` : String(dt.getDate());
     axTicks += `<span style="position:absolute;font-size:11px;color:#fff;top:3px;left:${x+2}px;white-space:nowrap;">${lbl}</span>`;
   });
