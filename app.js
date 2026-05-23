@@ -905,7 +905,7 @@ function renderGantt() {
     const dispDur = Math.max(Math.ceil(rawDur / CELL_H), 1) * CELL_H;
     const barW = h2px(dispDur);
     const kX = d2px(row.k);
-    const sX = row.s ? Math.max(0, d2px(row.s)) : null;
+    const sX = (row.s && row.s >= TODAY_ISO) ? d2px(row.s) : null;
     const eX = d2px(row.e);
 
     let bar = dayGridLines + todayLine;
