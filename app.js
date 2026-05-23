@@ -836,7 +836,9 @@ function renderGantt() {
     {n:"752GPSB　265",b:"樹脂",s:null,e:"2026-06-23",k:"2026-07-02",aa:204,ab:208},
   ];
   if (_ganttData && _ganttData.rows && _ganttData.rows.length > 0) D = _ganttData.rows;
-  D = D.filter(r => r.aa !== 0);  // AA列=0は完了工程なので非表示
+  // 納品日(e)が昨日以前の行を除外（納品日なしはそのまま表示）
+  const yesterdayISO = (d => { d.setDate(d.getDate() - 1); return d.toISOString().slice(0, 10); })(new Date());
+  D = D.filter(r => !r.e || r.e >= yesterdayISO);
 
   const h2px = h => Math.round(h * SC);
   const halfDayPx    = h2px(4); // 1日の前半・後半の境界（4h = 1マス分）
