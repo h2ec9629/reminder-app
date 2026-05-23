@@ -729,6 +729,7 @@
     .hr-tbl th { background:var(--bg-2); color:var(--text-sub); font-weight:600; padding:4px 5px; border:1px solid var(--border); text-align:center; }
     .hr-tbl td { padding:4px 5px; border:1px solid var(--border); text-align:right; color:var(--text); background:var(--surface); }
     .hr-tbl td.lbl { text-align:left; color:var(--text-sub); font-size:11px; background:var(--bg-2); }
+    .hr-tbl td.sep-lbl-log { text-align:center; font-size:11px; font-weight:700; color:var(--text-sub); background:var(--bg-2); padding:2px; }
     .hr-tbl td.diff-ok   { color:#4ADE80; font-weight:700; }
     .hr-tbl td.diff-warn { color:#fff;    font-weight:700; }
     .hr-tbl td.diff-ng   { color:#ff9800; font-weight:700; }

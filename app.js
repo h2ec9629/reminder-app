@@ -1383,10 +1383,10 @@ function _measRenderDetail(idx) {
            + '<div class="meas-hist-det-memo">' + _measEsc(it.memo) + '</div>';
   PH.forEach(function(ph) {
     html += '<div class="hr-ph-hd ' + phColors[ph] + '">' + phNames[ph] + '</div>';
-    html += '<table class="hr-tbl"><thead><tr><th style="width:20%"></th><th>R</th><th>A</th><th>B</th></tr></thead><tbody>';
+    html += '<table class="hr-tbl"><thead><tr><th style="width:20%"></th><th>R</th><th></th><th>A</th><th>B</th></tr></thead><tbody>';
     [['ON','on'],['OFF','off'],['差数','diff']].forEach(function(row) {
       html += '<tr><td class="lbl">' + row[0] + '</td>';
-      ['r','a','b'].forEach(function(col) {
+      ['r','a','b'].forEach(function(col, ci) {
         var dv = it.phases[ph] && it.phases[ph][col] ? it.phases[ph][col][row[1]] : '';
         if (row[1] === 'diff' && dv !== '') {
           var dn = parseFloat(dv);
@@ -1394,6 +1394,10 @@ function _measRenderDetail(idx) {
           html += '<td class="' + cls + '">' + _measEsc(dv) + '</td>';
         } else {
           html += '<td>' + _measEsc(dv || '—') + '</td>';
+        }
+        if (ci === 0) {
+          var sepLbl = row[1] === 'on' ? 'OFF' : row[1] === 'off' ? 'ON' : '';
+          html += sepLbl ? '<td class="sep-lbl-log">' + sepLbl + '</td>' : '<td></td>';
         }
       });
       html += '</tr>';
