@@ -1242,4 +1242,10 @@ function autoDecimal(inp, ph) {
   } else {
     formatted = digits.slice(0, -2) + '.' + digits.slice(-2);
   }
-  if (neg && formatted !== '' && formatted !== 
+  if (neg && formatted !== '' && formatted !== '-') formatted = '-' + formatted;
+
+  inp.value = formatted;
+  var len = formatted.length;
+  setTimeout(function() { inp.setSelectionRange(len, len); }, 0);
+  measCalc(ph);
+}
