@@ -277,7 +277,11 @@
         </div>
       </div>
       <div class="calc-pg pg-right" id="calcPg1">
-        <div class="meas-container"><div class="meas-reset-bar"><button class="meas-reset-all" onclick="resetAllMeas()">全リセット</button></div>
+        <div class="meas-container"><div class="meas-reset-bar">
+          <button class="meas-bar-btn meas-bar-save" onclick="measSave()">SAVE</button>
+          <button class="meas-bar-btn meas-bar-log"  id="measLogBtn" onclick="measToggleHist()">LOG</button>
+          <button class="meas-bar-btn meas-bar-reset" onclick="resetAllMeas()">全リセット</button>
+        </div>
           <div class="meas-phase">
             <div class="meas-phase-hd th-u">U相</div>
             <table class="meas-tbl">
@@ -331,6 +335,35 @@
                 <td class="meas-diff" id="mw_d_a"><span class="d-num">—</span><span class="d-lbl"></span></td>
                 <td class="meas-diff" id="mw_d_b"><span class="d-num">—</span><span class="d-lbl"></span></td></tr>
             </table>
+          </div>
+
+        <!-- ===== SAVE パネル ===== -->
+        <div class="meas-save-panel" id="measSavePanel">
+          <div class="meas-sp-title">SAVE — 機番を入力して保存</div>
+          <div class="meas-sp-kiban-row">
+            <span class="meas-sp-lbl">機番</span>
+            <input class="meas-sp-kiban-in" id="measKibanIn" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="機番を入力">
+          </div>
+          <div class="meas-sp-status-row" id="measSaveStatusRow">
+            <button class="meas-sp-status sel" data-status="完成時">完成時</button>
+            <button class="meas-sp-status"     data-status="出荷前">出荷前</button>
+            <button class="meas-sp-status"     data-status="AG中">AG中</button>
+            <button class="meas-sp-status"     data-status="AG後">AG後</button>
+          </div>
+          <div class="meas-sp-act-row">
+            <button class="meas-sp-cancel" onclick="measCloseSavePanel()">キャンセル</button>
+            <button class="meas-sp-ok"     onclick="measConfirmSave()">保存する</button>
+          </div>
+        </div>
+        <!-- ===== LOG ビュー ===== -->
+        <div class="meas-hist-view hidden" id="measHistView">
+          <div class="meas-hist-sidebar" id="measHistSidebar">
+            <button class="meas-hist-back" onclick="measToggleHist()">◀ 測定へ戻る</button>
+            <div class="meas-hist-sidebar-hd">保存履歴</div>
+            <div id="measHistList"></div>
+          </div>
+          <div class="meas-hist-detail" id="measHistDetail">
+            <div class="meas-hist-empty">← 履歴を選択</div>
           </div>
         </div>
       </div>

@@ -1177,6 +1177,193 @@ function resetAllMeas() {
   });
   showToast('三相測定をリセットしました');
 }
+// === MEAS SAVE / LOG ===
+var MEAS_STORE_KEY = 'meas_history';
+var _measHistMode  = false;
+var _measSelIdx    = -1;
+var _measSaveStatus = '完成時';
+var _measPendingData = null;
+
+function _measLoadHistory() {
+  try { var r = localStorage.getItem(MEAS_STORE_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; }
+}
+function _measSaveHistory(arr) {
+  try { localStorage.setItem(MEAS_STORE_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+function measSave() {
+  var ph, col, onEl, offEl, onV, offV, diff, hasAny = false;
+  var data = { date: '', memo: '', phases: {} };
+  var now = new Date();
+  data.date = now.getFullYear() + '/' +
+    ('0'+(now.getMonth()+1)).slice(-2) + '/' +
+    ('0'+now.getDate()).slice(-2) + ' ' +
+    ('0'+now.getHours()).slice(-2) + ':' +
+    ('0'+now.getMinutes()).slice(-2);
+
+  ['u','v','w'].forEach(function(p) {
+    data.phases[p] = {};
+    ['r','a','b'].forEach(function(c) {
+      onEl  = document.getElementById('m' + p + '_on_'  + c);
+      offEl = document.getElementById('m' + p + '_off_' + c);
+      onV   = onEl  ? onEl.value  : '';
+      offV  = offEl ? offEl.value : '';
+      diff  = '';
+      if (onV !== '' && offV !== '') {
+        diff = (Math.round((parseFloat(onV) - parseFloat(offV)) * 1000) / 1000).toFixed(2);
+        hasAny = true;
+      }
+      data.phases[p][c] = { on: onV, off: offV, diff: diff };
+    });
+  });
+
+  if (!hasAny) { showToast('入力がありません'); return; }
+  _measPendingData = data;
+  _measSaveStatus  = '完成時';
+
+  var sp = document.getElementById('measSavePanel');
+  if (sp) sp.classList.add('show');
+  var ki = document.getElementById('measKibanIn');
+  if (ki) { ki.value = ''; ki.focus(); }
+  _measRefreshSaveStatus();
+}
+
+function _measRefreshSaveStatus() {
+  var btns = document.getElementById('measSaveStatusRow');
+  if (!btns) return;
+  Array.prototype.forEach.call(btns.querySelectorAll('button'), function(b) {
+    b.classList.toggle('sel', b.getAttribute('data-status') === _measSaveStatus);
+  });
+}
+
+function measCloseSavePanel() {
+  _measPendingData = null;
+  var sp = document.getElementById('measSavePanel');
+  if (sp) sp.classList.remove('show');
+}
+
+function measConfirmSave() {
+  if (!_measPendingData) return;
+  var ki = document.getElementById('measKibanIn');
+  var kiban = ki ? ki.value.trim() : '';
+  if (!kiban) { showToast('機番を入力してください'); if(ki) ki.focus(); return; }
+
+  _measPendingData.memo   = '機番 ' + kiban + '　' + _measSaveStatus;
+  _measPendingData.kiban  = kiban;
+  _measPendingData.status = _measSaveStatus;
+
+  var arr = _measLoadHistory();
+  arr.unshift(_measPendingData);
+  if (arr.length > 50) arr = arr.slice(0, 50);
+  _measSaveHistory(arr);
+  measCloseSavePanel();
+  showToast('保存しました');
+}
+
+function measToggleHist() {
+  _measHistMode = !_measHistMode;
+  var hv  = document.getElementById('measHistView');
+  var mc  = document.querySelector('#calcPg1 .meas-container');
+  var btn = document.getElementById('measLogBtn');
+  if (!hv) return;
+  if (_measHistMode) {
+    if (mc)  mc.style.visibility = 'hidden';
+    hv.classList.remove('hidden');
+    if (btn) btn.classList.add('active');
+    _measSelIdx = -1;
+    _measRenderSidebar();
+  } else {
+    hv.classList.add('hidden');
+    if (mc)  mc.style.visibility = '';
+    if (btn) btn.classList.remove('active');
+  }
+}
+
+function _measEsc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function _measRenderSidebar() {
+  var arr  = _measLoadHistory();
+  var list = document.getElementById('measHistList');
+  if (!list) return;
+  if (arr.length === 0) {
+    list.innerHTML = '<div class="meas-hist-empty-msg">保存データなし</div>';
+    return;
+  }
+  var html = '';
+  arr.forEach(function(it, i) {
+    html += '<div class="meas-hist-item' + (i === _measSelIdx ? ' selected' : '') + '" data-idx="' + i + '">'
+          + '<button class="meas-hist-del" data-didx="' + i + '">×</button>'
+          + '<div class="meas-hist-item-date">' + _measEsc(it.date) + '</div>'
+          + '<div class="meas-hist-item-memo">' + _measEsc(it.memo) + '</div>'
+          + '</div>';
+  });
+  list.innerHTML = html;
+
+  list.onclick = function(e) {
+    var del = e.target.getAttribute('data-didx');
+    if (del !== null) { _measDeleteHist(parseInt(del)); return; }
+    var item = e.target.closest('.meas-hist-item');
+    if (item) {
+      _measSelIdx = parseInt(item.getAttribute('data-idx'));
+      _measRenderSidebar();
+      _measRenderDetail(_measSelIdx);
+    }
+  };
+  if (_measSelIdx >= 0 && _measSelIdx < arr.length) _measRenderDetail(_measSelIdx);
+}
+
+function _measDeleteHist(idx) {
+  if (!confirm('この記録を削除しますか？')) return;
+  var arr = _measLoadHistory();
+  arr.splice(idx, 1);
+  _measSaveHistory(arr);
+  if (_measSelIdx >= arr.length) _measSelIdx = arr.length - 1;
+  _measRenderSidebar();
+  if (_measSelIdx < 0) document.getElementById('measHistDetail').innerHTML = '<div class="meas-hist-empty">← 履歴を選択</div>';
+}
+
+function _measRenderDetail(idx) {
+  var arr = _measLoadHistory();
+  if (idx < 0 || idx >= arr.length) return;
+  var it = arr[idx];
+  var PH = ['u','v','w'], phNames = {u:'U相',v:'V相',w:'W相'};
+  var phColors = {u:'hr-ph-u',v:'hr-ph-v',w:'hr-ph-w'};
+  var html = '<div class="meas-hist-det-date">' + _measEsc(it.date) + '</div>'
+           + '<div class="meas-hist-det-memo">' + _measEsc(it.memo) + '</div>';
+  PH.forEach(function(ph) {
+    html += '<div class="hr-ph-hd ' + phColors[ph] + '">' + phNames[ph] + '</div>';
+    html += '<table class="hr-tbl"><thead><tr><th style="width:20%"></th><th>R</th><th>A</th><th>B</th></tr></thead><tbody>';
+    [['ON','on'],['OFF','off'],['差数','diff']].forEach(function(row) {
+      html += '<tr><td class="lbl">' + row[0] + '</td>';
+      ['r','a','b'].forEach(function(col) {
+        var dv = it.phases[ph] && it.phases[ph][col] ? it.phases[ph][col][row[1]] : '';
+        if (row[1] === 'diff' && dv !== '') {
+          var dn = parseFloat(dv);
+          var cls = dn >= 1.83 && dn <= 1.97 ? 'diff-ok' : dn >= 1.80 && dn <= 2.00 ? 'diff-warn' : 'diff-ng';
+          html += '<td class="' + cls + '">' + _measEsc(dv) + '</td>';
+        } else {
+          html += '<td>' + _measEsc(dv || '—') + '</td>';
+        }
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+  });
+  document.getElementById('measHistDetail').innerHTML = html;
+}
+
+// 状態ボタン委譲
+(function() {
+  document.addEventListener('click', function(e) {
+    var srow = document.getElementById('measSaveStatusRow');
+    if (srow && srow.contains(e.target) && e.target.tagName === 'BUTTON') {
+      _measSaveStatus = e.target.getAttribute('data-status');
+      _measRefreshSaveStatus();
+    }
+  });
+})();
 
 // === MEAS AUTO DECIMAL (meas.html方式: 2桁整数+小数) ===
 function autoDecimalMeas(inp, ph) {
