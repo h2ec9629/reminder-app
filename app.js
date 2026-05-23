@@ -551,6 +551,8 @@ async function pushToMailbox(reminder) {
 
 // === GITHUB GIST SYNC ===
 const GIST_RAW_URL = 'https://gist.githubusercontent.com/H2EC9629/34f07c829b92ea7141367874f8777512/raw/reminder_sync.json';
+const MEAS_HIST_GIST_URL = 'https://gist.githubusercontent.com/H2EC9629/34f07c829b92ea7141367874f8777512/raw/meas_history.json';
+const MEAS_GIST_ID       = '34f07c829b92ea7141367874f8777512';
 
 async function syncFromGist(manual=false) {
   try {
@@ -1191,6 +1193,49 @@ function _measSaveHistory(arr) {
   try { localStorage.setItem(MEAS_STORE_KEY, JSON.stringify(arr)); } catch(e) {}
 }
 
+// Gist から取得してローカルとマージ
+async function _measFetchFromGist() {
+  var pat = (getMailboxCfg && getMailboxCfg().pat) || '';
+  if (!pat) return;  // PAT未設定はスキップ
+  try {
+    var res = await fetch(MEAS_HIST_GIST_URL + '?t=' + Date.now());
+    if (!res.ok) return;
+    var remote = await res.json();
+    if (!Array.isArray(remote)) return;
+    // ローカルとリモートをマージ（memo+dateをキーに重複除去、新しい順）
+    var local = _measLoadHistory();
+    var seen  = new Set();
+    var merged = [];
+    remote.concat(local).forEach(function(it) {
+      var k = it.date + '|' + it.memo;
+      if (!seen.has(k)) { seen.add(k); merged.push(it); }
+    });
+    merged.sort(function(a,b){ return b.date < a.date ? -1 : 1; });
+    if (merged.length > 50) merged = merged.slice(0, 50);
+    _measSaveHistory(merged);
+  } catch(e) { console.warn('meas fetch failed:', e.message); }
+}
+
+// Gist に書き込む
+async function _measSyncToGist(arr) {
+  var pat = (getMailboxCfg && getMailboxCfg().pat) || '';
+  if (!pat) return;
+  try {
+    var res = await fetch('https://api.github.com/gists/' + MEAS_GIST_ID, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + pat,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        files: { 'meas_history.json': { content: JSON.stringify(arr, null, 2) } }
+      })
+    });
+    if (!res.ok) throw new Error('patch failed ' + res.status);
+  } catch(e) { console.warn('meas sync failed:', e.message); }
+}
+
 function measSave() {
   var ph, col, onEl, offEl, onV, offV, diff, hasAny = false;
   var data = { date: '', memo: '', phases: {} };
@@ -1258,6 +1303,7 @@ function measConfirmSave() {
   _measSaveHistory(arr);
   measCloseSavePanel();
   showToast('保存しました');
+  _measSyncToGist(arr);  // Gistに非同期で書き込む
 }
 
 function measToggleHist() {
@@ -1272,6 +1318,8 @@ function measToggleHist() {
     if (btn) btn.classList.add('active');
     _measSelIdx = -1;
     _measRenderSidebar();
+    // Gistから最新を取得してサイドバーを更新
+    _measFetchFromGist().then(function() { _measRenderSidebar(); });
   } else {
     hv.classList.add('hidden');
     if (mc)  mc.style.visibility = '';
@@ -1319,6 +1367,7 @@ function _measDeleteHist(idx) {
   var arr = _measLoadHistory();
   arr.splice(idx, 1);
   _measSaveHistory(arr);
+  _measSyncToGist(arr);  // Gistも更新
   if (_measSelIdx >= arr.length) _measSelIdx = arr.length - 1;
   _measRenderSidebar();
   if (_measSelIdx < 0) document.getElementById('measHistDetail').innerHTML = '<div class="meas-hist-empty">← 履歴を選択</div>';
