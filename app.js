@@ -903,7 +903,13 @@ function renderGantt() {
     const eX = d2px(row.e);
 
     let bar = dayGridLines + todayLine;
-    bar += `<div style="position:absolute;top:17px;height:16px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColor};z-index:2;"></div>`;
+    // 進捗バー（w/u の達成率を明暗2層で表示）
+    const barColorDim = row.b==='灯具' ? 'rgba(133,183,235,0.28)' : 'rgba(200,200,200,0.28)';
+    const progress  = (row.u > 0 && row.w != null) ? Math.min(row.w / row.u, 1.0) : 0;
+    const progressW = Math.round(barW * progress);
+    bar += `<div style="position:absolute;top:17px;height:16px;left:${barX}px;width:${barW}px;border-radius:3px;background:${barColorDim};z-index:2;overflow:hidden;">` +
+           `<div style="position:absolute;top:0;left:0;height:100%;width:${progressW}px;background:${barColor};border-radius:3px;"></div>` +
+           `</div>`;
     // 期日と納品日の重複チェック
     const kOverlapsE = row.k && row.e && row.k === row.e;
     // 納品日（e）: 2マス目を緑ブロックで塗る
@@ -1236,10 +1242,4 @@ function autoDecimal(inp, ph) {
   } else {
     formatted = digits.slice(0, -2) + '.' + digits.slice(-2);
   }
-  if (neg && formatted !== '' && formatted !== '-') formatted = '-' + formatted;
-
-  inp.value = formatted;
-  var len = formatted.length;
-  setTimeout(function() { inp.setSelectionRange(len, len); }, 0);
-  measCalc(ph);
-}
+  if (neg && formatted !== '' && formatted !== 
