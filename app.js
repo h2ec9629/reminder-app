@@ -886,12 +886,12 @@ function renderGantt() {
   const todayLine = `<div style="position:absolute;top:0;bottom:0;left:${todayX}px;width:2px;background:#E24B4A;z-index:5;pointer-events:none;"></div>`;
   let html = `<div style="position:relative;display:inline-block;min-width:${LW+TL}px;width:100%;">`;
 
-  html += `<div style="display:flex;height:22px;position:sticky;top:0;z-index:10;border-bottom:1px solid var(--border);">
+  html += `<div style="display:flex;height:22px;position:sticky;top:0;z-index:10;border-bottom:1px solid rgba(255,255,255,0.12);">
     <div style="${stickyLbl}background:var(--surface-2);height:22px;z-index:11;"></div>
     <div style="position:relative;flex:1;height:22px;background:var(--surface-2);overflow:hidden;">${dayGridLines}${todayLine}${axTicks}</div>
   </div>`;
 
-  html += `<div style="display:flex;height:22px;position:sticky;top:22px;z-index:9;border-bottom:1px solid var(--border);">
+  html += `<div style="display:flex;height:22px;position:sticky;top:22px;z-index:9;border-bottom:1px solid rgba(255,255,255,0.12);">
     <div style="${stickyLbl}background:var(--bg-2);height:22px;z-index:10;display:flex;align-items:center;font-size:10px;font-weight:700;color:var(--text-faint);padding:0 5px;">品名 / 依頼・進捗・支給日・納品日・期日</div>
     <div style="position:relative;flex:1;height:22px;background:var(--bg-2);overflow:hidden;">${dayGridLines}${todayLine}</div>
   </div>`;
@@ -918,7 +918,7 @@ function renderGantt() {
     // 期日と納品日の重複チェック
     const kOverlapsE = row.k && row.e && row.k === row.e;
     // 【下段】3色マーカー（top:22px〜bottom:4px）
-    const mkStyle = `position:absolute;top:22px;bottom:4px;width:${halfDayPx}px;z-index:4;border-radius:2px;border:1px solid rgba(255,255,255,0.25);`;
+    const mkStyle = `position:absolute;top:22px;height:14px;width:${halfDayPx}px;z-index:4;border-radius:2px;border:1px solid rgba(255,255,255,0.25);`;
     // 納品日（e）: 緑マーカー
     if (eX !== null) {
       if (kOverlapsE) {
@@ -940,8 +940,8 @@ function renderGantt() {
     const dispD = iso => iso ? iso.slice(5).replace('-', '/') : '-';
     const uV = row.u != null ? String(row.u) : '-';
     const wV = row.w != null ? String(row.w) : '-';
-    html += `<div style="display:flex;height:50px;border-bottom:1px solid var(--border);">
-      <div style="${stickyLbl}background:var(--surface);height:50px;padding:3px 6px;display:flex;flex-direction:column;justify-content:center;gap:4px;overflow:hidden;border-bottom:1px solid var(--border);">
+    html += `<div style="display:flex;height:50px;border-bottom:1px solid rgba(255,255,255,0.12);">
+      <div style="${stickyLbl}background:var(--surface);height:50px;padding:3px 6px;display:flex;flex-direction:column;justify-content:center;gap:4px;overflow:hidden;border-bottom:1px solid rgba(255,255,255,0.12);">
         <div style="display:flex;justify-content:space-between;align-items:baseline;">
           <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">${escH(abbrevName(row.n))}</div>
           <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;padding-left:4px;flex-shrink:0;">${uV}/${wV}</div>
