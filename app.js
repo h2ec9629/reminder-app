@@ -770,7 +770,7 @@ function renderGantt() {
     '2026-06-17':184,'2026-06-18':192,'2026-06-19':200,
     '2026-06-22':208,'2026-06-23':216,'2026-07-02':272
   };
-  if (_ganttData && _ganttData.d2h) d2h = Object.assign({}, d2h, _ganttData.d2h);
+  if (_ganttData && _ganttData.d2h) d2h = _ganttData.d2h;
 
   const _td = new Date(); const TODAY_ISO = `${_td.getFullYear()}-${String(_td.getMonth()+1).padStart(2,'0')}-${String(_td.getDate()).padStart(2,'0')}`;
   const TODAY_H = (function() {
