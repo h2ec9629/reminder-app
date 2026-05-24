@@ -53,10 +53,6 @@ function chipCls(n) {
   return '';
 }
 
-// === MASCOT ===
-function mascotSVG(w=120, h=132) {
-  return `<svg width="${w}" height="${h}" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg"><use href="#rimachan"/></svg>`;
-}
 
 // === RIMA ROTATION ===
 // === ステータスコメント（リマインド数別・複数バリエーション） ===
@@ -223,10 +219,6 @@ function showNextRimaComment() {
   setTimeout(typeNext, 400);
 }
 
-function updateRimaNav() { /* ローテーションに統合済み */ }
-
-// === RIMA COMMENT (後方互換) ===
-function rimaComment(count) { return rimaCommentText(count); }
 
 // === RENDER HOME ===
 function renderHome() {
@@ -251,7 +243,7 @@ function renderHome() {
   document.getElementById('notifBanner').style.display =
     ('Notification' in window && Notification.permission==='default') ? 'flex' : 'none';
 
-  updateRimaNav();
+
 
   let html = '';
   if(overdue.length)  html+=sec('期限超過',overdue);
@@ -309,7 +301,7 @@ function switchTab(name,btn) {
   if(name==='gantt')    renderGantt();
   if(name==='calc')     calcDisplay();
 
-  updateRimaNav();
+
   window.scrollTo(0,0);
 }
 
@@ -423,25 +415,9 @@ document.getElementById('addForm').addEventListener('submit', async e=>{
 });
 
 // === IMPORT ===
-function importFromJSON() {
-  const raw=document.getElementById('importJson').value.trim();
-  if(!raw){ showToast('JSONを貼り付けてください'); return; }
-  let data; try{ data=JSON.parse(raw); }catch{ showToast('JSONの形式が違います'); return; }
-  const list=Array.isArray(data)?data:(data.reminders||[]);
-  if(!list.length){ showToast('リマインドが見つかりませんでした'); return; }
-  const keys=new Set(getAll().map(r=>r.title+'|'+r.deadline));
-  let added=0;
-  list.forEach(item=>{
-    if(!item.title||!item.deadline) return;
-    const k=item.title+'|'+item.deadline;
-    if(keys.has(k)) return;
-    addReminder({title:item.title,deadline:item.deadline,category:item.category||'claude',
-                 advance_days:item.advance_days||3,notes:item.notes||''});
-    keys.add(k); added++;
-  });
-  document.getElementById('importJson').value='';
-  showToast(added>0?`${added}件取り込みました`:'新しいリマインドはありませんでした');
-  if(added>0) setTimeout(()=>document.getElementById('nav-home').click(),600);
+function clearFormInput(btn) {
+  const inp = btn.previousElementSibling || btn.parentNode.querySelector('input,textarea');
+  if(inp){ inp.value = ''; inp.focus(); }
 }
 
 function importBackup(input) {
