@@ -983,13 +983,33 @@ function renderGantt() {
     <div style="position:relative;flex:1;height:22px;background:var(--bg-2);overflow:hidden;">${dayGridLines}${todayLine}</div>
   </div>`;
 
+  // === 直列連鎖：前行の実際完了地点を次行のaaに反映（表示のみ）===
+  let _prevActualEnd = null; // 前行の実際完了地点（時間）
+  const _dispAA = []; // 各行の表示用aa（連鎖補正済み）
+  const _dispAB = []; // 各行の表示用ab（連鎖補正済み）
+  _displayD.forEach(({ r: row }, i) => {
+    const rate  = row.rate || getRate(row.n);
+    const rawAA = row.aa != null ? row.aa : 0;
+    const durH  = (row.u && rate) ? calcBarH(row.u, rate)
+                : (row.ab != null ? row.ab - rawAA : 4);
+    // 前行完了地点より左ならずらす
+    const aa = (_prevActualEnd != null && _prevActualEnd > rawAA)
+      ? _prevActualEnd : rawAA;
+    const ab = aa + durH;
+    // 実際完了地点：進捗がある場合は出来高分、ない場合は計画終了
+    const actualEnd = (row.u && row.w != null && rate)
+      ? aa + Math.ceil(row.w / rate / 4) * 4
+      : ab;
+    _dispAA.push(aa);
+    _dispAB.push(ab);
+    _prevActualEnd = actualEnd;
+  });
+
   _displayD.forEach(({ r: row, srcIdx }, rowIdx) => {
     const barColor = row.b==='灯具' ? '#85B7EB' : '#C8C8C8';
-    // バー幅：u・工数/hがあれば自動計算、なければaa/abのハードコード値を使用
     const _rate = row.rate || getRate(row.n);
-    const _autoH = (row.u && _rate) ? calcBarH(row.u, _rate) : null;
-    const _aaH = row.aa != null ? row.aa : 0;
-    const _abH = _autoH != null ? _aaH + _autoH : (row.ab != null ? row.ab : _aaH + 4);
+    const _aaH = _dispAA[rowIdx];
+    const _abH = _dispAB[rowIdx];
     const barX = Math.max(0, h2px(_aaH) - todayOffset);
     const barW = h2px(_abH - _aaH);
     const kX = d2px(row.k);
