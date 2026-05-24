@@ -1,4 +1,5 @@
 ﻿'use strict';
+// BUILD: 2026-05-24-A
 
 // === DATA ===
 const KEY = 'ojisan_reminders_v1';
@@ -976,7 +977,7 @@ function renderGantt() {
         </div>
         <div style="display:flex;justify-content:space-between;align-items:baseline;">
           <div style="font-size:10px;white-space:nowrap;"><span style="color:#FBB040;font-weight:700;">引</span><span style="color:var(--text-sub);"> ${dispD(row.s)}</span><span style="color:var(--text-faint);"> ・ </span><span style="color:#4ADE80;font-weight:700;">納</span><span style="color:var(--text-sub);"> ${dispD(row.e)}</span></div>
-          <div style="font-size:10px;white-space:nowrap;padding-left:4px;"><span style="color:#F87171;font-weight:700;">期</span><span style="color:#F87171;"> ${dispD(row.af)}</span></div>
+          <div style="font-size:10px;white-space:nowrap;padding-left:4px;"><span style="color:#F87171;font-weight:700;">期</span><span style="color:#F87171;"> ${dispD(row.k)}</span></div>
         </div>
       </div>
       <div class="gantt-chart-area" style="position:relative;flex:1;height:50px;overflow:hidden;">${bar}<div class="gantt-col-hl" style="display:none;position:absolute;top:0;bottom:0;pointer-events:none;"></div></div>
