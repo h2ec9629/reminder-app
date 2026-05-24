@@ -929,7 +929,7 @@ function renderGantt() {
     <div style="position:relative;flex:1;height:22px;background:var(--bg-2);overflow:hidden;">${dayGridLines}${todayLine}</div>
   </div>`;
 
-  D.forEach(row => {
+  D.forEach((row, rowIdx) => {
     const barColor = row.b==='灯具' ? '#85B7EB' : '#C8C8C8';
     const barX = Math.max(0, h2px(row.aa) - todayOffset);
     // 1マス=4時間単位で切り上げ、最小1マス保証
@@ -973,8 +973,8 @@ function renderGantt() {
     const dispD = iso => iso ? iso.slice(5).replace('-', '/') : '-';
     const uV = row.u != null ? String(row.u) : '-';
     const wV = row.w != null ? String(row.w) : '-';
-    html += `<div style="display:flex;height:50px;border-bottom:1px solid rgba(255,255,255,0.12);">
-      <div style="${stickyLbl}background:var(--surface);height:50px;padding:3px 6px;display:flex;flex-direction:column;justify-content:center;gap:4px;overflow:hidden;border-bottom:1px solid rgba(255,255,255,0.12);">
+    html += `<div data-row-idx="${rowIdx}" style="display:flex;height:50px;border-bottom:1px solid rgba(255,255,255,0.12);">
+      <div class="gantt-lbl" style="${stickyLbl}background:var(--surface);height:50px;padding:3px 6px;display:flex;flex-direction:column;justify-content:center;gap:4px;overflow:hidden;border-bottom:1px solid rgba(255,255,255,0.12);">
         <div style="display:flex;justify-content:space-between;align-items:baseline;">
           <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">${escH(abbrevName(row.n))}</div>
           <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;padding-left:4px;flex-shrink:0;">${uV} / ${wV}</div>
@@ -984,14 +984,76 @@ function renderGantt() {
           <div style="font-size:10px;white-space:nowrap;padding-left:4px;"><span style="color:#F87171;font-weight:700;">期</span><span style="color:#F87171;"> ${dispD(row.af)}</span></div>
         </div>
       </div>
-      <div style="position:relative;flex:1;height:50px;overflow:hidden;">${bar}</div>
+      <div class="gantt-chart-area" style="position:relative;flex:1;height:50px;overflow:hidden;">${bar}<div class="gantt-col-hl" style="display:none;position:absolute;top:0;bottom:0;pointer-events:none;"></div></div>
     </div>`;
   });
 
   html += '</div>';
-  document.getElementById('ganttInner').innerHTML = html;
+  const inner = document.getElementById('ganttInner');
+  inner.innerHTML = html;
   const outer = document.getElementById('ganttOuter');
   outer.scrollLeft = 0;
+
+  // === ガントチャート 行・列ハイライト ===
+  let _hlRow = -1;
+  let _hlColISO = null;
+  const d2hEntries = Object.entries(d2h).sort((a, b) => a[1] - b[1]);
+
+  inner.addEventListener('click', e => {
+    const rowEl = e.target.closest('[data-row-idx]');
+    if (!rowEl) return;
+    const clickedIdx = parseInt(rowEl.dataset.rowIdx);
+    const allRows = inner.querySelectorAll('[data-row-idx]');
+
+    // --- 行ハイライト ---
+    if (_hlRow === clickedIdx) {
+      // 同じ行→解除
+      _hlRow = -1;
+      rowEl.style.background = '';
+      rowEl.querySelector('.gantt-lbl').style.background = 'var(--surface)';
+    } else {
+      // 前の行をリセットして新しい行をハイライト
+      allRows.forEach(r => {
+        r.style.background = '';
+        r.querySelector('.gantt-lbl').style.background = 'var(--surface)';
+      });
+      _hlRow = clickedIdx;
+      rowEl.style.background = 'rgba(255,210,60,0.06)';
+      rowEl.querySelector('.gantt-lbl').style.background = 'rgba(255,210,60,0.14)';
+    }
+
+    // --- 列ハイライト（チャートエリアをタップした時のみ）---
+    const chartArea = e.target.closest('.gantt-chart-area');
+    if (chartArea) {
+      const rect = chartArea.getBoundingClientRect();
+      const contentX = (e.clientX - rect.left) + outer.scrollLeft;
+      const contentH = contentX / SC + TODAY_H;
+      // 最近接の稼働日を探す
+      let nearestISO = d2hEntries[0][0], minDist = Infinity;
+      for (const [iso, h] of d2hEntries) {
+        const dist = Math.abs(h - contentH);
+        if (dist < minDist) { minDist = dist; nearestISO = iso; }
+      }
+      const colHls = inner.querySelectorAll('.gantt-col-hl');
+      if (_hlColISO === nearestISO) {
+        // 同じ列→解除
+        _hlColISO = null;
+        colHls.forEach(el => { el.style.display = 'none'; });
+      } else {
+        _hlColISO = nearestISO;
+        const snappedX = h2px(d2h[nearestISO]) - todayOffset;
+        colHls.forEach(el => {
+          el.style.display = 'block';
+          el.style.left = snappedX + 'px';
+          el.style.width = fullDayPx + 'px';
+          el.style.background = 'rgba(255,210,60,0.13)';
+          el.style.borderLeft = '1px solid rgba(255,210,60,0.50)';
+          el.style.borderRight = '1px solid rgba(255,210,60,0.50)';
+          el.style.zIndex = '3';
+        });
+      }
+    }
+  });
 }
 
 // === FORCE UPDATE ===
