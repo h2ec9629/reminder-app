@@ -321,6 +321,7 @@ function switchTab(name,btn) {
 let _excelSchedule = null;
 let _schSyncedAt   = null;
 let _ganttData     = null;
+let _ganttSrcRows  = null;
 
 function renderSchedule() {
   const grid  = document.getElementById('scheduleGrid');
@@ -915,8 +916,12 @@ function renderGantt() {
     {n:"752GPSB　265",b:"樹脂",s:null,e:"2026-06-23",k:"2026-07-02",aa:204,ab:208},
   ];
   if (_ganttData && _ganttData.rows && _ganttData.rows.length > 0) D = _ganttData.rows;
-  // 納品日(e)が昨日以前の行を除外（納品日なしはそのまま表示）
-  D = D.filter(r => !r.e || r.e > TODAY_ISO);
+  _ganttSrcRows = D;
+  if (!_ganttData) _ganttData = {};
+  _ganttData.rows = D;
+  const _displayD = D
+    .map((r, srcIdx) => ({ r, srcIdx }))
+    .filter(({ r }) => !r.e || r.e > TODAY_ISO);
 
   const h2px = h => Math.round(h * SC);
   const halfDayPx    = h2px(4); // 1日の前半・後半の境界（4h = 1マス分）
@@ -978,7 +983,7 @@ function renderGantt() {
     <div style="position:relative;flex:1;height:22px;background:var(--bg-2);overflow:hidden;">${dayGridLines}${todayLine}</div>
   </div>`;
 
-  D.forEach((row, rowIdx) => {
+  _displayD.forEach(({ r: row, srcIdx }, rowIdx) => {
     const barColor = row.b==='灯具' ? '#85B7EB' : '#C8C8C8';
     // バー幅：u・工数/hがあれば自動計算、なければaa/abのハードコード値を使用
     const _rate = row.rate || getRate(row.n);
@@ -992,11 +997,14 @@ function renderGantt() {
     const eX = d2px(row.e);
 
     let bar = dayGridLines + todayLine;
-    // 【上段】進捗バー：グレー背景＋進捗フィル（top:4px, height:14px）
+    // 【上段】進捗バー（完了時グリーン）
+    const isDone    = row.u > 0 && row.w != null && row.w >= row.u;
     const progress  = (row.u > 0 && row.w != null) ? Math.min(row.w / row.u, 1.0) : 0;
     const progressW = Math.round(barW * progress);
-    bar += `<div style="position:absolute;top:4px;height:14px;left:${barX}px;width:${barW}px;border-radius:3px;background:rgba(160,160,160,0.55);z-index:2;overflow:hidden;">` +
-           `<div style="position:absolute;top:0;left:0;height:100%;width:${progressW}px;background:rgba(210,210,210,0.95);border-radius:3px;"></div>` +
+    const bgColor   = isDone ? 'rgba(74,222,128,0.28)' : 'rgba(160,160,160,0.55)';
+    const fillColor = isDone ? 'rgba(74,222,128,0.90)' : 'rgba(210,210,210,0.95)';
+    bar += `<div style="position:absolute;top:4px;height:14px;left:${barX}px;width:${barW}px;border-radius:3px;background:${bgColor};z-index:2;overflow:hidden;">` +
+           `<div style="position:absolute;top:0;left:0;height:100%;width:${progressW}px;background:${fillColor};border-radius:3px;"></div>` +
            `</div>`;
     // 期日と納品日の重複チェック
     const kOverlapsE = row.k && row.e && row.k === row.e;
@@ -1027,7 +1035,7 @@ function renderGantt() {
     const inpStyle = `background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.25);`
       + `color:var(--text);font-size:11px;font-weight:600;width:36px;text-align:right;`
       + `padding:0 2px;outline:none;`;
-    html += `<div data-row-idx="${rowIdx}" style="display:flex;height:50px;border-bottom:1px solid rgba(255,255,255,0.12);">
+    html += `<div data-row-idx="${rowIdx}" data-src-idx="${srcIdx}" style="display:flex;height:50px;border-bottom:1px solid rgba(255,255,255,0.12);">
       <div class="gantt-lbl" style="${stickyLbl}background:var(--surface);height:50px;padding:3px 4px 3px 2px;display:flex;flex-direction:row;align-items:stretch;overflow:hidden;border-bottom:1px solid rgba(255,255,255,0.12);">
         <div class="gantt-drag-handle" data-row="${rowIdx}"
           style="width:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
@@ -1183,60 +1191,50 @@ function renderGantt() {
 
 // === GANTT ドラッグ＆ドロップ並び替え ===
 function initGanttDnD(inner) {
-  let dragIdx = -1;        // ドラッグ開始行インデックス
-  let placeholder = null;  // 挿入位置インジケータ
-  let startY = 0;
-  const ROW_H = 50;
+  const ROW_H = 50, HEADER_H = 44;
+  let dragDisplayIdx = -1;
 
   inner.addEventListener('touchstart', e => {
     const handle = e.target.closest('.gantt-drag-handle');
     if (!handle) return;
-    dragIdx = parseInt(handle.dataset.row);
-    startY = e.touches[0].clientY;
-    handle.closest('[data-row-idx]').style.opacity = '0.5';
+    dragDisplayIdx = parseInt(handle.dataset.row);
+    const rowEl = inner.querySelector(`[data-row-idx="${dragDisplayIdx}"]`);
+    if (rowEl) rowEl.style.opacity = '0.45';
     e.preventDefault();
   }, { passive: false });
 
   inner.addEventListener('touchmove', e => {
-    if (dragIdx < 0) return;
+    if (dragDisplayIdx < 0) return;
     e.preventDefault();
-    const y = e.touches[0].clientY;
-    // ドラッグ中の行を上下にどれだけ移動したか → 挿入位置を計算
+    const outerTop = inner.closest('.gantt-outer').getBoundingClientRect().top;
+    const relY = e.touches[0].clientY - outerTop - HEADER_H;
     const allRows = [...inner.querySelectorAll('[data-row-idx]')];
-    const outerRect = inner.closest('.gantt-outer').getBoundingClientRect();
-    const relY = y - outerRect.top + inner.closest('.gantt-outer').scrollTop;
-    const headerH = 44; // 2行分のsticky header
-    let targetIdx = Math.floor((relY - headerH) / ROW_H);
-    targetIdx = Math.max(0, Math.min(targetIdx, allRows.length - 1));
-    // インジケータ線を表示
+    const targetIdx = Math.max(0, Math.min(Math.floor(relY / ROW_H), allRows.length - 1));
     allRows.forEach((r, i) => {
-      r.style.borderTop = i === targetIdx && i !== dragIdx
+      r.style.borderTop = (i === targetIdx && i !== dragDisplayIdx)
         ? '2px solid rgba(255,210,60,0.85)' : '';
     });
   }, { passive: false });
 
-  inner.addEventListener('touchend', e => {
-    if (dragIdx < 0) return;
+  inner.addEventListener('touchend', () => {
+    if (dragDisplayIdx < 0) return;
     const allRows = [...inner.querySelectorAll('[data-row-idx]')];
-    // 現在の border-top があるもの → 挿入位置
-    let targetIdx = dragIdx;
+    let targetDisplayIdx = -1;
     allRows.forEach((r, i) => {
-      if (r.style.borderTop && i !== dragIdx) targetIdx = i;
+      if (r.style.borderTop && i !== dragDisplayIdx) targetDisplayIdx = i;
       r.style.borderTop = '';
-      r.style.opacity = '';
+      r.style.opacity   = '';
     });
-    if (targetIdx !== dragIdx) {
-      // _ganttData.rows を並び替え
-      const rows = (_ganttData && _ganttData.rows) || [];
-      if (rows.length > 0) {
-        const moved = rows.splice(dragIdx, 1)[0];
-        const insertAt = targetIdx > dragIdx ? targetIdx - 1 : targetIdx;
-        rows.splice(insertAt, 0, moved);
-        _ganttData.rows = rows;
-      }
+    if (targetDisplayIdx >= 0 && targetDisplayIdx !== dragDisplayIdx && _ganttSrcRows) {
+      const srcFrom  = parseInt(allRows[dragDisplayIdx].dataset.srcIdx);
+      const srcTo    = parseInt(allRows[targetDisplayIdx].dataset.srcIdx);
+      const moved    = _ganttSrcRows.splice(srcFrom, 1)[0];
+      const insertAt = srcTo > srcFrom ? srcTo - 1 : srcTo;
+      _ganttSrcRows.splice(insertAt, 0, moved);
+      _ganttData.rows = _ganttSrcRows;
       renderGantt();
     }
-    dragIdx = -1;
+    dragDisplayIdx = -1;
   });
 }
 
