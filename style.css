@@ -266,13 +266,16 @@
     .edit-overlay {
       display: none; position: fixed; inset: 0;
       background: rgba(0,0,0,0.55); z-index: 100;
+      align-items: center; justify-content: center;
     }
-    .edit-overlay.show { display: block; }
+    .edit-overlay.show { display: flex; }
     .edit-panel {
-      display: none; position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--surface); border-top: 2px solid var(--accent);
-      border-radius: 16px 16px 0 0; z-index: 101;
-      padding: 16px; max-height: 80vh; overflow-y: auto;
+      display: none; position: relative;
+      background: var(--surface); border: 2px solid var(--accent);
+      border-radius: 16px; z-index: 101;
+      padding: 20px; width: 92%; max-width: 480px;
+      max-height: 85vh; overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
     }
     .edit-panel.show { display: block; }
     .edit-panel-title { font-size: 13px; font-weight: 700; color: var(--text-faint); margin-bottom: 14px; }
