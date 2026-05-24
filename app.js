@@ -271,12 +271,6 @@ function cardHTML(r) {
   const uc=r.completed?'done':urgClass(n,r.advance_days||3);
   const catLabel={excel:'Excel',obsidian:'Obsidian',claude:'Claude',manual:'手動'}[r.category]||'手動';
   const notesHtml=r.notes?`<div class="rnotes">${escH(r.notes)}</div>`:'';
-  const snzRow=(!r.completed && r.deadline)
-    ?`<div class="ractions">
-        <button class="ract snz-btn"  onclick="snooze('${r.id}',3)">+3日</button>
-        <button class="ract snz-btn"  onclick="snooze('${r.id}',7)">+1週間</button>
-      </div>`
-    :'';
   const editBtn=!r.completed
     ?`<button class="rcard-edit-btn" onclick="openEdit('${r.id}')">✎</button>`
     :'';
@@ -285,8 +279,7 @@ function cardHTML(r) {
     :`<div class="ractions">
         <button class="ract done-btn" onclick="doDone('${r.id}')">完了</button>
         <button class="ract del-btn"  onclick="doDelete('${r.id}')">削除</button>
-      </div>
-      ${snzRow}`;
+      </div>`;
   return `<div class="rcard ${uc}">
     ${editBtn}
     <div class="rtitle">${escH(r.title)}</div>
@@ -420,6 +413,13 @@ function snooze(id, days) {
   renderHome();
   showToast(`${days}日延ばしました`);
 }
+function snoozeEdit(days) {
+  const inp = document.getElementById('editDeadline');
+  if (!inp.value) return;
+  const d = new Date(inp.value + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  inp.value = d.toISOString().split('T')[0];
+}
 
 // === EDIT ===
 let _editId = null;
@@ -442,25 +442,24 @@ function closeEdit() {
 // === RIMA TOGGLE ===
 function _applyRimaState(open) {
   const area = document.getElementById('rimaNavArea');
-  const btn  = document.getElementById('rimaToggle');
   const grid = document.querySelector('.nav-grid');
   if (open) {
     area.classList.add('rima-open');
     grid.classList.remove('all-cols');
-    btn.textContent = '‹';
   } else {
     area.classList.remove('rima-open');
     grid.classList.add('all-cols');
-    btn.textContent = '›';
   }
 }
 function toggleRima() {
-  const open = !document.getElementById('rimaNavArea').classList.contains('rima-open');
+  const open = document.getElementById('showMascot').checked;
   _applyRimaState(open);
   localStorage.setItem('rimaOpen', open ? '1' : '0');
 }
 function initRimaToggle() {
   const open = localStorage.getItem('rimaOpen') === '1'; // デフォルト非表示
+  const cb = document.getElementById('showMascot');
+  if (cb) cb.checked = open;
   _applyRimaState(open);
 }
 function saveEdit() {

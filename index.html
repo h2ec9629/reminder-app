@@ -116,7 +116,7 @@
     <!-- グループ2: 表示 -->
     <div class="set-group">
       <div class="set-section-title">表示</div>
-      <div class="set-item set-only">
+      <div class="set-item set-first">
         <div class="set-info">
           <div class="set-label">完了済みを表示</div>
           <div class="set-sub">ホームに完了リマインドも出す</div>
@@ -124,6 +124,18 @@
         <div class="set-act">
           <label class="toggle">
             <input type="checkbox" id="showCompleted" onchange="renderHome()">
+            <span class="toggle-sl"></span>
+          </label>
+        </div>
+      </div>
+      <div class="set-item set-last">
+        <div class="set-info">
+          <div class="set-label">マスコット</div>
+          <div class="set-sub">リマちゃんの表示</div>
+        </div>
+        <div class="set-act">
+          <label class="toggle">
+            <input type="checkbox" id="showMascot" onchange="toggleRima()">
             <span class="toggle-sl"></span>
           </label>
         </div>
@@ -430,7 +442,6 @@
 
   <!-- リマちゃんエリア -->
   <div class="rima-wrapper">
-    <button class="rima-toggle-btn" id="rimaToggle" onclick="toggleRima()">›</button>
     <div class="rima-nav-area" id="rimaNavArea">
       <div class="rima-nav-inner">
         <div id="rimaNavComment" class="rima-nav-comment"></div>
@@ -547,6 +558,11 @@
   <div class="edit-field">
     <label class="edit-label">期限日</label>
     <input type="date" class="edit-input" id="editDeadline">
+    <div class="edit-snz-row">
+      <button class="ract snz-btn" onclick="snoozeEdit(1)">+1日</button>
+      <button class="ract snz-btn" onclick="snoozeEdit(3)">+3日</button>
+      <button class="ract snz-btn" onclick="snoozeEdit(7)">+1週間</button>
+    </div>
   </div>
   <div class="edit-field">
     <label class="edit-label">メモ</label>

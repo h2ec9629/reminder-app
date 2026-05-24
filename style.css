@@ -97,16 +97,7 @@
       display: flex; align-items: stretch; flex-shrink: 0;
       border-right: 1px solid var(--border);
     }
-    .rima-toggle-btn {
-      flex-shrink: 0; width: 20px;
-      background: none; border: none;
-      color: var(--text-faint); cursor: pointer;
-      font-size: 14px; font-weight: 700;
-      padding: 0; display: flex; align-items: center; justify-content: center;
-      transition: color 0.15s;
-    }
-    .rima-toggle-btn:active { color: var(--accent); }
-    .rima-nav-area {
+.rima-nav-area {
       overflow: hidden; width: 0;
       transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -306,6 +297,8 @@
     }
     .edit-input:focus { border-color: var(--accent); }
     textarea.edit-input { resize: none; }
+    .edit-snz-row { display: flex; gap: 6px; margin-top: 6px; }
+    .edit-snz-row .ract { font-size: 11px; padding: 4px 8px; }
     .edit-act-row { display: flex; gap: 8px; margin-top: 14px; }
     .edit-cancel {
       flex: 1; background: var(--surface-2); border: 1px solid var(--border);
