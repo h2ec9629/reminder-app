@@ -460,7 +460,7 @@ function toggleRima() {
   localStorage.setItem('rimaOpen', open ? '1' : '0');
 }
 function initRimaToggle() {
-  const open = localStorage.getItem('rimaOpen') !== '0'; // デフォルト表示
+  const open = localStorage.getItem('rimaOpen') === '1'; // デフォルト非表示
   _applyRimaState(open);
 }
 function saveEdit() {
