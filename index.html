@@ -135,7 +135,7 @@
       <div class="set-section-title">GitHub Gist 同期</div>
       <div class="set-item set-first set-col">
         <div class="set-label">🔗 自動同期</div>
-        <div class="set-sub">毎晩23:30にCoworkが自動更新します</div>
+        <div class="set-sub">毎晩23:45にタスクスケジューラが自動更新します</div>
         <div style="font-size:11px; color:var(--text-faint); word-break:break-all; background:var(--bg-2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-family:monospace; line-height:1.6;" id="gistUrlDisplay"></div>
         <button class="sm-btn sm-btn-accent" style="width:100%; padding:9px;" onclick="syncFromGist(true)">今すぐ同期</button>
       </div>
@@ -200,7 +200,7 @@
 
   <!-- SCHEDULE -->
   <div id="tab-schedule" class="tab-content">
-    <div class="sch-title-bar">7日以内の引取・配送日程</div>
+    <div class="sch-title-bar">14日以内の引取・配送日程</div>
     <div id="scheduleGrid"></div>
     <div id="schSynced" class="sch-synced"></div>
   </div>
@@ -530,6 +530,28 @@
 </nav>
 
 <div class="toast" id="toast"></div>
+
+<!-- ========== EDIT PANEL ========== -->
+<div class="edit-overlay" id="editOverlay" onclick="closeEdit()"></div>
+<div class="edit-panel" id="editPanel">
+  <div class="edit-panel-title">リマインドを編集</div>
+  <div class="edit-field">
+    <label class="edit-label">タイトル</label>
+    <input type="text" class="edit-input" id="editTitle">
+  </div>
+  <div class="edit-field">
+    <label class="edit-label">期限日</label>
+    <input type="date" class="edit-input" id="editDeadline">
+  </div>
+  <div class="edit-field">
+    <label class="edit-label">メモ</label>
+    <textarea class="edit-input" id="editNotes" rows="3" placeholder="詳細・備考（任意）"></textarea>
+  </div>
+  <div class="edit-act-row">
+    <button class="edit-cancel" onclick="closeEdit()">キャンセル</button>
+    <button class="edit-ok"     onclick="saveEdit()">保存する</button>
+  </div>
+</div>
 
 <!-- ========== JS ========== -->
 <script src="app.js"></script>

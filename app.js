@@ -12,7 +12,8 @@ function addReminder(r) {
   r.id = genId(); r.created_at = todayStr(); r.completed = false;
   a.push(r); saveAll(a); return r;
 }
-const markDone  = id => saveAll(getAll().map(r => r.id===id ? {...r, completed:true, completed_at:todayStr()} : r));
+const markDone        = id => saveAll(getAll().map(r => r.id===id ? {...r, completed:true, completed_at:todayStr()} : r));
+const updateReminder  = (id, changes) => saveAll(getAll().map(r => r.id===id ? {...r, ...changes} : r));
 
 // === 削除済みグレーブヤード（同期で復活させない） ===
 const GRAVE_KEY   = 'ojisan_deleted_v1';
@@ -269,13 +270,24 @@ function cardHTML(r) {
   const uc=r.completed?'done':urgClass(n,r.advance_days||3);
   const catLabel={excel:'Excel',obsidian:'Obsidian',claude:'Claude',manual:'手動'}[r.category]||'手動';
   const notesHtml=r.notes?`<div class="rnotes">${escH(r.notes)}</div>`:'';
+  const snzRow=(!r.completed && r.deadline)
+    ?`<div class="ractions">
+        <button class="ract snz-btn"  onclick="snooze('${r.id}',3)">+3日</button>
+        <button class="ract snz-btn"  onclick="snooze('${r.id}',7)">+1週間</button>
+      </div>`
+    :'';
+  const editBtn=!r.completed
+    ?`<button class="rcard-edit-btn" onclick="openEdit('${r.id}')">✎</button>`
+    :'';
   const actions=r.completed
     ?`<div class="ractions"><button class="ract del-btn" onclick="doDelete('${r.id}')">削除</button></div>`
     :`<div class="ractions">
         <button class="ract done-btn" onclick="doDone('${r.id}')">完了</button>
         <button class="ract del-btn"  onclick="doDelete('${r.id}')">削除</button>
-      </div>`;
+      </div>
+      ${snzRow}`;
   return `<div class="rcard ${uc}">
+    ${editBtn}
     <div class="rtitle">${escH(r.title)}</div>
     <div class="rmeta">
       <span class="badge badge-${r.category||'manual'}">${catLabel}</span>
@@ -395,6 +407,46 @@ const doDone  = id => { markDone(id);  renderHome(); showToast('完了しまし�
 function doDelete(id) {
   if(!confirm('このリマインドを削除しますか？')) return;
   deleteOne(id); renderHome(); showToast('削除しました');
+}
+
+// === SNOOZE ===
+function snooze(id, days) {
+  const r = getAll().find(r => r.id===id);
+  if (!r || !r.deadline) return;
+  const d = new Date(r.deadline + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  updateReminder(id, { deadline: d.toISOString().split('T')[0] });
+  renderHome();
+  showToast(`${days}日延ばしました`);
+}
+
+// === EDIT ===
+let _editId = null;
+function openEdit(id) {
+  const r = getAll().find(r => r.id===id);
+  if (!r) return;
+  _editId = id;
+  document.getElementById('editTitle').value    = r.title    || '';
+  document.getElementById('editDeadline').value = r.deadline || '';
+  document.getElementById('editNotes').value    = r.notes    || '';
+  document.getElementById('editOverlay').classList.add('show');
+  document.getElementById('editPanel').classList.add('show');
+}
+function closeEdit() {
+  _editId = null;
+  document.getElementById('editOverlay').classList.remove('show');
+  document.getElementById('editPanel').classList.remove('show');
+}
+function saveEdit() {
+  if (!_editId) return;
+  const title    = document.getElementById('editTitle').value.trim();
+  const deadline = document.getElementById('editDeadline').value;
+  const notes    = document.getElementById('editNotes').value.trim();
+  if (!title) { showToast('タイトルを入力してください'); return; }
+  updateReminder(_editId, { title, deadline: deadline||null, notes: notes||null });
+  closeEdit();
+  renderHome();
+  showToast('更新しました');
 }
 
 // === ADD FORM ===
