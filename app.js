@@ -321,7 +321,6 @@ function switchTab(name,btn) {
 let _excelSchedule = null;
 let _schSyncedAt   = null;
 let _ganttData     = null;
-let _ganttSrcRows  = null;
 
 function renderSchedule() {
   const grid  = document.getElementById('scheduleGrid');
@@ -786,55 +785,6 @@ function abbrevName(n) {
   return n;
 }
 
-// === GANTT RATE TABLE（品名→工数/h） ===
-const GANTT_RATE = {
-  '8FL281304 5010　L=888':        170,
-  '8FL281304 6110　L=1478':       120,
-  '8FL281304 8310　L=748':        170,
-  '8FL281304 4910　L=592':        180,
-  '8FL281304 4810　L=297':        200,
-  '採光ルーバーパネルB　L=1996':      63,
-  '灯具カバーPC IN 2110　L=1815':   24,
-  '灯具カバーPC IN 2100　L=1923':   24,
-  '灯具カバーPC IN 2470　L=1648':   24,
-  '灯具カバーPC IN 2490　L=1264':   32,
-  '灯具カバーPC IN 2460　L=1291':   32,
-  '灯具カバーPC IN 2500　L=1238':   32,
-  '灯具カバーPC IN 2060　L=1258.5': 32,
-  '灯具カバーPC IN 2130　L=908':    40,
-  '灯具カバーPC IN 2090　L=840':    40,
-  '灯具カバーPC IN 2050　L=1183.5': 32,
-  '灯具カバーPC IN 2070　L=1966':   24,
-  '灯具カバーPC IN 2080　L=1540':   24,
-  '752GPSB　865':                 150,
-  '752GPSB　715':                 300,
-  '752GPSB　665':                 300,
-  '752GPSB　565':                 300,
-  '752GPSB　415':                 300,
-  '752GPSB　265':                 300,
-  '001EGAW　715':                 300,
-  '001EGAW　652':                 300,
-  '001EGAW　565':                 300,
-  '001EGAW　508':                 300,
-  '001EGAW　415':                 300,
-};
-
-// 品名からレート取得（部分一致フォールバック付き）
-function getRate(name) {
-  if (!name) return null;
-  if (GANTT_RATE[name] !== undefined) return GANTT_RATE[name];
-  for (const key of Object.keys(GANTT_RATE)) {
-    if (name.includes(key) || key.includes(name)) return GANTT_RATE[key];
-  }
-  return null;
-}
-
-// 数量・工数/h → バー幅時間（4時間単位切り上げ、最小1マス=4h）
-function calcBarH(u, rate) {
-  if (!u || !rate) return null;
-  return Math.max(Math.ceil(u / rate / 4) * 4, 4);
-}
-
 function renderGantt() {
   const SC = 9;
   const LW = 200;
@@ -916,12 +866,8 @@ function renderGantt() {
     {n:"752GPSB　265",b:"樹脂",s:null,e:"2026-06-23",k:"2026-07-02",aa:204,ab:208},
   ];
   if (_ganttData && _ganttData.rows && _ganttData.rows.length > 0) D = _ganttData.rows;
-  _ganttSrcRows = D;
-  if (!_ganttData) _ganttData = {};
-  _ganttData.rows = D;
-  const _displayD = D
-    .map((r, srcIdx) => ({ r, srcIdx }))
-    .filter(({ r }) => !r.e || r.e > TODAY_ISO);
+  // 納品日(e)が昨日以前の行を除外（納品日なしはそのまま表示）
+  D = D.filter(r => !r.e || r.e > TODAY_ISO);
 
   const h2px = h => Math.round(h * SC);
   const halfDayPx    = h2px(4); // 1日の前半・後半の境界（4h = 1マス分）
@@ -983,48 +929,24 @@ function renderGantt() {
     <div style="position:relative;flex:1;height:22px;background:var(--bg-2);overflow:hidden;">${dayGridLines}${todayLine}</div>
   </div>`;
 
-  // === 直列連鎖：前行の実際完了地点を次行のaaに反映（表示のみ）===
-  let _prevActualEnd = null; // 前行の実際完了地点（時間）
-  const _dispAA = []; // 各行の表示用aa（連鎖補正済み）
-  const _dispAB = []; // 各行の表示用ab（連鎖補正済み）
-  _displayD.forEach(({ r: row }, i) => {
-    const rate  = row.rate || getRate(row.n);
-    const rawAA = row.aa != null ? row.aa : 0;
-    const durH  = (row.u && rate) ? calcBarH(row.u, rate)
-                : (row.ab != null ? row.ab - rawAA : 4);
-    // 前行完了地点より左ならずらす
-    const aa = (_prevActualEnd != null && _prevActualEnd > rawAA)
-      ? _prevActualEnd : rawAA;
-    const ab = aa + durH;
-    // 実際完了地点：進捗がある場合は出来高分、ない場合は計画終了
-    const actualEnd = (row.u && row.w != null && rate)
-      ? aa + Math.ceil(row.w / rate / 4) * 4
-      : ab;
-    _dispAA.push(aa);
-    _dispAB.push(ab);
-    _prevActualEnd = actualEnd;
-  });
-
-  _displayD.forEach(({ r: row, srcIdx }, rowIdx) => {
+  D.forEach((row, rowIdx) => {
     const barColor = row.b==='灯具' ? '#85B7EB' : '#C8C8C8';
-    const _rate = row.rate || getRate(row.n);
-    const _aaH = _dispAA[rowIdx];
-    const _abH = _dispAB[rowIdx];
-    const barX = Math.max(0, h2px(_aaH) - todayOffset);
-    const barW = h2px(_abH - _aaH);
+    const barX = Math.max(0, h2px(row.aa) - todayOffset);
+    // 1マス=4時間単位で切り上げ、最小1マス保証
+    const CELL_H = 4;
+    const rawDur = row.ab - row.aa;
+    const dispDur = Math.max(Math.ceil(rawDur / CELL_H), 1) * CELL_H;
+    const barW = h2px(dispDur);
     const kX = d2px(row.k);
     const sX = (row.s && row.s >= TODAY_ISO) ? d2px(row.s) : null;
     const eX = d2px(row.e);
 
     let bar = dayGridLines + todayLine;
-    // 【上段】進捗バー（完了時グリーン）
-    const isDone    = row.u > 0 && row.w != null && row.w >= row.u;
+    // 【上段】進捗バー：グレー背景＋進捗フィル（top:4px, height:14px）
     const progress  = (row.u > 0 && row.w != null) ? Math.min(row.w / row.u, 1.0) : 0;
     const progressW = Math.round(barW * progress);
-    const bgColor   = isDone ? 'rgba(74,222,128,0.28)' : 'rgba(160,160,160,0.55)';
-    const fillColor = isDone ? 'rgba(74,222,128,0.90)' : 'rgba(210,210,210,0.95)';
-    bar += `<div style="position:absolute;top:4px;height:14px;left:${barX}px;width:${barW}px;border-radius:3px;background:${bgColor};z-index:2;overflow:hidden;">` +
-           `<div style="position:absolute;top:0;left:0;height:100%;width:${progressW}px;background:${fillColor};border-radius:3px;"></div>` +
+    bar += `<div style="position:absolute;top:4px;height:14px;left:${barX}px;width:${barW}px;border-radius:3px;background:rgba(160,160,160,0.55);z-index:2;overflow:hidden;">` +
+           `<div style="position:absolute;top:0;left:0;height:100%;width:${progressW}px;background:rgba(210,210,210,0.95);border-radius:3px;"></div>` +
            `</div>`;
     // 期日と納品日の重複チェック
     const kOverlapsE = row.k && row.e && row.k === row.e;
@@ -1049,35 +971,17 @@ function renderGantt() {
     }
 
     const dispD = iso => iso ? iso.slice(5).replace('-', '/') : '-';
-    const uV = row.u != null ? String(row.u) : '';
-    const wV = row.w != null ? String(row.w) : '';
-    const rateDisp = _rate ? String(_rate) : '?';
-    const inpStyle = `background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.25);`
-      + `color:var(--text);font-size:11px;font-weight:600;width:36px;text-align:right;`
-      + `padding:0 2px;outline:none;`;
-    html += `<div data-row-idx="${rowIdx}" data-src-idx="${srcIdx}" style="display:flex;height:50px;border-bottom:1px solid rgba(255,255,255,0.12);">
-      <div class="gantt-lbl" style="${stickyLbl}background:var(--surface);height:50px;padding:3px 4px 3px 2px;display:flex;flex-direction:row;align-items:stretch;overflow:hidden;border-bottom:1px solid rgba(255,255,255,0.12);">
-        <div class="gantt-drag-handle" data-row="${rowIdx}"
-          style="width:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-                 color:rgba(255,255,255,0.3);font-size:13px;cursor:grab;touch-action:none;
-                 user-select:none;">☰</div>
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:4px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
+    const uV = row.u != null ? String(row.u) : '-';
+    const wV = row.w != null ? String(row.w) : '-';
+    html += `<div data-row-idx="${rowIdx}" style="display:flex;height:50px;border-bottom:1px solid rgba(255,255,255,0.12);">
+      <div class="gantt-lbl" style="${stickyLbl}background:var(--surface);height:50px;padding:3px 6px;display:flex;flex-direction:column;justify-content:center;gap:4px;overflow:hidden;border-bottom:1px solid rgba(255,255,255,0.12);">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
           <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">${escH(abbrevName(row.n))}</div>
-          <div style="display:flex;align-items:center;gap:2px;padding-left:4px;flex-shrink:0;">
-            <input class="gantt-u" data-row="${rowIdx}" type="text" inputmode="decimal"
-              placeholder="依頼" value="${escH(uV)}"
-              style="${inpStyle}" onclick="event.stopPropagation()">
-            <span style="font-size:10px;color:var(--text-faint);">/</span>
-            <input class="gantt-w" data-row="${rowIdx}" type="text" inputmode="decimal"
-              placeholder="完成" value="${escH(wV)}"
-              style="${inpStyle}" onclick="event.stopPropagation()">
-          </div>
+          <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;padding-left:4px;flex-shrink:0;">${uV} / ${wV}</div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:baseline;">
           <div style="font-size:10px;white-space:nowrap;"><span style="color:#FBB040;font-weight:700;">引</span><span style="color:var(--text-sub);"> ${dispD(row.s)}</span><span style="color:var(--text-faint);"> ・ </span><span style="color:#4ADE80;font-weight:700;">納</span><span style="color:var(--text-sub);"> ${dispD(row.e)}</span></div>
-          <div style="font-size:10px;white-space:nowrap;padding-left:4px;"><span style="color:var(--text-faint);">${rateDisp}/h</span></div>
-        </div>
+          <div style="font-size:10px;white-space:nowrap;padding-left:4px;"><span style="color:#F87171;font-weight:700;">期</span><span style="color:#F87171;"> ${dispD(row.af)}</span></div>
         </div>
       </div>
       <div class="gantt-chart-area" style="position:relative;flex:1;height:50px;overflow:hidden;">${bar}<div class="gantt-col-hl" style="display:none;position:absolute;top:0;bottom:0;pointer-events:none;"></div></div>
@@ -1089,51 +993,6 @@ function renderGantt() {
   inner.innerHTML = html;
   const outer = document.getElementById('ganttOuter');
   outer.scrollLeft = 0;
-
-  // === U/W インライン入力 → プログレスバー即時更新 ===
-  function updateProgress(rowIdx, uVal, wVal) {
-    // _ganttData.rows[rowIdx] を更新
-    const rows = (_ganttData && _ganttData.rows && _ganttData.rows.length)
-      ? _ganttData.rows : D;
-    if (!rows[rowIdx]) return;
-    rows[rowIdx].u = uVal != null ? uVal : rows[rowIdx].u;
-    rows[rowIdx].w = wVal != null ? wVal : rows[rowIdx].w;
-    // プログレスバーを DOM 直接更新（再描画なし）
-    const rowEl = inner.querySelector(`[data-row-idx="${rowIdx}"]`);
-    if (!rowEl) return;
-    const u = rows[rowIdx].u, w = rows[rowIdx].w;
-    const prog = (u > 0 && w != null) ? Math.min(w / u, 1.0) : 0;
-    const rate = rows[rowIdx].rate || getRate(rows[rowIdx].n);
-    const barH = (u && rate) ? calcBarH(u, rate) : null;
-    const aaH  = rows[rowIdx].aa != null ? rows[rowIdx].aa : 0;
-    const abH  = barH != null ? aaH + barH : (rows[rowIdx].ab != null ? rows[rowIdx].ab : aaH + 4);
-    const barXpx = Math.max(0, h2px(aaH) - todayOffset);
-    const barWpx = h2px(abH - aaH);
-    const progWpx = Math.round(barWpx * prog);
-    // バー背景（グレー）の幅更新
-    const chartArea = rowEl.querySelector('.gantt-chart-area');
-    if (chartArea) {
-      const bgBar = chartArea.querySelector('div[style*="rgba(160,160,160"]');
-      if (bgBar) {
-        bgBar.style.left  = barXpx + 'px';
-        bgBar.style.width = barWpx + 'px';
-        const fill = bgBar.querySelector('div');
-        if (fill) fill.style.width = progWpx + 'px';
-      }
-    }
-  }
-
-  inner.addEventListener('change', e => {
-    const uInp = e.target.closest('.gantt-u');
-    const wInp = e.target.closest('.gantt-w');
-    if (!uInp && !wInp) return;
-    const inp   = uInp || wInp;
-    const rowIdx = parseInt(inp.dataset.row);
-    const isU   = !!uInp;
-    const val   = parseFloat(inp.value);
-    const numVal = isNaN(val) ? null : val;
-    updateProgress(rowIdx, isU ? numVal : null, isU ? null : numVal);
-  });
 
   // === ガントチャート 行・列ハイライト ===
   let _hlRow = -1;
@@ -1205,57 +1064,6 @@ function renderGantt() {
     }
   });
 
-  // ドラッグ&ドロップ初期化
-  initGanttDnD(inner);
-}
-
-// === GANTT ドラッグ＆ドロップ並び替え ===
-function initGanttDnD(inner) {
-  const ROW_H = 50, HEADER_H = 44;
-  let dragDisplayIdx = -1;
-
-  inner.addEventListener('touchstart', e => {
-    const handle = e.target.closest('.gantt-drag-handle');
-    if (!handle) return;
-    dragDisplayIdx = parseInt(handle.dataset.row);
-    const rowEl = inner.querySelector(`[data-row-idx="${dragDisplayIdx}"]`);
-    if (rowEl) rowEl.style.opacity = '0.45';
-    e.preventDefault();
-  }, { passive: false });
-
-  inner.addEventListener('touchmove', e => {
-    if (dragDisplayIdx < 0) return;
-    e.preventDefault();
-    const outerTop = inner.closest('.gantt-outer').getBoundingClientRect().top;
-    const relY = e.touches[0].clientY - outerTop - HEADER_H;
-    const allRows = [...inner.querySelectorAll('[data-row-idx]')];
-    const targetIdx = Math.max(0, Math.min(Math.floor(relY / ROW_H), allRows.length - 1));
-    allRows.forEach((r, i) => {
-      r.style.borderTop = (i === targetIdx && i !== dragDisplayIdx)
-        ? '2px solid rgba(255,210,60,0.85)' : '';
-    });
-  }, { passive: false });
-
-  inner.addEventListener('touchend', () => {
-    if (dragDisplayIdx < 0) return;
-    const allRows = [...inner.querySelectorAll('[data-row-idx]')];
-    let targetDisplayIdx = -1;
-    allRows.forEach((r, i) => {
-      if (r.style.borderTop && i !== dragDisplayIdx) targetDisplayIdx = i;
-      r.style.borderTop = '';
-      r.style.opacity   = '';
-    });
-    if (targetDisplayIdx >= 0 && targetDisplayIdx !== dragDisplayIdx && _ganttSrcRows) {
-      const srcFrom  = parseInt(allRows[dragDisplayIdx].dataset.srcIdx);
-      const srcTo    = parseInt(allRows[targetDisplayIdx].dataset.srcIdx);
-      const moved    = _ganttSrcRows.splice(srcFrom, 1)[0];
-      const insertAt = srcTo > srcFrom ? srcTo - 1 : srcTo;
-      _ganttSrcRows.splice(insertAt, 0, moved);
-      _ganttData.rows = _ganttSrcRows;
-      renderGantt();
-    }
-    dragDisplayIdx = -1;
-  });
 }
 
 // === FORCE UPDATE ===
