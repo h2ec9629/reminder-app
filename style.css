@@ -144,7 +144,9 @@
       overflow-x: auto;
       scrollbar-width: none;
       -webkit-overflow-scrolling: touch;
+      transition: grid-auto-columns 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
+    .nav-grid.all-cols { grid-auto-columns: calc(100% / 4); }
     .nav-grid::-webkit-scrollbar { display: none; }
     @media (hover: hover) {
       .nav-grid  { cursor: grab; }

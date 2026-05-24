@@ -440,19 +440,28 @@ function closeEdit() {
 }
 
 // === RIMA TOGGLE ===
-function toggleRima() {
+function _applyRimaState(open) {
   const area = document.getElementById('rimaNavArea');
   const btn  = document.getElementById('rimaToggle');
-  const open = area.classList.toggle('rima-open');
-  btn.textContent = open ? '‹' : '›';
+  const grid = document.querySelector('.nav-grid');
+  if (open) {
+    area.classList.add('rima-open');
+    grid.classList.remove('all-cols');
+    btn.textContent = '‹';
+  } else {
+    area.classList.remove('rima-open');
+    grid.classList.add('all-cols');
+    btn.textContent = '›';
+  }
+}
+function toggleRima() {
+  const open = !document.getElementById('rimaNavArea').classList.contains('rima-open');
+  _applyRimaState(open);
   localStorage.setItem('rimaOpen', open ? '1' : '0');
 }
 function initRimaToggle() {
   const open = localStorage.getItem('rimaOpen') !== '0'; // デフォルト表示
-  const area = document.getElementById('rimaNavArea');
-  const btn  = document.getElementById('rimaToggle');
-  if (open) { area.classList.add('rima-open'); btn.textContent = '‹'; }
-  else       { btn.textContent = '›'; }
+  _applyRimaState(open);
 }
 function saveEdit() {
   if (!_editId) return;
