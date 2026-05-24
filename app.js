@@ -1623,6 +1623,129 @@ function vapeCalc() {
   resNic.className   = 'vape-result-val';
 }
 
+// ===== GAME MODE (オセロ) =====
+const OTH_CORNERS = new Set([0,7,56,63]);
+const OTH_DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+const OTH_CMT = {
+  start:        ['さあ始めますわよ。負けませんよ','あなたが相手なら本気出しますわ','オセロ、なかなか得意なんですよね実は'],
+  corner_got:   ['フフ、角いただきましたわ〜。もう詰みでは？','角ゲット。手加減するか迷ってますわ','あーあ、角取られましたねえ。合掌🙏'],
+  corner_lost:  ['あっ！角取るとかズルないですか！？（ズルくないけど）','そこ取りますか…なかなかやりますやんか','角とられた。信じられへんわ本当に'],
+  ai_lead:      ['このままいったらわたしの勝ちですわ。諦めます？','形勢有利すぎてちょっと申し訳ないかも。ちょっとだけ','もう終わりが見えてきましたわ〜'],
+'ぐぬぬ…なんで負けてるんですかわたし','これ本気出したら勝てますから！本気出してないだけですから！','運がよかっただけですわ。次は許しませんよ'],
+  even:         ['いい勝負ですわね。でも最後は負けさせませんよ','接戦やけど油断してませんから','どっちに転ぶかわかりませんわ〜ドキドキしますわ'],
+  pass_player:  ['打つとこないんですか。かわいそうに','パスですか。まあ仕方ないですわね','ないですよね〜打つとこ。フフ'],
+  pass_ai:      ['あら、わたしがパスですか。負けてへんし！','パスしますけど負けませんよ。まだまだ','ちっ、打てないですわ…（小声）'],
+  win:          ['わたしの勝ちですわ！気持ちよか〜！','勝ちましたー！やっぱりリマちゃん最強でしたわ','ふふ、お疲れ様でした。完敗ですわよ'],
+  lose:         ['…負けた。信じられへんわ本当に','まぐれですよ！絶対まぐれですから！','くっ…次は絶対勝ちますから覚えといてください'],
+  draw:         ['あら引き分けですか。まあ負けてないからええですわ','引き分けか〜。なんかスッキリしないですわね'],
+};
+function othCmt(key){ const p=OTH_CMT[key]; return p[Math.floor(Math.random()*p.length)]; }
+
+let _oth = {};
+function othIdx(r,c){ return r*8+c; }
+function othFlips(board,r,c,col){
+  const flips=[];
+  for(const [dr,dc] of OTH_DIRS){
+    const line=[]; let nr=r+dr,nc=c+dc;
+    while(nr>=0&&nr<8&&nc>=0&&nc<8&&board[othIdx(nr,nc)]===-col){ line.push(othIdx(nr,nc)); nr+=dr; nc+=dc; }
+    if(nr>=0&&nr<8&&nc>=0&&nc<8&&board[othIdx(nr,nc)]===col&&line.length) flips.push(...line);
+  }
+  return flips;
+}
+function othValidMoves(board,col){
+  const moves=[];
+  for(let r=0;r<8;r++) for(let c=0;c<8;c++)
+    if(!board[othIdx(r,c)]&&othFlips(board,r,c,col).length) moves.push([r,c]);
+  return moves;
+}
+function othAiMove(board){
+  const moves=othValidMoves(board,-1);
+  if(!moves.length) return null;
+  for(const [r,c] of moves) if(OTH_CORNERS.has(othIdx(r,c))) return [r,c];
+  let best=null,bestN=0;
+  for(const [r,c] of moves){ const n=othFlips(board,r,c,-1).length; if(n>bestN){bestN=n;best=[r,c];} }
+  return best||moves[0];
+}
+
+function openGameMode(){
+  if(!document.getElementById('rimaNavArea').classList.contains('rima-open')) return;
+  initOthello();
+  document.getElementById('gameOverlay').classList.add('show');
+  document.getElementById('gamePanel').classList.add('show');
+}
+function closeGame(){
+  document.getElementById('gameOverlay').classList.remove('show');
+  document.getElementById('gamePanel').classList.remove('show');
+}
+
+function initOthello(){
+  const b=Array(64).fill(0);
+  b[27]=b[36]=1; b[28]=b[35]=-1;
+  _oth={board:b,over:false,comment:othCmt('start'),thinking:false};
+  renderOthello();
+}
+
+function othClick(r,c){
+  if(_oth.over||_oth.thinking) return;
+  const b=_oth.board;
+  const flips=othFlips(b,r,c,1);
+  if(!flips.length) return;
+  const gotCorner=OTH_CORNERS.has(othIdx(r,c));
+  b[othIdx(r,c)]=1; flips.forEach(i=>b[i]=1);
+  let cmt=gotCorner?othCmt('corner_lost'):null;
+  _oth.thinking=true;
+  if(cmt) _oth.comment=cmt;
+  renderOthello();
+  setTimeout(()=>{
+    const aiPos=othAiMove(b);
+    if(aiPos){
+      const aiCorner=OTH_CORNERS.has(othIdx(aiPos[0],aiPos[1]));
+      const aiFlips=othFlips(b,aiPos[0],aiPos[1],-1);
+      b[othIdx(aiPos[0],aiPos[1])]=-1; aiFlips.forEach(i=>b[i]=-1);
+      if(aiCorner) cmt=othCmt('corner_got');
+    } else { cmt=othCmt('pass_ai'); }
+    const pMoves=othValidMoves(b,1), aMoves=othValidMoves(b,-1);
+    if(!pMoves.length&&!aMoves.length){
+      _oth.over=true;
+      const p=b.filter(v=>v===1).length, a=b.filter(v=>v===-1).length;
+      _oth.comment=a>p?othCmt('win'):p>a?othCmt('lose'):othCmt('draw');
+    } else {
+      if(!pMoves.length) cmt=cmt||othCmt('pass_player');
+      if(!cmt){ const p=b.filter(v=>v===1).length,a=b.filter(v=>v===-1).length;
+        cmt=a>p+4?othCmt('ai_lead'):p>a+4?othCmt('player_lead'):othCmt('even'); }
+      _oth.comment=cmt;
+    }
+    _oth.thinking=false;
+    renderOthello();
+  },550);
+}
+
+function renderOthello(){
+  const b=_oth.board;
+  const valid=new Set((_oth.over?[]:othValidMoves(b,1)).map(([r,c])=>othIdx(r,c)));
+  const p=b.filter(v=>v===1).length, a=b.filter(v=>v===-1).length;
+  let rows='';
+  for(let r=0;r<8;r++){
+    rows+='<div class="oth-row">';
+    for(let c=0;c<8;c++){
+      const i=othIdx(r,c);
+      const cls=b[i]===1?'oth-b':b[i]===-1?'oth-w':valid.has(i)?'oth-hint':'';
+      rows+=`<button class="oth-cell ${cls}" onclick="othClick(${r},${c})"></button>`;
+    }
+    rows+='</div>';
+  }
+  document.getElementById('gamePanel').innerHTML=`
+    <div class="game-title">&#9898; オセロ <span style="font-size:10px;color:var(--text-faint);">あなた&#9898; vs リマちゃん&#9898;</span></div>
+    <div class="oth-comment">${_oth.comment}</div>
+    <div class="oth-score">あなた <b>${p}</b>　リマちゃん <b>${a}</b></div>
+    ${_oth.thinking?'<div class="oth-thinking">リマちゃん考え中…</div>':''}
+    <div class="oth-board">${rows}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button class="game-back-btn" style="flex:1" onclick="closeGame()">とじる</button>
+      <button class="game-back-btn" style="flex:1;color:var(--accent);" onclick="initOthello()">もう一度</button>
+    </div>`;
+}
+
 // === TOAST ===
 let _tt;
 function showToast(msg) {
@@ -1630,6 +1753,44 @@ function showToast(msg) {
   t.textContent=msg; t.classList.add('show');
   clearTimeout(_tt);
   _tt=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// === VAPE CALC ===
+let _vapeTarget = null;
+
+function vapeSetVol(v, btn) {
+  document.getElementById('vapeVol').value = v;
+  document.querySelectorAll('#calcPg2 .vape-presets .vape-preset').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  vapeCalc();
+}
+
+function vapeSetTarget(v, btn) {
+  _vapeTarget = v;
+  document.querySelectorAll('.vape-target-grid .vape-preset').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  vapeCalc();
+}
+
+function vapeCalc() {
+  const vol    = parseFloat(document.getElementById('vapeVol')?.value);
+  const target = _vapeTarget;
+  const base   = 200;
+  const resNic = document.getElementById('vapeResNic');
+  if (!resNic) return;
+  if (isNaN(vol) || target === null || vol <= 0) {
+    resNic.textContent = '—';
+    resNic.className   = 'vape-result-val';
+    return;
+  }
+  const nicAmt = (target * vol) / base;
+  if (nicAmt > vol) {
+    resNic.textContent = '濃度オーバー';
+    resNic.className   = 'vape-result-val error';
+    return;
+  }
+  resNic.textContent = (Math.round(nicAmt * 100) / 100) + ' ml';
+  resNic.className   = 'vape-result-val';
 }
 
 // === INIT ===
@@ -1653,29 +1814,11 @@ function showToast(msg) {
   document.querySelectorAll('.meas-in').forEach(el=>el.addEventListener('focus',function(){
     const len=this.value.length; this.setSelectionRange(len,len);
   }));
-
 })();
 
 function autoDecimal(inp, ph) {
-  var raw = inp.value;
-  var neg = raw.charAt(0) === '-';
-  // 数字だけ取り出して先頭ゼロ除去
-  var digits = raw.replace(/[^0-9]/g, '').replace(/^0+/, '');
-
-  var formatted;
-  if (digits.length === 0) {
-    formatted = neg ? '-' : '';
-  } else if (digits.length === 1) {
-    formatted = '0.0' + digits;
-  } else if (digits.length === 2) {
-    formatted = '0.' + digits;
-  } else {
-    formatted = digits.slice(0, -2) + '.' + digits.slice(-2);
-  }
-  if (neg && formatted !== '' && formatted !== '-') formatted = '-' + formatted;
-
-  inp.value = formatted;
-  var len = formatted.length;
-  setTimeout(function() { inp.setSelectionRange(len, len); }, 0);
-  measCalc(ph);
+  const v=inp.value; if(v===''||v==='.'||v==='-') return;
+  const n=parseFloat(v);
+  if(isNaN(n)) return;
+  inp.value=n%1===0?n.toString():(Math.round(n*100)/100).toString();
 }

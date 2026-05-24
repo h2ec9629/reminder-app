@@ -445,7 +445,7 @@
     <div class="rima-nav-area" id="rimaNavArea">
       <div class="rima-nav-inner">
         <div id="rimaNavComment" class="rima-nav-comment"></div>
-        <div id="rimaWrap">
+        <div id="rimaWrap" onclick="openGameMode()" style="cursor:pointer;">
           <svg width="68" height="75" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
             <use href="#rimachan"/>
           </svg>
@@ -573,6 +573,10 @@
     <button class="edit-ok" onclick="saveEdit()">保存</button>
   </div>
 </div>
+
+<!-- ========== GAME PANEL ========== -->
+<div class="game-overlay" id="gameOverlay" onclick="closeGame()"></div>
+<div class="game-panel" id="gamePanel"></div>
 
 <script src="app.js"></script>
 </body>
