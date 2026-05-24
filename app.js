@@ -861,7 +861,7 @@ function renderGantt() {
     {n:"752GPSB　415",b:"樹脂",s:"2026-06-16",e:"2026-06-24",k:"2026-07-02",u:2100,w:null,y:7.0,z:176.5889,aa:172,ab:180},
     {n:"752GPSB　265",b:"樹脂",s:"2026-06-16",e:"2026-06-24",k:"2026-07-02",u:600,w:null,y:2.0,z:178.5889,aa:180,ab:180}
   ];
-  if (_ganttData && _ganttData.rows && _ganttData.rows.length > 0) D = _ganttData.rows;
+  if (_ganttData && _ganttData.rows && _ganttData.rows.length > 0 && _ganttData.rows[0].y != null) D = _ganttData.rows;
   // 納品日(e)が昨日以前の行を除外（納品日なしはそのまま表示）
   D = D.filter(r => !r.e || r.e > TODAY_ISO);
 
