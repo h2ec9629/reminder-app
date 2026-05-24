@@ -1631,7 +1631,7 @@ const OTH_CMT = {
   corner_got:   ['フフ、角いただきましたわ〜。もう詰みでは？','角ゲット。手加減するか迷ってますわ','あーあ、角取られましたねえ。合掌🙏'],
   corner_lost:  ['あっ！角取るとかズルないですか！？（ズルくないけど）','そこ取りますか…なかなかやりますやんか','角とられた。信じられへんわ本当に'],
   ai_lead:      ['このままいったらわたしの勝ちですわ。諦めます？','形勢有利すぎてちょっと申し訳ないかも。ちょっとだけ','もう終わりが見えてきましたわ〜'],
-'ぐぬぬ…なんで負けてるんですかわたし','これ本気出したら勝てますから！本気出してないだけですから！','運がよかっただけですわ。次は許しませんよ'],
+  player_lead:  ['ぐぬぬ…なんで負けてるんですかわたし','これ本気出したら勝てますから！本気出してないだけですから！','運がよかっただけですわ。次は許しませんよ'],
   even:         ['いい勝負ですわね。でも最後は負けさせませんよ','接戦やけど油断してませんから','どっちに転ぶかわかりませんわ〜ドキドキしますわ'],
   pass_player:  ['打つとこないんですか。かわいそうに','パスですか。まあ仕方ないですわね','ないですよね〜打つとこ。フフ'],
   pass_ai:      ['あら、わたしがパスですか。負けてへんし！','パスしますけど負けませんよ。まだまだ','ちっ、打てないですわ…（小声）'],
@@ -1753,44 +1753,6 @@ function showToast(msg) {
   t.textContent=msg; t.classList.add('show');
   clearTimeout(_tt);
   _tt=setTimeout(()=>t.classList.remove('show'),2500);
-}
-
-// === VAPE CALC ===
-let _vapeTarget = null;
-
-function vapeSetVol(v, btn) {
-  document.getElementById('vapeVol').value = v;
-  document.querySelectorAll('#calcPg2 .vape-presets .vape-preset').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  vapeCalc();
-}
-
-function vapeSetTarget(v, btn) {
-  _vapeTarget = v;
-  document.querySelectorAll('.vape-target-grid .vape-preset').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  vapeCalc();
-}
-
-function vapeCalc() {
-  const vol    = parseFloat(document.getElementById('vapeVol')?.value);
-  const target = _vapeTarget;
-  const base   = 200;
-  const resNic = document.getElementById('vapeResNic');
-  if (!resNic) return;
-  if (isNaN(vol) || target === null || vol <= 0) {
-    resNic.textContent = '—';
-    resNic.className   = 'vape-result-val';
-    return;
-  }
-  const nicAmt = (target * vol) / base;
-  if (nicAmt > vol) {
-    resNic.textContent = '濃度オーバー';
-    resNic.className   = 'vape-result-val error';
-    return;
-  }
-  resNic.textContent = (Math.round(nicAmt * 100) / 100) + ' ml';
-  resNic.className   = 'vape-result-val';
 }
 
 // === INIT ===
