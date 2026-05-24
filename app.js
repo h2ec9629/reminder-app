@@ -438,6 +438,22 @@ function closeEdit() {
   document.getElementById('editOverlay').classList.remove('show');
   document.getElementById('editPanel').classList.remove('show');
 }
+
+// === RIMA TOGGLE ===
+function toggleRima() {
+  const area = document.getElementById('rimaNavArea');
+  const btn  = document.getElementById('rimaToggle');
+  const open = area.classList.toggle('rima-open');
+  btn.textContent = open ? '‹' : '›';
+  localStorage.setItem('rimaOpen', open ? '1' : '0');
+}
+function initRimaToggle() {
+  const open = localStorage.getItem('rimaOpen') !== '0'; // デフォルト表示
+  const area = document.getElementById('rimaNavArea');
+  const btn  = document.getElementById('rimaToggle');
+  if (open) { area.classList.add('rima-open'); btn.textContent = '‹'; }
+  else       { btn.textContent = '›'; }
+}
 function saveEdit() {
   if (!_editId) return;
   const title    = document.getElementById('editTitle').value.trim();
@@ -1619,6 +1635,7 @@ function showToast(msg) {
   const gistEl=document.getElementById('gistUrlDisplay');
   if(gistEl) gistEl.textContent=GIST_RAW_URL;
   syncFromGist();
+  initRimaToggle();
   startRimaRotation();
   renderHome();
   triggerNotifications();

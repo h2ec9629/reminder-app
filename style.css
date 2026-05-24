@@ -92,12 +92,28 @@
       z-index: 200;
       padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
     }
-    .rima-nav-area {
-      flex: 0 0 44%;
-      display: flex; align-items: center;
-      padding: 8px 8px 8px 12px; gap: 6px;
+    /* リマちゃん wrapper（トグルボタン＋エリア） */
+    .rima-wrapper {
+      display: flex; align-items: stretch; flex-shrink: 0;
       border-right: 1px solid var(--border);
-      overflow: hidden;
+    }
+    .rima-toggle-btn {
+      flex-shrink: 0; width: 20px;
+      background: none; border: none;
+      color: var(--text-faint); cursor: pointer;
+      font-size: 14px; font-weight: 700;
+      padding: 0; display: flex; align-items: center; justify-content: center;
+      transition: color 0.15s;
+    }
+    .rima-toggle-btn:active { color: var(--accent); }
+    .rima-nav-area {
+      overflow: hidden; width: 0;
+      transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .rima-nav-area.rima-open { width: 160px; }
+    .rima-nav-inner {
+      width: 160px; display: flex; align-items: center;
+      padding: 8px 8px 8px 8px; gap: 6px;
     }
     .rima-nav-comment {
       flex: 1; font-size: 11px; font-weight: 600;

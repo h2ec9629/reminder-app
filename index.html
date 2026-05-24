@@ -429,12 +429,17 @@
 <nav class="bottom-nav">
 
   <!-- リマちゃんエリア -->
-  <div class="rima-nav-area">
-    <div id="rimaNavComment" class="rima-nav-comment"></div>
-    <div id="rimaWrap">
-      <svg width="68" height="75" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
-        <use href="#rimachan"/>
-      </svg>
+  <div class="rima-wrapper">
+    <button class="rima-toggle-btn" id="rimaToggle" onclick="toggleRima()">›</button>
+    <div class="rima-nav-area" id="rimaNavArea">
+      <div class="rima-nav-inner">
+        <div id="rimaNavComment" class="rima-nav-comment"></div>
+        <div id="rimaWrap">
+          <svg width="68" height="75" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+            <use href="#rimachan"/>
+          </svg>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -549,11 +554,10 @@
   </div>
   <div class="edit-act-row">
     <button class="edit-cancel" onclick="closeEdit()">キャンセル</button>
-    <button class="edit-ok"     onclick="saveEdit()">保存する</button>
+    <button class="edit-ok" onclick="saveEdit()">保存</button>
   </div>
 </div>
 
-<!-- ========== JS ========== -->
 <script src="app.js"></script>
 </body>
 </html>
