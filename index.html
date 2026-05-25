@@ -578,6 +578,14 @@
 <div class="game-overlay" id="gameOverlay" onclick="closeGame()"></div>
 <div class="game-panel" id="gamePanel"></div>
 
-<script src="app.js"></script>
+<!-- 分割JS: 読み込み順を変えないこと -->
+<script src="core.js"></script>
+<script src="rima.js"></script>
+<script src="ui.js"></script>
+<script src="sync.js"></script>
+<script src="calendar.js"></script>
+<script src="calc.js"></script>
+<script src="game.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
