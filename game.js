@@ -113,9 +113,9 @@ function othAiMove(board){
 
 function openGameMode(){
   if(!document.getElementById('rimaNavArea').classList.contains('rima-open')) return;
-  initOthello();
   document.getElementById('gameOverlay').classList.add('show');
   document.getElementById('gamePanel').classList.add('show');
+  openGameModeMenu();
 }
 function closeGame(){
   document.getElementById('gameOverlay').classList.remove('show');
