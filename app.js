@@ -1735,7 +1735,7 @@ function renderOthello(){
     rows+='</div>';
   }
   document.getElementById('gamePanel').innerHTML=`
-    <div class="game-title">&#9898; オセロ <span style="font-size:10px;color:var(--text-faint);">あなた&#9898; vs リマちゃん&#9898;</span></div>
+    <div class="game-title">オセロ <span style="font-size:10px;color:var(--text-faint);">あなた<span style="color:var(--text);">●</span> vs リマちゃん<span style="color:var(--accent);">●</span></span></div>
     <div class="oth-comment">${_oth.comment}</div>
     <div class="oth-score">あなた <b>${p}</b>　リマちゃん <b>${a}</b></div>
     ${_oth.thinking?'<div class="oth-thinking">リマちゃん考え中…</div>':''}
