@@ -1658,12 +1658,81 @@ function othValidMoves(board,col){
     if(!board[othIdx(r,c)]&&othFlips(board,r,c,col).length) moves.push([r,c]);
   return moves;
 }
+// 難易度: 'easy' / 'normal' / 'hard'
+const OTH_WEIGHT = [
+  120,-20, 20,  5,  5, 20,-20,120,
+  -20,-40, -5, -5, -5, -5,-40,-20,
+   20, -5, 15,  3,  3, 15, -5, 20,
+    5, -5,  3,  3,  3,  3, -5,  5,
+    5, -5,  3,  3,  3,  3, -5,  5,
+   20, -5, 15,  3,  3, 15, -5, 20,
+  -20,-40, -5, -5, -5, -5,-40,-20,
+  120,-20, 20,  5,  5, 20,-20,120,
+];
+
+function othScore(board, col){
+  let s=0;
+  for(let i=0;i<64;i++) s+=board[i]*col*OTH_WEIGHT[i];
+  return s;
+}
+
+function othMinimax(board, col, depth, alpha, beta){
+  const moves=othValidMoves(board,col);
+  if(depth===0||(!moves.length&&!othValidMoves(board,-col).length)){
+    let s=0; for(let i=0;i<64;i++) s+=board[i]*-1*OTH_WEIGHT[i]; return s;
+  }
+  if(!moves.length) return othMinimax(board,-col,depth,alpha,beta);
+  if(col===-1){
+    let best=-Infinity;
+    for(const [r,c] of moves){
+      const nb=board.slice(); nb[othIdx(r,c)]=-1; othFlips(nb,r,c,-1).forEach(i=>nb[i]=-1);
+      best=Math.max(best,othMinimax(nb,1,depth-1,alpha,beta));
+      alpha=Math.max(alpha,best); if(beta<=alpha) break;
+    }
+    return best;
+  } else {
+    let best=Infinity;
+    for(const [r,c] of moves){
+      const nb=board.slice(); nb[othIdx(r,c)]=1; othFlips(nb,r,c,1).forEach(i=>nb[i]=1);
+      best=Math.min(best,othMinimax(nb,-1,depth-1,alpha,beta));
+      beta=Math.min(beta,best); if(beta<=alpha) break;
+    }
+    return best;
+  }
+}
+
 function othAiMove(board){
   const moves=othValidMoves(board,-1);
   if(!moves.length) return null;
-  for(const [r,c] of moves) if(OTH_CORNERS.has(othIdx(r,c))) return [r,c];
-  let best=null,bestN=0;
-  for(const [r,c] of moves){ const n=othFlips(board,r,c,-1).length; if(n>bestN){bestN=n;best=[r,c];} }
+  const diff=_oth.difficulty||'normal';
+
+  // EASY: 重みマップ使うが角だけ優先、たまにランダム
+  if(diff==='easy'){
+    for(const [r,c] of moves) if(OTH_CORNERS.has(othIdx(r,c))) return [r,c];
+    if(Math.random()<0.4) return moves[Math.floor(Math.random()*moves.length)];
+    let best=null,bestS=-Infinity;
+    for(const [r,c] of moves){ const s=OTH_WEIGHT[othIdx(r,c)]; if(s>bestS){bestS=s;best=[r,c];} }
+    return best||moves[0];
+  }
+
+  // NORMAL: 重みマップ＋2手先読み
+  if(diff==='normal'){
+    let best=null,bestS=-Infinity;
+    for(const [r,c] of moves){
+      const nb=board.slice(); nb[othIdx(r,c)]=-1; othFlips(nb,r,c,-1).forEach(i=>nb[i]=-1);
+      const s=othMinimax(nb,1,2,-Infinity,Infinity);
+      if(s>bestS){bestS=s;best=[r,c];}
+    }
+    return best||moves[0];
+  }
+
+  // HARD: アルファベータ枝刈り 5手先読み
+  let best=null,bestS=-Infinity;
+  for(const [r,c] of moves){
+    const nb=board.slice(); nb[othIdx(r,c)]=-1; othFlips(nb,r,c,-1).forEach(i=>nb[i]=-1);
+    const s=othMinimax(nb,1,5,-Infinity,Infinity);
+    if(s>bestS){bestS=s;best=[r,c];}
+  }
   return best||moves[0];
 }
 
@@ -1678,11 +1747,29 @@ function closeGame(){
   document.getElementById('gamePanel').classList.remove('show');
 }
 
-function initOthello(){
+function initOthello(difficulty){
+  if(!difficulty){
+    renderOthelloDiffSelect();
+    return;
+  }
   const b=Array(64).fill(0);
   b[27]=b[36]=1; b[28]=b[35]=-1;
-  _oth={board:b,over:false,comment:othCmt('start'),thinking:false};
+  _oth={board:b,over:false,comment:othCmt('start'),thinking:false,difficulty:difficulty};
   renderOthello();
+}
+
+function renderOthelloDiffSelect(){
+  document.getElementById('gamePanel').innerHTML=`
+    <div class="game-title">オセロ</div>
+    <div class="oth-comment">難易度を選んでください</div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:18px;">
+      <button class="game-back-btn" style="font-size:16px;padding:14px;color:var(--text);" onclick="initOthello('easy')">Easy</button>
+      <button class="game-back-btn" style="font-size:16px;padding:14px;color:var(--accent);" onclick="initOthello('normal')">Normal</button>
+      <button class="game-back-btn" style="font-size:16px;padding:14px;color:#e05555;" onclick="initOthello('hard')">Hard</button>
+    </div>
+    <div style="margin-top:16px;">
+      <button class="game-back-btn" style="width:100%;margin-top:4px;" onclick="closeGame()">とじる</button>
+    </div>`;
 }
 
 function othClick(r,c){
@@ -1734,15 +1821,17 @@ function renderOthello(){
     }
     rows+='</div>';
   }
+  const diffLabel={easy:'Easy',normal:'Normal',hard:'Hard'}[_oth.difficulty]||'';
   document.getElementById('gamePanel').innerHTML=`
-    <div class="game-title">オセロ <span style="font-size:10px;color:var(--text-faint);">あなた<span style="color:var(--text);">●</span> vs リマちゃん<span style="color:var(--accent);">●</span></span></div>
+    <div class="game-title">オセロ <span style="font-size:10px;color:var(--text-faint);">あなた<span style="color:var(--text);">●</span> vs リマちゃん<span style="color:var(--accent);">●</span> [${diffLabel}]</span></div>
     <div class="oth-comment">${_oth.comment}</div>
     <div class="oth-score">あなた <b>${p}</b>　リマちゃん <b>${a}</b></div>
     ${_oth.thinking?'<div class="oth-thinking">リマちゃん考え中…</div>':''}
     <div class="oth-board">${rows}</div>
     <div style="display:flex;gap:8px;margin-top:10px;">
       <button class="game-back-btn" style="flex:1" onclick="closeGame()">とじる</button>
-      <button class="game-back-btn" style="flex:1;color:var(--accent);" onclick="initOthello()">もう一度</button>
+      <button class="game-back-btn" style="flex:1;color:var(--accent);" onclick="initOthello(_oth.difficulty)">もう一度</button>
+      <button class="game-back-btn" style="flex:1;color:#e05555;" onclick="renderOthelloDiffSelect()">難易度変更</button>
     </div>`;
 }
 
@@ -1757,30 +1846,13 @@ function showToast(msg) {
 
 // === INIT ===
 (function(){
-  const today=new Date();
-  document.getElementById('headerDate').textContent=
-    `${today.getMonth()+1}/${today.getDate()}(${'日月火水木金土'[today.getDay()]})`;
-  document.getElementById('deadlineInput').value=todayStr();
+  syncFromGist();
   updateNotifStatus();
   updateMailboxStatus();
-  const gistEl=document.getElementById('gistUrlDisplay');
-  if(gistEl) gistEl.textContent=GIST_RAW_URL;
-  syncFromGist();
   initRimaToggle();
-  startRimaRotation();
   renderHome();
-  triggerNotifications();
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
-  }
-  document.querySelectorAll('.meas-in').forEach(el=>el.addEventListener('focus',function(){
-    const len=this.value.length; this.setSelectionRange(len,len);
-  }));
+  switchTab('home', document.getElementById('nav-home'));
+  document.getElementById('deadlineInput').value = todayStr();
+  if(Notification.permission==='granted') triggerNotifications();
+  startRimaRotation();
 })();
-
-function autoDecimal(inp, ph) {
-  const v=inp.value; if(v===''||v==='.'||v==='-') return;
-  const n=parseFloat(v);
-  if(isNaN(n)) return;
-  inp.value=n%1===0?n.toString():(Math.round(n*100)/100).toString();
-}
