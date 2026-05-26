@@ -306,7 +306,8 @@ function renderGantt() {
     const barX = Math.max(0, h2px(dispStart) - todayOffset);
     const barW = h2px(remainY);
     const kX = d2px(row.k);
-    const sX = (row.s && row.s >= TODAY_ISO) ? d2px(row.s) : null;
+    // 引取日マーカー: 当日以降 かつ 納品日より前の場合のみ表示（s>e の逆転データは非表示）
+    const sX = (row.s && row.s >= TODAY_ISO && (!row.e || row.s <= row.e)) ? d2px(row.s) : null;
     const eX = d2px(row.e);
 
     let bar = dayGridLines + todayLine;
