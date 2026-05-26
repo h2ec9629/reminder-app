@@ -244,10 +244,15 @@ function saveEdit() {
   const deadline = document.getElementById('editDeadline').value;
   const notes    = document.getElementById('editNotes').value.trim();
   if (!title) { showToast('タイトルを入力してください'); return; }
+  const old    = getAll().find(r => r.id === _editId);
+  const oldKey = old ? (old.title + '|' + (old.deadline || 'null')) : null;
+  const newKey = title + '|' + (deadline || 'null');
+  if (oldKey && oldKey !== newKey) addGrave(oldKey); // 旧キーをgraveに登録してGist復活を防ぐ
   updateReminder(_editId, { title, deadline: deadline||null, notes: notes||null });
   closeEdit();
   renderHome();
   showToast('更新しました');
+  if (old) pushEditToMailbox(old, { title, deadline: deadline||null, notes: notes||null }); // Obsidianにも反映
 }
 
 // === ADD FORM ===
