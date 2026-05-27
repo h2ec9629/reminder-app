@@ -295,6 +295,7 @@ function renderGantt() {
   </div>`;
 
   let _cascadeOffset = 0;
+  let _nextMinX = 0;
   D.forEach((row, rowIdx) => {
     const barColor = row.b==='灯具' ? '#85B7EB' : '#C8C8C8';
     // Y/Zベース・進捗カスケード（4hスナップなし）
@@ -303,7 +304,9 @@ function renderGantt() {
     const remainY = rowY > 0 ? rowY * (1 - progress) : 0;
     const dispStart = (row.z || 0) - rowY - _cascadeOffset;
     _cascadeOffset += rowY - remainY;
-    const barX = Math.max(0, h2px(dispStart) - todayOffset);
+    const rawBarX = h2px(dispStart) - todayOffset;
+    const barX = Math.max(_nextMinX, rawBarX);
+    _nextMinX = barX + h2px(remainY);
     const barW = h2px(remainY);
     const kX = d2px(row.k);
     // 引取日マーカー: 当日以降 かつ 納品日より前の場合のみ表示（s>e の逆転データは非表示）
@@ -440,7 +443,4 @@ async function forceUpdate() {
       await Promise.all(regs.map(r => r.unregister()));
     }
     const keys = await caches.keys();
-    await Promise.all(keys.map(k => caches.delete(k)));
-  } catch(e) {}
-  setTimeout(() => location.reload(true), 800);
-}
+    await Promise.all(keys.
