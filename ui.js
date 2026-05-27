@@ -88,15 +88,18 @@ function switchTab(name,btn) {
 }
 
 // === SCHEDULE ===
-let _excelSchedule = null;
-let _schSyncedAt   = null;
-let _ganttData     = null;
+let _excelSchedule  = null;
+let _schSyncedAt    = null;
+let _ganttData      = null;
+let _syncAttempted  = false;
 
 function renderSchedule() {
   const grid  = document.getElementById('scheduleGrid');
   const syncd = document.getElementById('schSynced');
   if (!_excelSchedule) {
-    grid.innerHTML = '<div class="sch-empty-msg">同期中...</div>';
+    grid.innerHTML = _syncAttempted
+      ? '<div class="sch-empty-msg">配送データ未取得。同期ボタンを押してみてください。</div>'
+      : '<div class="sch-empty-msg">同期中...</div>';
     return;
   }
   const ac = _excelSchedule.ac_side || [];
@@ -227,16 +230,24 @@ function _applyRimaState(open) {
     grid.classList.add('all-cols');
   }
 }
-function toggleRima() {
-  const open = document.getElementById('showMascot').checked;
-  _applyRimaState(open);
-  localStorage.setItem('rimaOpen', open ? '1' : '0');
+// 隠しコマンド：追加ボタン5連打でリマちゃん表示/非表示トグル
+let _rimaTapCount = 0;
+let _rimaTapTimer = null;
+function rimaTapCount() {
+  _rimaTapCount++;
+  clearTimeout(_rimaTapTimer);
+  if (_rimaTapCount >= 5) {
+    _rimaTapCount = 0;
+    const area = document.getElementById('rimaNavArea');
+    const isOpen = area.classList.contains('rima-open');
+    _applyRimaState(!isOpen);
+  } else {
+    _rimaTapTimer = setTimeout(() => { _rimaTapCount = 0; }, 1500);
+  }
 }
 function initRimaToggle() {
-  const open = localStorage.getItem('rimaOpen') === '1'; // デフォルト非表示
-  const cb = document.getElementById('showMascot');
-  if (cb) cb.checked = open;
-  _applyRimaState(open);
+  // 起動時は常に非表示
+  _applyRimaState(false);
 }
 function saveEdit() {
   if (!_editId) return;
@@ -244,10 +255,15 @@ function saveEdit() {
   const deadline = document.getElementById('editDeadline').value;
   const notes    = document.getElementById('editNotes').value.trim();
   if (!title) { showToast('タイトルを入力してください'); return; }
+  const old    = getAll().find(r => r.id === _editId);
+  const oldKey = old ? (old.title + '|' + (old.deadline || 'null')) : null;
+  const newKey = title + '|' + (deadline || 'null');
+  if (oldKey && oldKey !== newKey) addGrave(oldKey); // 旧キーをgraveに登録してGist復活を防ぐ
   updateReminder(_editId, { title, deadline: deadline||null, notes: notes||null });
   closeEdit();
   renderHome();
   showToast('更新しました');
+  if (old) pushEditToMailbox(old, { title, deadline: deadline||null, notes: notes||null }); // Obsidianにも反映
 }
 
 // === ADD FORM ===
@@ -263,12 +279,4 @@ document.getElementById('addForm').addEventListener('submit', async e=>{
   e.target.reset();
   document.getElementById('deadlineInput').value=todayStr();
   showToast('追加しました');
-  setTimeout(()=>document.getElementById('nav-home').click(),400);
-  pushToMailbox(reminder); // 投函箱に非同期送信（失敗してもローカル保存は済み）
-});
-
-// === IMPORT ===
-function clearFormInput(btn) {
-  const inp = btn.previousElementSibling || btn.parentNode.querySelector('input,textarea');
-  if(inp){ inp.value = ''; inp.focus(); }
-}
+  s

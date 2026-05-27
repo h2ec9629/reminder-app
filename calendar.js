@@ -170,6 +170,8 @@ function renderGantt() {
     '2026-06-22':208,'2026-06-23':216,'2026-07-02':272
   };
   if (_ganttData && _ganttData.d2h) d2h = _ganttData.d2h;
+  const _posVals = Object.values(d2h).filter(v => v >= 0);
+  const chartStartH = _posVals.length > 0 ? Math.min(..._posVals) : 0;
 
   const _td = new Date(); const TODAY_ISO = `${_td.getFullYear()}-${String(_td.getMonth()+1).padStart(2,'0')}-${String(_td.getDate()).padStart(2,'0')}`;
   const TODAY_H = (function() {
@@ -236,7 +238,7 @@ function renderGantt() {
 
   const h2px = h => Math.round(h * SC);
   const halfDayPx    = h2px(4); // 1日の前半・後半の境界（4h = 1マス分）
-  const todayOffset = h2px(TODAY_H); // 今日を左端の基準点にするオフセット
+  const todayOffset = h2px(chartStartH); // Excelで設定したチャート開始点を左端基準にする
 
   function d2px(iso) {
     if (!iso) return null;
@@ -252,18 +254,18 @@ function renderGantt() {
 
   const maxH   = Math.max(...D.map(r=>r.ab), TODAY_H+24);
   const TL     = Math.max((maxH - TODAY_H)*SC+48, 620);
-  const todayX = 0;
+  const todayX = h2px(TODAY_H) - h2px(chartStartH); // 今日の赤線はチャート開始点からの相対位置
   const stickyLbl = `flex:0 0 ${LW}px;position:sticky;left:0;z-index:8;border-right:1px solid var(--border);`;
 
   const DAYS_JP = ['日','月','火','水','木','金','土'];
   const fullDayPx = halfDayPx * 2;
-  const d2hSorted = Object.entries(d2h).filter(([iso,v])=>v>=0 && iso>=TODAY_ISO).sort((a,b)=>a[1]-b[1]);
+  const d2hSorted = Object.entries(d2h).filter(([iso,v])=>v>=0).sort((a,b)=>a[1]-b[1]);
   let dayGridLines = '';
   // 今日ラベルをx=0に赤で強制表示（2マス幅）
   const _todayDt = new Date(TODAY_ISO+'T00:00:00');
   const _todayDow = DAYS_JP[_todayDt.getDay()];
   const _todayLbl = `${_todayDt.getMonth()+1}/${_todayDt.getDate()}（${_todayDow}）`;
-  let axTicks = `<span style="position:absolute;font-size:10px;color:#E24B4A;font-weight:700;top:3px;left:1px;width:${fullDayPx}px;white-space:nowrap;overflow:hidden;">${_todayLbl}</span>`;
+  let axTicks = `<span style="position:absolute;font-size:10px;color:#E24B4A;font-weight:700;top:3px;left:${todayX+1}px;width:${fullDayPx}px;white-space:nowrap;overflow:hidden;">${_todayLbl}</span>`;
   d2hSorted.forEach(([iso, h]) => {
     const x  = h2px(h) - todayOffset;
     const dt = new Date(iso+'T00:00:00');
@@ -274,8 +276,8 @@ function renderGantt() {
     dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x}px;width:${lineW}px;background:${lineColor};opacity:1;z-index:1;pointer-events:none;"></div>`;
     // 1日2マス：中間グリッド線（半日）
     dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x + halfDayPx}px;width:1px;background:rgba(255,255,255,0.07);opacity:1;z-index:1;pointer-events:none;"></div>`;
-    // 今日ラベル（x<20）と重なる場合はラベルをスキップ（グリッド線は残す）
-    if (x < 20) return;
+    // 今日ラベルと重なる場合はスキップ（グリッド線は残す）
+    if (Math.abs(x - todayX) < fullDayPx) return;
     const dow = DAYS_JP[dt.getDay()];
     const lbl = `${dt.getMonth()+1}/${dt.getDate()}（${dow}）`;
     axTicks += `<span style="position:absolute;font-size:10px;color:#fff;top:3px;left:${x+1}px;width:${fullDayPx}px;white-space:nowrap;overflow:hidden;">${lbl}</span>`;
@@ -295,6 +297,7 @@ function renderGantt() {
   </div>`;
 
   let _cascadeOffset = 0;
+  let _nextMinX = 0;
   D.forEach((row, rowIdx) => {
     const barColor = row.b==='灯具' ? '#85B7EB' : '#C8C8C8';
     // Y/Zベース・進捗カスケード（4hスナップなし）
@@ -303,7 +306,9 @@ function renderGantt() {
     const remainY = rowY > 0 ? rowY * (1 - progress) : 0;
     const dispStart = (row.z || 0) - rowY - _cascadeOffset;
     _cascadeOffset += rowY - remainY;
-    const barX = Math.max(0, h2px(dispStart) - todayOffset);
+    const rawBarX = h2px(dispStart) - todayOffset;
+    const barX = Math.max(_nextMinX, rawBarX);
+    _nextMinX = barX + h2px(remainY);
     const barW = h2px(remainY);
     const kX = d2px(row.k);
     // 引取日マーカー: 当日以降 かつ 納品日より前の場合のみ表示（s>e の逆転データは非表示）
@@ -444,3 +449,4 @@ async function forceUpdate() {
   } catch(e) {}
   setTimeout(() => location.reload(true), 800);
 }
+                                                                                                              
