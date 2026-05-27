@@ -174,8 +174,16 @@ async function syncFromGist(manual=false) {
     const activeTab = document.querySelector('.tab-content.active');
     if (activeTab && activeTab.id === 'tab-schedule') renderSchedule();
     if (activeTab && activeTab.id === 'tab-gantt') renderGantt();
-    if (added > 0) { renderHome(); showToast(`Obsidianから${added}件を取込みました`); }
-    else if (manual) showToast('新しいリマインドはありませんでした');
+    const calUpdated = !!(data.gantt_data || data.excel_schedule);
+    const parts = [];
+    if (added > 0) parts.push(`新規リマインド${added}件あります`);
+    if (calUpdated) parts.push('スケジュールが更新されました');
+    if (parts.length > 0) {
+      if (added > 0) renderHome();
+      showToast(parts.join('\n'));
+    } else if (manual) {
+      showToast('更新はありませんでした');
+    }
   } catch(e) {
     if (manual) showToast('同期に失敗しました（しばらく後でお試しください）');
   }
@@ -191,10 +199,4 @@ function clearCompleted() {
   const all = getAll();
   all.filter(r=>r.completed).forEach(r => addGrave(r.title+'|'+(r.deadline||'null')));
   const b = all.length;
-  saveAll(all.filter(r=>!r.completed));
-  renderHome(); showToast(`${b-getAll().length}件削除しました`);
-}
-function clearAll() {
-  if(!confirm('全てのリマインドを削除しますか？')) return;
-  saveAll([]); renderHome(); showToast('全て削除しました');
-}
+  saveAll(all.filter(r=>!r.completed)
