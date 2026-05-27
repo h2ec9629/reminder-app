@@ -1,6 +1,6 @@
 {
-  "name": "おじさんリマインダー",
-  "short_name": "リマインダー",
+  "name": "Wm2B",
+  "short_name": "Wm2B",
   "description": "Excel・Obsidian・Claude連携リマインダーアプリ",
   "start_url": "/reminder-app/",
   "scope": "/reminder-app/",
