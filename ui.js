@@ -227,16 +227,24 @@ function _applyRimaState(open) {
     grid.classList.add('all-cols');
   }
 }
-function toggleRima() {
-  const open = document.getElementById('showMascot').checked;
-  _applyRimaState(open);
-  localStorage.setItem('rimaOpen', open ? '1' : '0');
+// 隠しコマンド：追加ボタン5連打でリマちゃん表示/非表示トグル
+let _rimaTapCount = 0;
+let _rimaTapTimer = null;
+function rimaTapCount() {
+  _rimaTapCount++;
+  clearTimeout(_rimaTapTimer);
+  if (_rimaTapCount >= 5) {
+    _rimaTapCount = 0;
+    const area = document.getElementById('rimaNavArea');
+    const isOpen = area.classList.contains('rima-open');
+    _applyRimaState(!isOpen);
+  } else {
+    _rimaTapTimer = setTimeout(() => { _rimaTapCount = 0; }, 1500);
+  }
 }
 function initRimaToggle() {
-  const open = localStorage.getItem('rimaOpen') === '1'; // デフォルト非表示
-  const cb = document.getElementById('showMascot');
-  if (cb) cb.checked = open;
-  _applyRimaState(open);
+  // 起動時は常に非表示
+  _applyRimaState(false);
 }
 function saveEdit() {
   if (!_editId) return;
@@ -269,11 +277,4 @@ document.getElementById('addForm').addEventListener('submit', async e=>{
   document.getElementById('deadlineInput').value=todayStr();
   showToast('追加しました');
   setTimeout(()=>document.getElementById('nav-home').click(),400);
-  pushToMailbox(reminder); // 投函箱に非同期送信（失敗してもローカル保存は済み）
-});
-
-// === IMPORT ===
-function clearFormInput(btn) {
-  const inp = btn.previousElementSibling || btn.parentNode.querySelector('input,textarea');
-  if(inp){ inp.value = ''; inp.focus(); }
-}
+  pushToMailbox(reminder); // 投函箱に非同期送信（失敗してもローカル保存は済�
