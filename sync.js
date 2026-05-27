@@ -170,33 +170,36 @@ async function syncFromGist(manual=false) {
                     category:'obsidian', advance_days:item.advance_days||3, notes:item.notes||'' });
       keys.add(k); added++;
     });
-    // 同期完了後、配送タブ・日程タブが表示中なら即再描画
+    // 同期完了後、各タブを再描画
     const activeTab = document.querySelector('.tab-content.active');
     if (activeTab && activeTab.id === 'tab-schedule') renderSchedule();
     if (activeTab && activeTab.id === 'tab-gantt') renderGantt();
+    if (activeTab && activeTab.id === 'tab-home') renderHome();
     const calUpdated = !!(data.gantt_data || data.excel_schedule);
     const parts = [];
-    if (added > 0) parts.push(`新規リマインド${added}件あります`);
-    if (calUpdated) parts.push('スケジュールが更新されました');
+    if (added > 0) {
+      if (!activeTab || activeTab.id !== 'tab-home') renderHome(); // ホーム非表示でも更新
+      parts.push(`新規リマインド${added}件あります`);
+    }
+    if (calUpdated) parts.push('スケジュール更新あり');
     if (parts.length > 0) {
-      if (added > 0) renderHome();
-      showToast(parts.join('\n'));
+      showToast(parts.join('　／　'));
     } else if (manual) {
       showToast('更新はありませんでした');
     }
   } catch(e) {
     if (manual) showToast('同期に失敗しました（しばらく後でお試しください）');
+  } finally {
+    _syncAttempted = true;
+    // 同期失敗でデータなし → 配送タブのメッセージを切り替え
+    if (!_excelSchedule) {
+      const at = document.querySelector('.tab-content.active');
+      if (at && at.id === 'tab-schedule') renderSchedule();
+    }
   }
 }
 
 // === SETTINGS ===
 function exportData() {
   const blob=new Blob([JSON.stringify({reminders:getAll(),exported_at:new Date().toISOString()},null,2)],{type:'application/json'});
-  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`reminder-${todayStr()}.json`});
-  a.click(); URL.revokeObjectURL(a.href); showToast('エクスポートしました');
-}
-function clearCompleted() {
-  const all = getAll();
-  all.filter(r=>r.completed).forEach(r => addGrave(r.title+'|'+(r.deadline||'null')));
-  const b = all.length;
-  saveAll(all.filter(r=>!r.completed)
+  const a=Object.assign(do
