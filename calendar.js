@@ -170,6 +170,7 @@ function renderGantt() {
     '2026-06-22':208,'2026-06-23':216,'2026-07-02':272
   };
   if (_ganttData && _ganttData.d2h) d2h = _ganttData.d2h;
+  const chartStartH = Math.min(...Object.values(d2h));
 
   const _td = new Date(); const TODAY_ISO = `${_td.getFullYear()}-${String(_td.getMonth()+1).padStart(2,'0')}-${String(_td.getDate()).padStart(2,'0')}`;
   const TODAY_H = (function() {
@@ -236,7 +237,7 @@ function renderGantt() {
 
   const h2px = h => Math.round(h * SC);
   const halfDayPx    = h2px(4); // 1日の前半・後半の境界（4h = 1マス分）
-  const todayOffset = h2px(TODAY_H); // 今日を左端の基準点にするオフセット
+  const todayOffset = h2px(chartStartH); // Excelで設定したチャート開始点を左端基準にする
 
   function d2px(iso) {
     if (!iso) return null;
@@ -252,7 +253,7 @@ function renderGantt() {
 
   const maxH   = Math.max(...D.map(r=>r.ab), TODAY_H+24);
   const TL     = Math.max((maxH - TODAY_H)*SC+48, 620);
-  const todayX = 0;
+  const todayX = h2px(TODAY_H) - h2px(chartStartH); // 今日の赤線はチャート開始点からの相対位置
   const stickyLbl = `flex:0 0 ${LW}px;position:sticky;left:0;z-index:8;border-right:1px solid var(--border);`;
 
   const DAYS_JP = ['日','月','火','水','木','金','土'];
