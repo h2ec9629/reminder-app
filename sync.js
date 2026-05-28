@@ -1,4 +1,3 @@
-
 function importBackup(input) {
   const file=input.files[0]; if(!file) return;
   const r=new FileReader();
@@ -170,10 +169,6 @@ async function syncFromGist(manual=false) {
                     category:'obsidian', advance_days:item.advance_days||3, notes:item.notes||'' });
       keys.add(k); added++;
     });
-    // 同期完了後、配送タブ・日程タブが表示中なら即再描画
-    const activeTab = document.querySelector('.tab-content.active');
-    if (activeTab && activeTab.id === 'tab-schedule') renderSchedule();
-    if (activeTab && activeTab.id === 'tab-gantt') renderGantt();
     if (added > 0) { renderHome(); showToast(`Obsidianから${added}件を取込みました`); }
     else if (manual) showToast('新しいリマインドはありませんでした');
   } catch(e) {
@@ -198,3 +193,4 @@ function clearAll() {
   if(!confirm('全てのリマインドを削除しますか？')) return;
   saveAll([]); renderHome(); showToast('全て削除しました');
 }
+

@@ -521,3 +521,116 @@ function vapeCalc() {
   resNic.className   = 'vape-result-val';
 }
 
+// ===== GAME MODE (オセロ) =====
+const OTH_CORNERS = new Set([0,7,56,63]);
+const OTH_DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+const OTH_CMT = {
+  start:        ['さあ始めますわよ。負けませんよ','あなたが相手なら本気出しますわ','オセロ、なかなか得意なんですよね実は'],
+  corner_got:   ['フフ、角いただきましたわ〜。もう詰みでは？','角ゲット。手加減するか迷ってますわ','あーあ、角取られましたねえ。合掌🙏'],
+  corner_lost:  ['あっ！角取るとかズルないですか！？（ズルくないけど）','そこ取りますか…なかなかやりますやんか','角とられた。信じられへんわ本当に'],
+  ai_lead:      ['このままいったらわたしの勝ちですわ。諦めます？','形勢有利すぎてちょっと申し訳ないかも。ちょっとだけ','もう終わりが見えてきましたわ〜'],
+  player_lead:  ['ぐぬぬ…なんで負けてるんですかわたし','これ本気出したら勝てますから！本気出してないだけですから！','運がよかっただけですわ。次は許しませんよ'],
+  even:         ['いい勝負ですわね。でも最後は負けさせませんよ','接戦やけど油断してませんから','どっちに転ぶかわかりませんわ〜ドキドキしますわ'],
+  pass_player:  ['打つとこないんですか。かわいそうに','パスですか。まあ仕方ないですわね','ないですよね〜打つとこ。フフ'],
+  pass_ai:      ['あら、わたしがパスですか。負けてへんし！','パスしますけど負けませんよ。まだまだ','ちっ、打てないですわ…（小声）'],
+  win:          ['わたしの勝ちですわ！気持ちよか〜！','勝ちましたー！やっぱりリマちゃん最強でしたわ','ふふ、お疲れ様でした。完敗ですわよ'],
+  lose:         ['…負けた。信じられへんわ本当に','まぐれですよ！絶対まぐれですから！','くっ…次は絶対勝ちますから覚えといてください'],
+  draw:         ['あら引き分けですか。まあ負けてないからええですわ','引き分けか〜。なんかスッキリしないですわね'],
+};
+function othCmt(key){ const p=OTH_CMT[key]; return p[Math.floor(Math.random()*p.length)]; }
+
+let _oth = {};
+function othIdx(r,c){ return r*8+c; }
+function othFlips(board,r,c,col){
+  const flips=[];
+  for(const [dr,dc] of OTH_DIRS){
+    const line=[]; let nr=r+dr,nc=c+dc;
+    while(nr>=0&&nr<8&&nc>=0&&nc<8&&board[othIdx(nr,nc)]===-col){ line.push(othIdx(nr,nc)); nr+=dr; nc+=dc; }
+    if(nr>=0&&nr<8&&nc>=0&&nc<8&&board[othIdx(nr,nc)]===col&&line.length) flips.push(...line);
+  }
+  return flips;
+}
+function othValidMoves(board,col){
+  const moves=[];
+  for(let r=0;r<8;r++) for(let c=0;c<8;c++)
+    if(!board[othIdx(r,c)]&&othFlips(board,r,c,col).length) moves.push([r,c]);
+  return moves;
+}
+// 難易度: 'easy' / 'normal' / 'hard'
+const OTH_WEIGHT = [
+  120,-20, 20,  5,  5, 20,-20,120,
+  -20,-40, -5, -5, -5, -5,-40,-20,
+   20, -5, 15,  3,  3, 15, -5, 20,
+    5, -5,  3,  3,  3,  3, -5,  5,
+    5, -5,  3,  3,  3,  3, -5,  5,
+   20, -5, 15,  3,  3, 15, -5, 20,
+  -20,-40, -5, -5, -5, -5,-40,-20,
+  120,-20, 20,  5,  5, 20,-20,120,
+];
+
+function othScore(board, col){
+  let s=0;
+  for(let i=0;i<64;i++) s+=board[i]*col*OTH_WEIGHT[i];
+  return s;
+}
+
+function othMinimax(board, col, depth, alpha, beta){
+  const moves=othValidMoves(board,col);
+  if(depth===0||(!moves.length&&!othValidMoves(board,-col).length)){
+    let s=0; for(let i=0;i<64;i++) s+=board[i]*-1*OTH_WEIGHT[i]; return s;
+  }
+  if(!moves.length) return othMinimax(board,-col,depth,alpha,beta);
+  if(col===-1){
+    let best=-Infinity;
+    for(const [r,c] of moves){
+      const nb=board.slice(); nb[othIdx(r,c)]=-1; othFlips(nb,r,c,-1).forEach(i=>nb[i]=-1);
+      best=Math.max(best,othMinimax(nb,1,depth-1,alpha,beta));
+      alpha=Math.max(alpha,best); if(beta<=alpha) break;
+    }
+    return best;
+  } else {
+    let best=Infinity;
+    for(const [r,c] of moves){
+      const nb=board.slice(); nb[othIdx(r,c)]=1; othFlips(nb,r,c,1).forEach(i=>nb[i]=1);
+      best=Math.min(best,othMinimax(nb,-1,depth-1,alpha,beta));
+      beta=Math.min(beta,best); if(beta<=alpha) break;
+    }
+    return best;
+  }
+}
+
+function othAiMove(board){
+  const moves=othValidMoves(board,-1);
+  if(!moves.length) return null;
+  const diff=_oth.difficulty||'normal';
+
+  // EASY: 重みマップ使うが角だけ優先、たまにランダム
+  if(diff==='easy'){
+    for(const [r,c] of moves) if(OTH_CORNERS.has(othIdx(r,c))) return [r,c];
+    if(Math.random()<0.4) return moves[Math.floor(Math.random()*moves.length)];
+    let best=null,bestS=-Infinity;
+    for(const [r,c] of moves){ const s=OTH_WEIGHT[othIdx(r,c)]; if(s>bestS){bestS=s;best=[r,c];} }
+    return best||moves[0];
+  }
+
+  // NORMAL: 重みマップ＋2手先読み
+  if(diff==='normal'){
+    let best=null,bestS=-Infinity;
+    for(const [r,c] of moves){
+      const nb=board.slice(); nb[othIdx(r,c)]=-1; othFlips(nb,r,c,-1).forEach(i=>nb[i]=-1);
+      const s=othMinimax(nb,1,2,-Infinity,Infinity);
+      if(s>bestS){bestS=s;best=[r,c];}
+    }
+    return best||moves[0];
+  }
+
+  // HARD: アルファベータ枝刈り 5手先読み
+  let best=null,bestS=-Infinity;
+  for(const [r,c] of moves){
+    const nb=board.slice(); nb[othIdx(r,c)]=-1; othFlips(nb,r,c,-1).forEach(i=>nb[i]=-1);
+    const s=othMinimax(nb,1,5,-Infinity,Infinity);
+    if(s>bestS){bestS=s;best=[r,c];}
+  }
+  return best||moves[0];
+}
+
