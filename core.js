@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 // BUILD: 2026-05-24-A
 
 // === DATA ===
@@ -13,11 +13,7 @@ function addReminder(r) {
   r.id = genId(); r.created_at = todayStr(); r.completed = false;
   a.push(r); saveAll(a); return r;
 }
-const markDone        = id => {
-  const r = getAll().find(r => r.id===id);
-  if (r) addGrave(r.title+'|'+(r.deadline||'null')); // 完了=削除済み扱いで同期時に復活させない
-  saveAll(getAll().map(r => r.id===id ? {...r, completed:true, completed_at:todayStr()} : r));
-};
+const markDone        = id => saveAll(getAll().map(r => r.id===id ? {...r, completed:true, completed_at:todayStr()} : r));
 const updateReminder  = (id, changes) => saveAll(getAll().map(r => r.id===id ? {...r, ...changes} : r));
 
 // === 削除済みグレーブヤード（同期で復活させない） ===
@@ -58,4 +54,5 @@ function chipCls(n) {
   if(n<=7) return 'dc-warning';
   return '';
 }
+
 

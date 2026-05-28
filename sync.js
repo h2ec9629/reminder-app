@@ -1,4 +1,3 @@
-
 function importBackup(input) {
   const file=input.files[0]; if(!file) return;
   const r=new FileReader();
@@ -104,42 +103,6 @@ async function pushToMailbox(reminder) {
   }
 }
 
-// === MAILBOX EDIT PUSH ===
-async function pushEditToMailbox(oldReminder, newFields) {
-  const cfg = getMailboxCfg();
-  if (!cfg.gistId || !cfg.pat) return;
-  try {
-    const gistRes = await fetch('https://api.github.com/gists/' + cfg.gistId, {
-      headers: { 'Authorization': 'Bearer ' + cfg.pat, 'Accept': 'application/vnd.github+json' }
-    });
-    if (!gistRes.ok) throw new Error('fetch failed');
-    const gistData = await gistRes.json();
-    const raw = gistData.files['pending_manual.json']?.content || '{"pending_manual":[]}';
-    const parsed = JSON.parse(raw);
-    const edits = parsed.pending_edits || [];
-    edits.push({
-      old_title:    oldReminder.title,
-      old_deadline: oldReminder.deadline || null,
-      new_title:    newFields.title,
-      new_deadline: newFields.deadline || null,
-      new_notes:    newFields.notes || '',
-      pushed_at:    todayStr()
-    });
-    parsed.pending_edits = edits;
-    await fetch('https://api.github.com/gists/' + cfg.gistId, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': 'Bearer ' + cfg.pat,
-        'Accept': 'application/vnd.github+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ files: { 'pending_manual.json': { content: JSON.stringify(parsed, null, 2) } } })
-    });
-  } catch(e) {
-    console.warn('編集の投函箱送信失敗（ローカルには保存済み）:', e.message);
-  }
-}
-
 // === GITHUB GIST SYNC ===
 const GIST_RAW_URL = 'https://gist.githubusercontent.com/H2EC9629/34f07c829b92ea7141367874f8777512/raw/reminder_sync.json';
 const MEAS_HIST_GIST_URL = 'https://gist.githubusercontent.com/H2EC9629/34f07c829b92ea7141367874f8777512/raw/meas_history.json';
@@ -170,36 +133,25 @@ async function syncFromGist(manual=false) {
                     category:'obsidian', advance_days:item.advance_days||3, notes:item.notes||'' });
       keys.add(k); added++;
     });
-    // 同期完了後、各タブを再描画
-    const activeTab = document.querySelector('.tab-content.active');
-    if (activeTab && activeTab.id === 'tab-schedule') renderSchedule();
-    if (activeTab && activeTab.id === 'tab-gantt') renderGantt();
-    if (activeTab && activeTab.id === 'tab-home') renderHome();
-    const calUpdated = !!(data.gantt_data || data.excel_schedule);
-    const parts = [];
-    if (added > 0) {
-      if (!activeTab || activeTab.id !== 'tab-home') renderHome(); // ホーム非表示でも更新
-      parts.push(`新規リマインド${added}件あります`);
-    }
-    if (calUpdated) parts.push('スケジュール更新あり');
-    if (parts.length > 0) {
-      showToast(parts.join('　／　'));
-    } else if (manual) {
-      showToast('更新はありませんでした');
-    }
+    if (added > 0) { renderHome(); showToast(`Obsidianから${added}件を取込みました`); }
+    else if (manual) showToast('新しいリマインドはありませんでした');
   } catch(e) {
     if (manual) showToast('同期に失敗しました（しばらく後でお試しください）');
-  } finally {
-    _syncAttempted = true;
-    // 同期失敗でデータなし → 配送タブのメッセージを切り替え
-    if (!_excelSchedule) {
-      const at = document.querySelector('.tab-content.active');
-      if (at && at.id === 'tab-schedule') renderSchedule();
-    }
   }
 }
 
 // === SETTINGS ===
 function exportData() {
   const blob=new Blob([JSON.stringify({reminders:getAll(),exported_at:new Date().toISOString()},null,2)],{type:'application/json'});
-  const a=Object.assign(do
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`reminder-${todayStr()}.json`});
+  a.click(); URL.revokeObjectURL(a.href); showToast('エクスポートしました');
+}
+function clearCompleted() {
+  const b=getAll().length; saveAll(getAll().filter(r=>!r.completed));
+  renderHome(); showToast(`${b-getAll().length}件削除しました`);
+}
+function clearAll() {
+  if(!confirm('全てのリマインドを削除しますか？')) return;
+  saveAll([]); renderHome(); showToast('全て削除しました');
+}
+

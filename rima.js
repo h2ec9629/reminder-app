@@ -163,3 +163,4 @@ function showNextRimaComment() {
   setTimeout(typeNext, 400);
 }
 
+
