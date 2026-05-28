@@ -88,9 +88,10 @@ function switchTab(name,btn) {
 }
 
 // === SCHEDULE ===
-let _excelSchedule = null;
-let _schSyncedAt   = null;
-let _ganttData     = null;
+let _excelSchedule  = null;
+let _schSyncedAt    = null;
+let _ganttData      = null;
+let _syncAttempted  = false;
 
 function renderSchedule() {
   const grid  = document.getElementById('scheduleGrid');
