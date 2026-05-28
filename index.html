@@ -128,18 +128,6 @@
           </label>
         </div>
       </div>
-      <div class="set-item set-last">
-        <div class="set-info">
-          <div class="set-label">マスコット</div>
-          <div class="set-sub">リマちゃんの表示</div>
-        </div>
-        <div class="set-act">
-          <label class="toggle">
-            <input type="checkbox" id="showMascot" onchange="toggleRima()">
-            <span class="toggle-sl"></span>
-          </label>
-        </div>
-      </div>
     </div>
 
     <!-- グループ3: GitHub Gist 同期 -->
@@ -493,7 +481,7 @@
     </button>
 
     <!-- 列2 下: 追加 -->
-    <button class="nav-btn" id="nav-add" onclick="switchTab('add',this)">
+    <button class="nav-btn" id="nav-add" onclick="switchTab('add',this); rimaTapCount()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
         <circle cx="12" cy="12" r="9"/><path d="M12 8V16M8 12H16"/>
       </svg>
