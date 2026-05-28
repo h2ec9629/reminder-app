@@ -170,8 +170,7 @@ function renderGantt() {
     '2026-06-22':208,'2026-06-23':216,'2026-07-02':272
   };
   if (_ganttData && _ganttData.d2h) d2h = _ganttData.d2h;
-  const _posVals = Object.values(d2h).filter(v => v >= 0);
-  const chartStartH = _posVals.length > 0 ? Math.min(..._posVals) : 0;
+  const chartStartH = Math.min(...Object.values(d2h));
 
   const _td = new Date(); const TODAY_ISO = `${_td.getFullYear()}-${String(_td.getMonth()+1).padStart(2,'0')}-${String(_td.getDate()).padStart(2,'0')}`;
   const TODAY_H = (function() {
@@ -259,13 +258,13 @@ function renderGantt() {
 
   const DAYS_JP = ['日','月','火','水','木','金','土'];
   const fullDayPx = halfDayPx * 2;
-  const d2hSorted = Object.entries(d2h).filter(([iso,v])=>v>=0).sort((a,b)=>a[1]-b[1]);
+  const d2hSorted = Object.entries(d2h).filter(([iso,v])=>v>=0 && iso>=TODAY_ISO).sort((a,b)=>a[1]-b[1]);
   let dayGridLines = '';
   // 今日ラベルをx=0に赤で強制表示（2マス幅）
   const _todayDt = new Date(TODAY_ISO+'T00:00:00');
   const _todayDow = DAYS_JP[_todayDt.getDay()];
   const _todayLbl = `${_todayDt.getMonth()+1}/${_todayDt.getDate()}（${_todayDow}）`;
-  let axTicks = `<span style="position:absolute;font-size:10px;color:#E24B4A;font-weight:700;top:3px;left:${todayX+1}px;width:${fullDayPx}px;white-space:nowrap;overflow:hidden;">${_todayLbl}</span>`;
+  let axTicks = `<span style="position:absolute;font-size:10px;color:#E24B4A;font-weight:700;top:3px;left:1px;width:${fullDayPx}px;white-space:nowrap;overflow:hidden;">${_todayLbl}</span>`;
   d2hSorted.forEach(([iso, h]) => {
     const x  = h2px(h) - todayOffset;
     const dt = new Date(iso+'T00:00:00');
@@ -276,8 +275,8 @@ function renderGantt() {
     dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x}px;width:${lineW}px;background:${lineColor};opacity:1;z-index:1;pointer-events:none;"></div>`;
     // 1日2マス：中間グリッド線（半日）
     dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x + halfDayPx}px;width:1px;background:rgba(255,255,255,0.07);opacity:1;z-index:1;pointer-events:none;"></div>`;
-    // 今日ラベルと重なる場合はスキップ（グリッド線は残す）
-    if (Math.abs(x - todayX) < fullDayPx) return;
+    // 今日ラベル（x<20）と重なる場合はラベルをスキップ（グリッド線は残す）
+    if (x < 20) return;
     const dow = DAYS_JP[dt.getDay()];
     const lbl = `${dt.getMonth()+1}/${dt.getDate()}（${dow}）`;
     axTicks += `<span style="position:absolute;font-size:10px;color:#fff;top:3px;left:${x+1}px;width:${fullDayPx}px;white-space:nowrap;overflow:hidden;">${lbl}</span>`;

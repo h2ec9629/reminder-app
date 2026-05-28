@@ -88,18 +88,15 @@ function switchTab(name,btn) {
 }
 
 // === SCHEDULE ===
-let _excelSchedule  = null;
-let _schSyncedAt    = null;
-let _ganttData      = null;
-let _syncAttempted  = false;
+let _excelSchedule = null;
+let _schSyncedAt   = null;
+let _ganttData     = null;
 
 function renderSchedule() {
   const grid  = document.getElementById('scheduleGrid');
   const syncd = document.getElementById('schSynced');
   if (!_excelSchedule) {
-    grid.innerHTML = _syncAttempted
-      ? '<div class="sch-empty-msg">配送データ未取得。同期ボタンを押してみてください。</div>'
-      : '<div class="sch-empty-msg">同期中...</div>';
+    grid.innerHTML = '<div class="sch-empty-msg">同期中...</div>';
     return;
   }
   const ac = _excelSchedule.ac_side || [];
@@ -279,4 +276,6 @@ document.getElementById('addForm').addEventListener('submit', async e=>{
   e.target.reset();
   document.getElementById('deadlineInput').value=todayStr();
   showToast('追加しました');
-  s
+  setTimeout(()=>document.getElementById('nav-home').click(),400);
+  pushToMailbox(reminder); // 投函箱に非同期送信（失敗してもローカル保存は済み）
+});
