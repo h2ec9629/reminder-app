@@ -447,4 +447,7 @@ async function forceUpdate() {
       await Promise.all(regs.map(r => r.unregister()));
     }
     const keys = await caches.keys();
-    await Promise.all(keys.map(k
+    await Promise.all(keys.map(k => caches.delete(k)));
+  } catch(e) {}
+  setTimeout(() => location.reload(true), 800);
+}
