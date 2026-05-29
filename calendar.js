@@ -176,7 +176,13 @@ function renderGantt() {
   };
   if (_ganttData && _ganttData.d2h) d2h = _ganttData.d2h;
 
-  const _td = new Date(); const TODAY_ISO = `${_td.getFullYear()}-${String(_td.getMonth()+1).padStart(2,'0')}-${String(_td.getDate()).padStart(2,'0')}`;
+  // 今日線の基準日：エクセル(AD3でずらした)デイラインがあれば優先。無ければPCの今日。
+  let TODAY_ISO;
+  if (_ganttData && typeof _ganttData.base_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(_ganttData.base_date)) {
+    TODAY_ISO = _ganttData.base_date;
+  } else {
+    const _td = new Date(); TODAY_ISO = `${_td.getFullYear()}-${String(_td.getMonth()+1).padStart(2,'0')}-${String(_td.getDate()).padStart(2,'0')}`;
+  }
   const TODAY_H = (function() {
     if (d2h[TODAY_ISO] !== undefined) return d2h[TODAY_ISO];
     const keys = Object.keys(d2h).sort();
