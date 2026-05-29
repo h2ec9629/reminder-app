@@ -238,6 +238,12 @@ function renderGantt() {
   if (_ganttData && _ganttData.rows && _ganttData.rows.length > 0 && _ganttData.rows[0].y != null) D = _ganttData.rows;
   // 納品日(e)が昨日以前の行を除外（当日・未来・納品日なしはそのまま表示）
   D = D.filter(r => !r.e || r.e >= TODAY_ISO);
+  // 完了行を除外: 進捗100%(w>=u) または 所要時間ゼロ(y<=0) はバー長さ0で重なるため非表示
+  D = D.filter(r => {
+    const yOK = (r.y || 0) > 0;                              // 所要時間あり
+    const done = (r.u > 0 && r.w != null && r.w >= r.u);     // 進捗100%＝完了
+    return yOK && !done;
+  });
 
   const h2px = h => Math.round(h * SC);
   const halfDayPx    = h2px(4); // 1日の前半・後半の境界（4h = 1マス分）
@@ -308,7 +314,9 @@ function renderGantt() {
     const remainY = rowY > 0 ? rowY * (1 - progress) : 0;
     const dispStart = _cascadeEnd; // 前の行終端がそのまま開始点
     _cascadeEnd = dispStart + remainY; // 次の行のために終端を更新
-    const barX = Math.max(0, h2px(dispStart) - todayOffset);
+    // 累積位置をそのまま使う（マイナス=今日より前は左端で自然にクリップ）。
+    // Math.max(0,...)で潰すと今日より前の行が全部x=0に積上り横に重なるため不可。
+    const barX = h2px(dispStart) - todayOffset;
     const barW = h2px(remainY);
     const kX = d2px(row.k);
     // 引取日マーカー: 当日以降 かつ 納品日より前の場合のみ表示（s>e の逆転データは非表示）
@@ -433,4 +441,4 @@ function renderGantt() {
       }
     }
   });
-}
+}
