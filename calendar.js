@@ -159,23 +159,24 @@ function renderGantt() {
   const LW = 200;
 
   let d2h = {
-    '2026-05-11':-40,'2026-05-12':-32,'2026-05-13':-24,'2026-05-14':-16,
-    '2026-05-16':0,  '2026-05-18':8,  '2026-05-19':16, '2026-05-20':24,
-    '2026-05-21':32, '2026-05-22':40, '2026-05-25':48, '2026-05-26':56,
-    '2026-05-27':64, '2026-05-28':72, '2026-05-29':80,
-    '2026-06-01':88, '2026-06-02':96, '2026-06-03':104,'2026-06-04':112,
-    '2026-06-05':120,'2026-06-08':128,'2026-06-09':136,'2026-06-10':144,
-    '2026-06-11':152,'2026-06-12':160,'2026-06-15':168,'2026-06-16':176,
-    '2026-06-17':184,'2026-06-18':192,'2026-06-19':200,
-    '2026-06-22':208,'2026-06-23':216,'2026-07-02':272
+    '2026-05-28':0,   '2026-05-29':8,
+    '2026-06-01':16,  '2026-06-02':24,  '2026-06-03':32,  '2026-06-04':40,
+    '2026-06-05':48,  '2026-06-08':56,  '2026-06-09':64,  '2026-06-10':72,
+    '2026-06-11':80,  '2026-06-12':88,  '2026-06-15':96,  '2026-06-16':104,
+    '2026-06-17':112, '2026-06-18':120, '2026-06-19':128,
+    '2026-06-22':136, '2026-06-23':144, '2026-06-24':152, '2026-06-25':160,
+    '2026-06-26':168, '2026-06-29':176, '2026-06-30':184,
+    '2026-07-01':192, '2026-07-02':200, '2026-07-03':208, '2026-07-06':216,
+    '2026-07-07':224, '2026-07-08':232, '2026-07-09':240, '2026-07-10':248,
+    '2026-07-13':256, '2026-07-14':264, '2026-07-15':272, '2026-07-16':280,
+    '2026-07-17':288, '2026-07-21':296, '2026-07-22':304, '2026-07-23':312,
+    '2026-07-24':320, '2026-07-27':328, '2026-07-28':336, '2026-07-29':344,
+    '2026-07-30':352, '2026-07-31':360,
+    '2026-08-03':368, '2026-08-04':376, '2026-08-05':384
   };
   if (_ganttData && _ganttData.d2h) d2h = _ganttData.d2h;
-  const _posVals = Object.values(d2h).filter(v => v >= 0);
-  const chartStartH = _posVals.length > 0 ? Math.min(..._posVals) : 0;
 
-  const TODAY_ISO = (_ganttData && _ganttData.view_date)
-    ? _ganttData.view_date
-    : (()=>{ const _td = new Date(); return `${_td.getFullYear()}-${String(_td.getMonth()+1).padStart(2,'0')}-${String(_td.getDate()).padStart(2,'0')}`; })();
+  const _td = new Date(); const TODAY_ISO = `${_td.getFullYear()}-${String(_td.getMonth()+1).padStart(2,'0')}-${String(_td.getDate()).padStart(2,'0')}`;
   const TODAY_H = (function() {
     if (d2h[TODAY_ISO] !== undefined) return d2h[TODAY_ISO];
     const keys = Object.keys(d2h).sort();
@@ -237,10 +238,16 @@ function renderGantt() {
   if (_ganttData && _ganttData.rows && _ganttData.rows.length > 0 && _ganttData.rows[0].y != null) D = _ganttData.rows;
   // 納品日(e)が昨日以前の行を除外（当日・未来・納品日なしはそのまま表示）
   D = D.filter(r => !r.e || r.e >= TODAY_ISO);
+  // 完了行を除外: 進捗100%(w>=u) または 所要時間ゼロ(y<=0) はバー長さ0で重なるため非表示
+  D = D.filter(r => {
+    const yOK = (r.y || 0) > 0;                              // 所要時間あり
+    const done = (r.u > 0 && r.w != null && r.w >= r.u);     // 進捗100%＝完了
+    return yOK && !done;
+  });
 
   const h2px = h => Math.round(h * SC);
   const halfDayPx    = h2px(4); // 1日の前半・後半の境界（4h = 1マス分）
-  const todayOffset = h2px(chartStartH); // Excelで設定したチャート開始点を左端基準にする
+  const todayOffset = h2px(TODAY_H); // 今日を左端の基準点にするオフセット
 
   function d2px(iso) {
     if (!iso) return null;
@@ -256,18 +263,18 @@ function renderGantt() {
 
   const maxH   = Math.max(...D.map(r=>r.ab), TODAY_H+24);
   const TL     = Math.max((maxH - TODAY_H)*SC+48, 620);
-  const todayX = h2px(TODAY_H) - h2px(chartStartH); // 今日の赤線はチャート開始点からの相対位置
+  const todayX = 0;
   const stickyLbl = `flex:0 0 ${LW}px;position:sticky;left:0;z-index:8;border-right:1px solid var(--border);`;
 
   const DAYS_JP = ['日','月','火','水','木','金','土'];
   const fullDayPx = halfDayPx * 2;
-  const d2hSorted = Object.entries(d2h).filter(([iso,v])=>v>=0).sort((a,b)=>a[1]-b[1]);
+  const d2hSorted = Object.entries(d2h).filter(([iso,v])=>v>=0 && iso>=TODAY_ISO).sort((a,b)=>a[1]-b[1]);
   let dayGridLines = '';
   // 今日ラベルをx=0に赤で強制表示（2マス幅）
   const _todayDt = new Date(TODAY_ISO+'T00:00:00');
   const _todayDow = DAYS_JP[_todayDt.getDay()];
   const _todayLbl = `${_todayDt.getMonth()+1}/${_todayDt.getDate()}（${_todayDow}）`;
-  let axTicks = `<span style="position:absolute;font-size:10px;color:#E24B4A;font-weight:700;top:3px;left:${todayX+1}px;width:${fullDayPx}px;white-space:nowrap;overflow:hidden;">${_todayLbl}</span>`;
+  let axTicks = `<span style="position:absolute;font-size:10px;color:#E24B4A;font-weight:700;top:3px;left:1px;width:${fullDayPx}px;white-space:nowrap;overflow:hidden;">${_todayLbl}</span>`;
   d2hSorted.forEach(([iso, h]) => {
     const x  = h2px(h) - todayOffset;
     const dt = new Date(iso+'T00:00:00');
@@ -278,8 +285,8 @@ function renderGantt() {
     dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x}px;width:${lineW}px;background:${lineColor};opacity:1;z-index:1;pointer-events:none;"></div>`;
     // 1日2マス：中間グリッド線（半日）
     dayGridLines += `<div style="position:absolute;top:0;bottom:0;left:${x + halfDayPx}px;width:1px;background:rgba(255,255,255,0.07);opacity:1;z-index:1;pointer-events:none;"></div>`;
-    // 今日ラベルと重なる場合はスキップ（グリッド線は残す）
-    if (Math.abs(x - todayX) < fullDayPx) return;
+    // 今日ラベル（x<20）と重なる場合はラベルをスキップ（グリッド線は残す）
+    if (x < 20) return;
     const dow = DAYS_JP[dt.getDay()];
     const lbl = `${dt.getMonth()+1}/${dt.getDate()}（${dow}）`;
     axTicks += `<span style="position:absolute;font-size:10px;color:#fff;top:3px;left:${x+1}px;width:${fullDayPx}px;white-space:nowrap;overflow:hidden;">${lbl}</span>`;
@@ -298,19 +305,18 @@ function renderGantt() {
     <div style="position:relative;flex:1;height:22px;background:var(--bg-2);overflow:hidden;">${dayGridLines}${todayLine}</div>
   </div>`;
 
-  let _cascadeOffset = 0;
-  let _nextMinX = 0;
+  let _cascadeEnd = 0; // 前の行のバー終端（時間軸h）
   D.forEach((row, rowIdx) => {
     const barColor = row.b==='灯具' ? '#85B7EB' : '#C8C8C8';
-    // Y/Zベース・進捗カスケード（4hスナップなし）
+    // Y/Zベース・進捗カスケード（前の行終端 = 次の行始端）
     const rowY = row.y || 0;
     const progress = (row.u > 0 && row.w != null) ? Math.min(row.w / row.u, 1.0) : 0;
     const remainY = rowY > 0 ? rowY * (1 - progress) : 0;
-    const dispStart = (row.z || 0) - rowY - _cascadeOffset;
-    _cascadeOffset += rowY - remainY;
-    const rawBarX = h2px(dispStart) - todayOffset;
-    const barX = Math.max(_nextMinX, rawBarX);
-    _nextMinX = barX + h2px(remainY);
+    const dispStart = _cascadeEnd; // 前の行終端がそのまま開始点
+    _cascadeEnd = dispStart + remainY; // 次の行のために終端を更新
+    // 累積位置をそのまま使う（マイナス=今日より前は左端で自然にクリップ）。
+    // Math.max(0,...)で潰すと今日より前の行が全部x=0に積上り横に重なるため不可。
+    const barX = h2px(dispStart) - todayOffset;
     const barW = h2px(remainY);
     const kX = d2px(row.k);
     // 引取日マーカー: 当日以降 かつ 納品日より前の場合のみ表示（s>e の逆転データは非表示）
@@ -435,19 +441,4 @@ function renderGantt() {
       }
     }
   });
-
-}
-
-// === FORCE UPDATE ===
-async function forceUpdate() {
-  showToast('更新中...');
-  try {
-    if ('serviceWorker' in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map(r => r.unregister()));
-    }
-    const keys = await caches.keys();
-    await Promise.all(keys.map(k => caches.delete(k)));
-  } catch(e) {}
-  setTimeout(() => location.reload(true), 800);
 }
