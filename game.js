@@ -1,6 +1,6 @@
 function openGameMode(){
   if(!document.getElementById('rimaNavArea').classList.contains('rima-open')) return;
-  initOthello();
+  openGameModeMenu();
   document.getElementById('gameOverlay').classList.add('show');
   document.getElementById('gamePanel').classList.add('show');
 }
