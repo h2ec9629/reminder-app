@@ -441,4 +441,10 @@ function renderGantt() {
           el.style.width = fullDayPx + 'px';
           el.style.background = 'rgba(255,210,60,0.13)';
           el.style.borderLeft = '1px solid rgba(255,210,60,0.50)';
-          el.style.borderRight = '1px so
+          el.style.borderRight = '1px solid rgba(255,210,60,0.50)';
+          el.style.zIndex = '3';
+        });
+      }
+    }
+  });
+}
