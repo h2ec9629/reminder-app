@@ -311,7 +311,7 @@ function renderGantt() {
     <div style="position:relative;flex:1;height:22px;background:var(--bg-2);overflow:hidden;">${dayGridLines}${todayLine}</div>
   </div>`;
 
-  let _cascadeEnd = 0; // 前の行のバー終端（時間軸h）
+  let _cascadeEnd = TODAY_H; // 前の行のバー終端（時間軸h）※今日を起点にすることで進捗済み行のバーが画面外に消えるのを防ぐ
   D.forEach((row, rowIdx) => {
     const barColor = row.b==='灯具' ? '#85B7EB' : '#C8C8C8';
     // Y/Zベース・進捗カスケード（前の行終端 = 次の行始端）
@@ -441,10 +441,4 @@ function renderGantt() {
           el.style.width = fullDayPx + 'px';
           el.style.background = 'rgba(255,210,60,0.13)';
           el.style.borderLeft = '1px solid rgba(255,210,60,0.50)';
-          el.style.borderRight = '1px solid rgba(255,210,60,0.50)';
-          el.style.zIndex = '3';
-        });
-      }
-    }
-  });
-}
+          el.style.borderRight = '1px so
