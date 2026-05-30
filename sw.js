@@ -1,10 +1,19 @@
-// おじさんリマインダー Service Worker v3.2
-const CACHE_NAME = 'ojisan-reminder-v3.4';
+// おじさんリマインダー Service Worker v3.6
+const CACHE_NAME = 'ojisan-reminder-v3.6';
 const ASSETS = [
   './index.html',
   './style.css',
-  './app.js',
+  './core.js',
+  './rima.js',
+  './ui.js',
+  './sync.js',
+  './calendar.js',
+  './calc.js',
+  './game.js',
+  './quiz.js',
+  './main.js',
   './meas.html',
+  './meas_sw.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png'
@@ -72,9 +81,4 @@ self.addEventListener('fetch', event => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   event.waitUntil(
-    clients.matchAll({ type: 'window' }).then(clientList => {
-      if (clientList.length > 0) return clientList[0].focus();
-      return clients.openWindow('./index.html');
-    })
-  );
-});
+    clients.matchAll({ type: 'window' }).then(

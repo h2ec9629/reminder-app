@@ -88,9 +88,10 @@ function switchTab(name,btn) {
 }
 
 // === SCHEDULE ===
-let _excelSchedule = null;
-let _schSyncedAt   = null;
-let _ganttData     = null;
+let _excelSchedule  = null;
+let _schSyncedAt    = null;
+let _ganttData      = null;
+let _syncAttempted  = false;
 
 function renderSchedule() {
   const grid  = document.getElementById('scheduleGrid');
@@ -238,6 +239,25 @@ function initRimaToggle() {
   if (cb) cb.checked = open;
   _applyRimaState(open);
 }
+// 追加ボタン連打の隠しコマンド: 5回でリマちゃん出現（PCクリック/タップ両対応）
+let _rimaTapCount = 0;
+let _rimaTapTimer = null;
+function rimaTapCount() {
+  if (localStorage.getItem('rimaOpen') === '1') return; // 既に表示中なら何もしない
+  _rimaTapCount++;
+  clearTimeout(_rimaTapTimer); // 連打が途切れたらリセット（2秒以内に次のタップが必要）
+  _rimaTapTimer = setTimeout(() => { _rimaTapCount = 0; }, 2000);
+  if (_rimaTapCount >= 5) {
+    _rimaTapCount = 0;
+    clearTimeout(_rimaTapTimer);
+    _applyRimaState(true);
+    localStorage.setItem('rimaOpen', '1');
+    const cb = document.getElementById('showMascot');
+    if (cb) cb.checked = true;
+    if (typeof startRimaRotation === 'function') startRimaRotation();
+    if (typeof showToast === 'function') showToast('リマちゃん出現！🐉');
+  }
+}
 function saveEdit() {
   if (!_editId) return;
   const title    = document.getElementById('editTitle').value.trim();
@@ -272,3 +292,4 @@ function clearFormInput(btn) {
   const inp = btn.previousElementSibling || btn.parentNode.querySelector('input,textarea');
   if(inp){ inp.value = ''; inp.focus(); }
 }
+

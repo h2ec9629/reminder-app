@@ -1,4 +1,4 @@
-// ===== IT QUIZ =====
+// ===== Claude用語 IT QUIZ =====
 
 const QUIZ_CMT = {
   start:   ['10問、気合い入れてください！','全問正解したら褒めてあげますわ','わたしが作った問題ですから難しいですよ'],
@@ -12,176 +12,158 @@ const QUIZ_CMT = {
 };
 function quizCmt(key){ const p=QUIZ_CMT[key]; return p[Math.floor(Math.random()*p.length)]; }
 
+// ===== 眼鏡リマちゃんSVG =====
+const RIMA_GLASSES_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="56" height="56" style="flex-shrink:0">
+  <circle cx="50" cy="56" r="44" fill="#F0EBE6"/>
+  <circle cx="33" cy="44" r="2.5" fill="#1A1614"/>
+  <circle cx="59" cy="44" r="2.5" fill="#1A1614"/>
+  <path d="M39 54 Q46 57 53 54" stroke="#1A1614" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <ellipse cx="33" cy="44" rx="9.5" ry="7.5" fill="none" stroke="#3A2A20" stroke-width="2"/>
+  <ellipse cx="59" cy="44" rx="9.5" ry="7.5" fill="none" stroke="#3A2A20" stroke-width="2"/>
+  <line x1="42.5" y1="44" x2="49.5" y2="44" stroke="#3A2A20" stroke-width="2"/>
+  <line x1="23.5" y1="43" x2="15" y2="41" stroke="#3A2A20" stroke-width="2"/>
+  <line x1="68.5" y1="43" x2="77" y2="41" stroke="#3A2A20" stroke-width="2"/>
+</svg>`;
+
+// ===== タイプライター =====
+let _typewriterTimer = null;
+
+function typewriterEffect(elementId, text, speed, onComplete) {
+  if (_typewriterTimer) { clearInterval(_typewriterTimer); _typewriterTimer = null; }
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  let i = 0;
+  el.textContent = '';
+  _typewriterTimer = setInterval(() => {
+    if (i < text.length) {
+      el.textContent += text[i++];
+    } else {
+      clearInterval(_typewriterTimer);
+      _typewriterTimer = null;
+      if (onComplete) onComplete();
+    }
+  }, speed || 28);
+}
+
+function typewriterSkip(text, onComplete) {
+  if (_typewriterTimer) { clearInterval(_typewriterTimer); _typewriterTimer = null; }
+  const el = document.getElementById('quizQuestion');
+  if (el) el.textContent = text;
+  if (onComplete) onComplete();
+}
+
+// ===== 問題リスト =====
 const QUIZ_QUESTIONS = [
-  // ===== IT一般・略語 =====
-  {q:'CPUとは何の略ですか？',choices:['Central Processing Unit','Computer Power Unit','Core Processing Utility','Central Power Unit'],a:0,cat:'IT一般'},
-  {q:'RAMとは何の略ですか？',choices:['Random Access Memory','Read And Modify','Rapid Action Module','Read Access Memory'],a:0,cat:'IT一般'},
-  {q:'ROMとは何の略ですか？',choices:['Read Only Memory','Random Order Memory','Remote Operating Mode','Read Or Modify'],a:0,cat:'IT一般'},
-  {q:'USBとは何の略ですか？',choices:['Universal Serial Bus','Unified System Board','Ultra Speed Bridge','Universal Storage Box'],a:0,cat:'IT一般'},
-  {q:'PDFとは何の略ですか？',choices:['Portable Document Format','Print Data File','Page Display Format','Public Document Frame'],a:0,cat:'IT一般'},
-  {q:'HTMLとは何の略ですか？',choices:['HyperText Markup Language','High Transfer Media Link','Hyper Terminal Monitor Layer','Home Text Machine Language'],a:0,cat:'IT一般'},
-  {q:'URLとは何の略ですか？',choices:['Uniform Resource Locator','Universal Read Link','Unified Remote Location','User Reference Layer'],a:0,cat:'IT一般'},
-  {q:'OSとは何の略ですか？',choices:['Operating System','Output System','Organize Software','Online Server'],a:0,cat:'IT一般'},
-  {q:'GUIとは何の略ですか？',choices:['Graphical User Interface','General Utility Instruction','Global Unified Input','Grid User Integration'],a:0,cat:'IT一般'},
-  {q:'APIとは何の略ですか？',choices:['Application Programming Interface','Advanced Processing Integration','Automated Program Index','Application Process Input'],a:0,cat:'IT一般'},
-  {q:'SSHとは何の略ですか？',choices:['Secure Shell','Super Speed Host','System Security Hub','Simple Sync Handler'],a:0,cat:'IT一般'},
-  {q:'SSDとは何の略ですか？',choices:['Solid State Drive','Super Speed Disk','Static Storage Device','Secure Sync Drive'],a:0,cat:'IT一般'},
-  {q:'QRコードのQRとは何の略ですか？',choices:['Quick Response','Quality Record','Queue Register','Quick Read'],a:0,cat:'IT一般'},
-  {q:'AIとは何の略ですか？',choices:['Artificial Intelligence','Automated Integration','Advanced Input','Analog Interface'],a:0,cat:'IT一般'},
-  {q:'IoTとは何の略ですか？',choices:['Internet of Things','Integration of Technology','Input on Terminal','Internet of Transfer'],a:0,cat:'IT一般'},
-  {q:'CSSとは何の略ですか？',choices:['Cascading Style Sheets','Computer Style System','Content Structure Sheet','Central Style Source'],a:0,cat:'IT一般'},
-  {q:'VBAとは何の略ですか？（ExcelのVBA）',choices:['Visual Basic for Applications','Virtual Boot Architecture','Variable Build Array','Visual Binary Access'],a:0,cat:'IT一般'},
-  {q:'HTTPSのSは何を意味しますか？',choices:['Secure','System','Server','Sync'],a:0,cat:'IT一般'},
-  {q:'1KBは何バイトですか？',choices:['1024バイト','1000バイト','512バイト','2048バイト'],a:0,cat:'IT一般'},
-  {q:'1GBは何MBですか？',choices:['1024MB','1000MB','512MB','2048MB'],a:0,cat:'IT一般'},
-  {q:'2進数の「1010」は10進数でいくつですか？',choices:['10','8','12','14'],a:0,cat:'IT一般'},
-  {q:'16進数の「FF」は10進数でいくつですか？',choices:['255','256','254','128'],a:0,cat:'IT一般'},
-  {q:'「デバッグ」とは何ですか？',choices:['プログラムの不具合を見つけて修正すること','プログラムを高速化すること','プログラムをコンパイルすること','プログラムを削除すること'],a:0,cat:'IT一般'},
-  {q:'「コンパイル」とは何ですか？',choices:['人間が書いたコードを機械語に変換すること','プログラムを実行すること','データを暗号化すること','ファイルを圧縮すること'],a:0,cat:'IT一般'},
-  {q:'「アルゴリズム」とは何ですか？',choices:['問題を解くための手順・計算方法','プログラムの設計図','コンピュータの処理速度','データの保存形式'],a:0,cat:'IT一般'},
-  {q:'「クラウドコンピューティング」とはどれですか？',choices:['インターネット経由でコンピュータ資源を利用するサービス','雲型のサーバー装置','オフライン専用のシステム','特定企業向けの内部ネットワーク'],a:0,cat:'IT一般'},
-  {q:'「サーバー」の役割として正しいのはどれですか？',choices:['他のコンピュータにサービスや資源を提供する','インターネットに接続するための装置','データを入力するための機器','画面を表示するための装置'],a:0,cat:'IT一般'},
-  {q:'「クライアント」とは何ですか？',choices:['サーバーからサービスを受け取るコンピュータや端末','データを保管するコンピュータ','ネットワークを管理するコンピュータ','プログラムを開発するためのソフト'],a:0,cat:'IT一般'},
-  {q:'「プロトコル」とは何ですか？',choices:['通信の規約・手順の取り決め','コンピュータの処理能力','ソフトウェアの設計書','ネットワークの物理的な配線'],a:0,cat:'IT一般'},
-  {q:'XMLとは何の略ですか？',choices:['eXtensible Markup Language','Extra Module Link','Extended Memory Layout','Executable Machine Language'],a:0,cat:'IT一般'},
-  {q:'JSONとは何の略ですか？',choices:['JavaScript Object Notation','Java Secure Object Node','Joint Software Open Network','Java Standard Output Null'],a:0,cat:'IT一般'},
-  {q:'「キャッシュ」とは何ですか？',choices:['よく使うデータを一時的に保存して高速化する仕組み','不要なファイルを削除する機能','パスワードを暗号化する機能','データをバックアップする機能'],a:0,cat:'IT一般'},
-  {q:'「ストリーミング」とは何ですか？',choices:['ダウンロードしながら同時に再生する技術','映像を高画質に変換する技術','インターネットを高速化する技術','動画を圧縮する技術'],a:0,cat:'IT一般'},
-  {q:'「クッキー（Cookie）」とは何ですか？',choices:['ウェブサイトがブラウザに保存する小さなデータ','ウイルスの一種','ウェブページのデザインを決めるファイル','動画配信の形式'],a:0,cat:'IT一般'},
-  {q:'「レスポンシブデザイン」とは何ですか？',choices:['画面サイズに応じてレイアウトが変わる設計','応答速度が速いウェブサイトの設計','セキュリティを強化したウェブ設計','オフラインでも動くウェブ設計'],a:0,cat:'IT一般'},
-  {q:'「UI」とは何の略ですか？',choices:['User Interface','Unified Input','Universal Integration','User Information'],a:0,cat:'IT一般'},
-  {q:'「UX」とは何の略ですか？',choices:['User Experience','Unified Execution','User Extension','Ultra Exchange'],a:0,cat:'IT一般'},
-  {q:'「オープンソース」とは何ですか？',choices:['ソースコードが公開されており誰でも使用・改変できるソフトウェア','無料で使えるソフトウェア全般','インターネットに接続できるソフトウェア','クラウドで動くソフトウェア'],a:0,cat:'IT一般'},
-  {q:'「仮想マシン（VM）」とは何ですか？',choices:['ソフトウェアで実現した仮想的なコンピュータ','遠隔操作できるパソコン','クラウド上に置くファイルサーバー','ゲーム用の高性能パソコン'],a:0,cat:'IT一般'},
-  {q:'「ビッグデータ」とは何ですか？',choices:['従来の方法では処理困難な大量・多様・高速なデータ群','1TB以上のデータ','企業の売上データ','政府が管理する統計データ'],a:0,cat:'IT一般'},
-  {q:'FTPとは何の略ですか？',choices:['File Transfer Protocol','Fast Transfer Process','Frame Transfer Port','File Transmission Path'],a:0,cat:'IT一般'},
-  {q:'「バックアップ」とは何ですか？',choices:['データの消失に備えてコピーを別に保存すること','不要なファイルを削除すること','ソフトウェアをアップデートすること','システムを再起動すること'],a:0,cat:'IT一般'},
-  {q:'「マルチタスク」とは何ですか？',choices:['複数の作業を同時に（または短時間で切り替えて）処理すること','高性能なCPUのこと','複数のユーザーが使えるシステム','複数の画面に表示できる機能'],a:0,cat:'IT一般'},
-  {q:'「フォント」とは何ですか？',choices:['文字の書体・デザインのセット','画像の解像度単位','印刷の用紙サイズ','カーソルの形状'],a:0,cat:'IT一般'},
-  {q:'「解像度」とは何ですか？',choices:['画像の細かさを表す単位（ピクセル数）','画面の明るさ','ファイルの容量','色の深さ'],a:0,cat:'IT一般'},
-  {q:'「インストール」とは何ですか？',choices:['ソフトウェアをコンピュータに組み込んで使える状態にすること','ソフトウェアを削除すること','ソフトウェアを起動すること','ソフトウェアを更新すること'],a:0,cat:'IT一般'},
-  {q:'「ドライバー」（ソフトウェア）とは何ですか？',choices:['ハードウェアをOSから操作するためのソフトウェア','ウイルス対策ソフトウェア','データを圧縮するソフトウェア','ネットワークを管理するソフトウェア'],a:0,cat:'IT一般'},
-  {q:'「パッチ」とは何ですか？',choices:['不具合修正やセキュリティ強化のための更新プログラム','プログラムの設計書','データのバックアップ','ハードウェアの部品'],a:0,cat:'IT一般'},
-  {q:'「ログ」とは何ですか？',choices:['システムの動作履歴を記録したデータ','ユーザーのパスワード','ネットワークの設定ファイル','プログラムのソースコード'],a:0,cat:'IT一般'},
-  {q:'「ポート」（ネットワーク）とは何ですか？',choices:['通信先のアプリケーションを識別する番号','ネットワークケーブルの差込口','ルーターのIPアドレス','MACアドレスの別名'],a:0,cat:'IT一般'},
 
-  // ===== ネットワーク・通信 =====
-  {q:'ループバックアドレスとして正しいのはどれですか？',choices:['127.0.0.1','192.168.0.1','10.0.0.1','255.255.255.255'],a:0,cat:'ネットワーク'},
-  {q:'HTTPのデフォルトポート番号はいくつですか？',choices:['80','443','22','21'],a:0,cat:'ネットワーク'},
-  {q:'HTTPSのデフォルトポート番号はいくつですか？',choices:['443','80','8080','22'],a:0,cat:'ネットワーク'},
-  {q:'SSHのデフォルトポート番号はいくつですか？',choices:['22','23','21','25'],a:0,cat:'ネットワーク'},
-  {q:'FTPのデフォルトポート番号はいくつですか？',choices:['21','20','22','25'],a:0,cat:'ネットワーク'},
-  {q:'SMTPのデフォルトポート番号はいくつですか？',choices:['25','110','143','993'],a:0,cat:'ネットワーク'},
-  {q:'OSI参照モデルは全部で何層ですか？',choices:['7層','4層','5層','6層'],a:0,cat:'ネットワーク'},
-  {q:'OSI参照モデルの第1層（物理層）の役割はどれですか？',choices:['電気信号・光信号などの物理的なデータ伝送','IPアドレスによる経路制御','データのエンドツーエンド転送','アプリケーション間の通信'],a:0,cat:'ネットワーク'},
-  {q:'OSI参照モデルの第3層（ネットワーク層）の役割はどれですか？',choices:['IPアドレスによる経路制御（ルーティング）','MACアドレスによるフレーム転送','物理的なデータ伝送','セッション管理'],a:0,cat:'ネットワーク'},
-  {q:'ルーターが動作するOSI参照モデルの層はどれですか？',choices:['第3層（ネットワーク層）','第1層（物理層）','第2層（データリンク層）','第4層（トランスポート層）'],a:0,cat:'ネットワーク'},
-  {q:'スイッチングハブが動作するOSI参照モデルの層はどれですか？',choices:['第2層（データリンク層）','第1層（物理層）','第3層（ネットワーク層）','第4層（トランスポート層）'],a:0,cat:'ネットワーク'},
-  {q:'pingコマンドで使われるプロトコルはどれですか？',choices:['ICMP','TCP','UDP','ARP'],a:0,cat:'ネットワーク'},
-  {q:'MACアドレスは何ビットですか？',choices:['48ビット','32ビット','64ビット','128ビット'],a:0,cat:'ネットワーク'},
-  {q:'IPv4アドレスは何ビットですか？',choices:['32ビット','48ビット','64ビット','128ビット'],a:0,cat:'ネットワーク'},
-  {q:'IPv6アドレスは何ビットですか？',choices:['128ビット','64ビット','32ビット','256ビット'],a:0,cat:'ネットワーク'},
-  {q:'DHCPの役割はどれですか？',choices:['IPアドレスを自動的に割り当てる','ドメイン名をIPアドレスに変換する','メールを送受信する','ファイルを転送する'],a:0,cat:'ネットワーク'},
-  {q:'DNSの役割はどれですか？',choices:['ドメイン名をIPアドレスに変換する','IPアドレスを自動的に割り当てる','データを暗号化して送信する','ネットワークを監視する'],a:0,cat:'ネットワーク'},
-  {q:'NATとは何の略ですか？',choices:['Network Address Translation','Network Access Terminal','Node Authentication Token','Null Address Table'],a:0,cat:'ネットワーク'},
-  {q:'VPNとは何の略ですか？',choices:['Virtual Private Network','Very Powerful Node','Virtual Protocol Number','Verified Public Network'],a:0,cat:'ネットワーク'},
-  {q:'ARPの役割はどれですか？',choices:['IPアドレスからMACアドレスを解決する','MACアドレスからIPアドレスを解決する','ドメイン名をIPアドレスに変換する','IPアドレスを自動割当てする'],a:0,cat:'ネットワーク'},
-  {q:'プライベートIPアドレスのクラスCの範囲はどれですか？',choices:['192.168.0.0 ～ 192.168.255.255','10.0.0.0 ～ 10.255.255.255','172.16.0.0 ～ 172.31.255.255','169.254.0.0 ～ 169.254.255.255'],a:0,cat:'ネットワーク'},
-  {q:'TCPの特徴として正しいのはどれですか？',choices:['信頼性の高い接続型通信（確認応答あり）','高速だが信頼性のない非接続型通信','暗号化された通信','ブロードキャスト通信'],a:0,cat:'ネットワーク'},
-  {q:'UDPの特徴として正しいのはどれですか？',choices:['高速だが信頼性のない非接続型通信','信頼性の高い接続型通信','暗号化された通信','マルチキャスト専用通信'],a:0,cat:'ネットワーク'},
-  {q:'「帯域幅」とは何ですか？',choices:['単位時間あたりに転送できるデータ量の最大値','通信の遅延時間','ネットワーク機器の数','IPアドレスの範囲'],a:0,cat:'ネットワーク'},
-  {q:'「レイテンシ」とは何ですか？',choices:['データが送信元から宛先に届くまでの遅延時間','ネットワークの最大転送速度','接続できる端末の最大数','パケットの消失率'],a:0,cat:'ネットワーク'},
-  {q:'CDNとは何の略ですか？',choices:['Content Delivery Network','Central Data Node','Common Domain Name','Compact Data Network'],a:0,cat:'ネットワーク'},
-  {q:'「プロキシサーバー」の役割はどれですか？',choices:['クライアントに代わってサーバーと通信する中継サーバー','IPアドレスを管理するサーバー','メールを管理するサーバー','ファイルを管理するサーバー'],a:0,cat:'ネットワーク'},
-  {q:'「ロードバランサー」の役割はどれですか？',choices:['複数のサーバーに通信を分散させる装置','通信を暗号化する装置','IPアドレスを割り当てる装置','ネットワークを監視する装置'],a:0,cat:'ネットワーク'},
-  {q:'「パケット」とは何ですか？',choices:['ネットワーク上で転送されるデータの小さな単位','ネットワーク機器のこと','通信の速度を表す単位','ネットワークの設定ファイル'],a:0,cat:'ネットワーク'},
-  {q:'「全二重通信」とは何ですか？',choices:['送信と受信を同時に行える通信方式','交互に送受信する通信方式','一方向のみの通信方式','ブロードキャストの通信方式'],a:0,cat:'ネットワーク'},
-  {q:'NASとは何の略ですか？',choices:['Network Attached Storage','Node Access System','Network Authentication Service','Null Address Segment'],a:0,cat:'ネットワーク'},
-  {q:'WAFとは何ですか？',choices:['Webアプリケーションへの攻撃を検知・遮断するファイアウォール','無線LANのアクセスポイント','Webサーバーの設定ファイル','ウイルス対策ソフト'],a:0,cat:'ネットワーク'},
-  {q:'「デフォルトゲートウェイ」とは何ですか？',choices:['外部ネットワークへの出口となるルーターのIPアドレス','インターネットのサーバーアドレス','ネットワーク内の管理サーバー','DNSサーバーのアドレス'],a:0,cat:'ネットワーク'},
-  {q:'「サブネットマスク」の役割はどれですか？',choices:['IPアドレスのネットワーク部とホスト部を区別する','IPアドレスを暗号化する','IPアドレスを自動割当てする','ドメイン名を解決する'],a:0,cat:'ネットワーク'},
-  {q:'スター型トポロジーの特徴はどれですか？',choices:['すべての端末が中央のスイッチやハブに接続される','すべての端末が1本のケーブルでつながる','すべての端末が輪状につながる','端末同士が網状に接続される'],a:0,cat:'ネットワーク'},
-  {q:'Wi-Fi 6の規格名はどれですか？',choices:['IEEE 802.11ax','IEEE 802.11ac','IEEE 802.11n','IEEE 802.11g'],a:0,cat:'ネットワーク'},
-  {q:'Bluetoothが使用する主な周波数帯はどれですか？',choices:['2.4GHz帯','5GHz帯','900MHz帯','60GHz帯'],a:0,cat:'ネットワーク'},
-  {q:'「QoS」とは何の略ですか？',choices:['Quality of Service','Queue of Sessions','Quick Online Sync','Query Operation System'],a:0,cat:'ネットワーク'},
-  {q:'ブロードキャストアドレスとはどれですか？',choices:['同一ネットワーク内の全ホストに送信するアドレス','特定の1台にだけ送信するアドレス','複数の特定グループに送信するアドレス','自分自身に送信するアドレス'],a:0,cat:'ネットワーク'},
-  {q:'「SSID」とは何ですか？',choices:['無線LANのネットワーク識別名','Wi-Fiルーターのパスワード','IPアドレスの別名','MACアドレスの種類'],a:0,cat:'ネットワーク'},
-  {q:'「DMZ」（ネットワーク）とは何ですか？',choices:['外部と内部ネットワークの中間に置く非武装地帯のセグメント','無線LANの電波の届く範囲','VPNのトンネル区間','ファイアウォールの設定エリア'],a:0,cat:'ネットワーク'},
-  {q:'「スループット」とは何ですか？',choices:['実際に転送できたデータ量（実効速度）','理論上の最大転送速度','通信の遅延時間','パケット消失率'],a:0,cat:'ネットワーク'},
-  {q:'ポート番号「3389」といえば何のプロトコルですか？',choices:['RDP（リモートデスクトッププロトコル）','HTTP','SSH','FTP'],a:0,cat:'ネットワーク'},
-  {q:'「ICMP」の用途として正しいのはどれですか？',choices:['ネットワーク診断・エラー通知（pingなど）','ファイル転送','メール送信','Webページ表示'],a:0,cat:'ネットワーク'},
-  {q:'IPアドレス「169.254.x.x」とはどういう状態ですか？',choices:['DHCPからIPを取得できなかった時の自動割当アドレス（APIPA）','プライベートIPアドレスの一種','ループバックアドレスの範囲','クラスAのプライベートアドレス'],a:0,cat:'ネットワーク'},
+  // ===== Claude / AI用語 =====
+  {q:'「トークン」とはAIにとって何ですか？',choices:['テキストを処理する基本単位（文字や単語の断片）','AIの処理速度の単位','AIへの入力ファイルの形式','AIモデルのバージョン番号'],a:0,cat:'Claude/AI用語'},
+  {q:'「プロンプト」とは何ですか？',choices:['AIへの入力テキスト・指示文','AIの出力結果','AIのモデルファイル','AIのエラーメッセージ'],a:0,cat:'Claude/AI用語'},
+  {q:'「LLM」とは何の略ですか？',choices:['Large Language Model','Low Latency Module','Language Learning Machine','Long Loop Method'],a:0,cat:'Claude/AI用語'},
+  {q:'「コンテキストウィンドウ」とは何ですか？',choices:['AIが一度に参照できるテキストの最大量','AIのメモリ容量','ブラウザのウィンドウサイズ','画面に表示される文字数'],a:0,cat:'Claude/AI用語'},
+  {q:'「ハルシネーション」とはAIにとって何ですか？',choices:['AIが事実でない情報をもっともらしく生成する現象','AIが処理できずに止まる現象','AIが同じ回答を繰り返す現象','AIが画像を生成する機能'],a:0,cat:'Claude/AI用語'},
+  {q:'「MCP」とは何の略ですか？（ClaudeのMCP）',choices:['Model Context Protocol','Multi-Channel Processing','Machine Code Pipeline','Memory Control Port'],a:0,cat:'Claude/AI用語'},
+  {q:'「RAG」とは何の略ですか？',choices:['Retrieval-Augmented Generation','Random Access Generator','Rapid Algorithm Graph','Repeated Action Group'],a:0,cat:'Claude/AI用語'},
+  {q:'Claudeの「システムプロンプト」とは何ですか？',choices:['AIの動作・役割・制約を事前に定義する指示','ユーザーが送るメッセージ','AIの回答文','コンピュータを起動するコマンド'],a:0,cat:'Claude/AI用語'},
+  {q:'AIのTemperature（温度）を高く設定すると何が起きますか？',choices:['回答の多様性・ランダム性が上がる','処理速度が速くなる','コンテキストが増える','エラーが減る'],a:0,cat:'Claude/AI用語'},
+  {q:'「エンベディング」とはAI分野で何ですか？',choices:['テキストを数値ベクトルに変換して意味を表現する技術','画像をテキストに変換する技術','AIモデルを圧縮する技術','データを暗号化する技術'],a:0,cat:'Claude/AI用語'},
+  {q:'Claudeが「Worktree」モードを使う理由は何ですか？',choices:['元ファイルに影響なく隔離した作業コピーで変更するため','ファイルをバックアップするため','コードをコンパイルするため','ネットワーク接続を管理するため'],a:0,cat:'Claude/AI用語'},
+  {q:'「ファインチューニング」とは何ですか？',choices:['事前学習済みモデルを特定用途向けに追加学習させること','モデルの画質を上げること','AIの処理速度を調整すること','プロンプトを短くすること'],a:0,cat:'Claude/AI用語'},
+  {q:'「Tool use（ツール使用）」とはAIにとって何ですか？',choices:['AIが外部のツールや機能を呼び出して実行する能力','AIがツールの説明文を生成すること','プロンプトに画像を添付すること','モデルをアップデートすること'],a:0,cat:'Claude/AI用語'},
+  {q:'「マルチモーダル」とはAIにとって何ですか？',choices:['テキスト・画像・音声など複数の形式を扱えること','複数のAIが同時に動くこと','複数言語に対応していること','複数のユーザーが使えること'],a:0,cat:'Claude/AI用語'},
+  {q:'「APIキー」とは何ですか？',choices:['APIサービスを利用するための認証用の秘密の文字列','キーボードの特殊キー','データの暗号化キー','データベースのプライマリキー'],a:0,cat:'Claude/AI用語'},
+  {q:'「サンドボックス」とはコンピュータ用語で何ですか？',choices:['本番環境に影響を与えない隔離された実行環境','子供向けゲームのこと','テスト用のデータベース','デバッグモードの別名'],a:0,cat:'Claude/AI用語'},
+  {q:'「プロンプトエンジニアリング」とは何ですか？',choices:['AIから望む出力を得るためにプロンプトを工夫・設計する技術','AIのモデルを設計する技術','AIのUIを設計する技術','AIを配備するインフラ設計'],a:0,cat:'Claude/AI用語'},
+  {q:'「zero-shot」とは何ですか？（AI文脈）',choices:['例を一切示さずにAIにタスクを指示すること','AIが0秒で回答すること','データなしでモデルを学習すること','画像ゼロで動作するAI'],a:0,cat:'Claude/AI用語'},
+  {q:'「few-shot」とは何ですか？（AI文脈）',choices:['少数の例を示してAIにタスクのパターンを伝える方法','少量のデータで学習させること','短いプロンプトを使うこと','少人数で使うAIサービス'],a:0,cat:'Claude/AI用語'},
+  {q:'Claudeの「Artifact」とは何ですか？（Coworkモード）',choices:['Claudeが作成・保存する成果物ページ（再訪可能）','Claudeのモデルファイル','エラーログのこと','プロンプトのテンプレート'],a:0,cat:'Claude/AI用語'},
+  {q:'「スキル」とは何ですか？（Claude Coworkの）',choices:['Claudeの能力を拡張するインストール可能な機能パック','Claudeの知識データベース','プログラミング言語の一種','クラウドストレージサービス'],a:0,cat:'Claude/AI用語'},
+  {q:'AIの「推論（Inference）」とは何ですか？',choices:['学習済みモデルに入力を与えて出力を得ること','AIを新たに学習させること','モデルの精度を評価すること','データを前処理すること'],a:0,cat:'Claude/AI用語'},
+  {q:'「ベクターデータベース」とは何ですか？',choices:['エンベディング（ベクトル）で意味検索ができるデータベース','グラフィック用のデータベース','Excelファイルを管理するデータベース','動画を管理するデータベース'],a:0,cat:'Claude/AI用語'},
+  {q:'Claudeの「scheduled task（スケジュールタスク）」とは何ですか？',choices:['指定した時刻や間隔で自動実行される仕事','タスクの優先順位リスト','Claudeとの会話のこと','ファイルの整理機能'],a:0,cat:'Claude/AI用語'},
+  {q:'「プラグイン」とは何ですか？（Claude Coworkの）',choices:['MCPやスキルをまとめた拡張機能パック','Claudeのメインプログラム','ファイルの種類','ユーザーの設定ファイル'],a:0,cat:'Claude/AI用語'},
 
-  // ===== プログラミング全般 =====
-  {q:'「変数」とは何ですか？',choices:['データを一時的に格納するための名前付きの箱','プログラムの命令文','繰り返し処理の単位','条件を判定するための式'],a:0,cat:'プログラミング'},
-  {q:'「配列」とは何ですか？',choices:['同じ種類のデータを順番に並べて格納するデータ構造','条件分岐の構文','繰り返し処理の構文','関数の別名'],a:0,cat:'プログラミング'},
-  {q:'オブジェクト指向の「継承」とは何ですか？',choices:['親クラスの性質を子クラスが受け継ぐ仕組み','データを外部から隠す仕組み','同じ名前のメソッドが異なる動作をする仕組み','クラスからオブジェクトを生成すること'],a:0,cat:'プログラミング'},
-  {q:'「カプセル化」とは何ですか？',choices:['データや処理をひとまとめにして外部から直接触れないようにする仕組み','親クラスの性質を子クラスが受け継ぐ仕組み','同じ名前のメソッドが異なる動作をする仕組み','クラスからオブジェクトを生成すること'],a:0,cat:'プログラミング'},
-  {q:'「インスタンス」とは何ですか？',choices:['クラスをもとに作られた実体のオブジェクト','クラスの設計図そのもの','クラスの初期化メソッド','クラスの継承関係'],a:0,cat:'プログラミング'},
-  {q:'「再帰（再帰関数）」とは何ですか？',choices:['関数が自分自身を呼び出す処理','関数を別の関数に渡す処理','関数を繰り返し定義する処理','外部ライブラリを呼び出す処理'],a:0,cat:'プログラミング'},
-  {q:'「スタック」の特徴はどれですか？',choices:['後から入れたものを先に取り出す（LIFO）構造','先に入れたものを先に取り出す（FIFO）構造','ランダムにアクセスできる構造','キーで検索できる構造'],a:0,cat:'プログラミング'},
-  {q:'「キュー」の特徴はどれですか？',choices:['先に入れたものを先に取り出す（FIFO）構造','後から入れたものを先に取り出す（LIFO）構造','ランダムにアクセスできる構造','キーで検索できる構造'],a:0,cat:'プログラミング'},
-  {q:'二分探索の計算量（最悪）はどれですか？',choices:['O(log n)','O(n)','O(n²)','O(1)'],a:0,cat:'プログラミング'},
-  {q:'バブルソートの計算量（最悪）はどれですか？',choices:['O(n²)','O(n log n)','O(log n)','O(n)'],a:0,cat:'プログラミング'},
-  {q:'「コンパイル言語」の特徴はどれですか？',choices:['実行前にソースコード全体を機械語に変換する','一行ずつ読み込みながら実行する','ブラウザ上で動作する','スクリプト形式で記述する'],a:0,cat:'プログラミング'},
-  {q:'Gitの「commit」とは何ですか？',choices:['変更内容をローカルリポジトリに記録・保存すること','変更内容をリモートに送ること','リモートから最新を取得すること','ブランチを統合すること'],a:0,cat:'プログラミング'},
-  {q:'Gitの「push」とは何ですか？',choices:['ローカルの変更内容をリモートリポジトリに送ること','リモートから最新を取得すること','ブランチを統合すること','新しいリポジトリを作ること'],a:0,cat:'プログラミング'},
-  {q:'Gitの「pull」とは何ですか？',choices:['リモートリポジトリの最新を取得してローカルに反映すること','ローカルの変更を送ること','変更を記録すること','ブランチを切ること'],a:0,cat:'プログラミング'},
-  {q:'Gitの「branch」とは何ですか？',choices:['メインの開発ラインから分岐した独立した作業ライン','変更の記録単位','リモートリポジトリ','プロジェクトのフォルダ構造'],a:0,cat:'プログラミング'},
-  {q:'MVCパターンの「M」は何ですか？',choices:['Model（データ・ビジネスロジック）','Module','Monitor','Memory'],a:0,cat:'プログラミング'},
-  {q:'MVCパターンの「V」は何ですか？',choices:['View（画面表示）','Variable','Version','Validation'],a:0,cat:'プログラミング'},
-  {q:'MVCパターンの「C」は何ですか？',choices:['Controller（制御・橋渡し）','Cache','Compile','Connection'],a:0,cat:'プログラミング'},
-  {q:'「NULL（ヌル）」とは何ですか？',choices:['値が存在しないことを示す特別な値','ゼロのこと','空文字のこと','エラーのこと'],a:0,cat:'プログラミング'},
-  {q:'「例外処理」とは何ですか？',choices:['プログラム実行中のエラーを捕捉して対処する仕組み','エラーを無視して処理を続ける仕組み','エラーが起きないようにするテスト','パフォーマンスを改善する処理'],a:0,cat:'プログラミング'},
-  {q:'「フレームワーク」と「ライブラリ」の違いはどれですか？',choices:['フレームワークはアプリの骨格を提供し処理の流れを制御、ライブラリは機能部品を提供','フレームワークは無料でライブラリは有料','フレームワークはサーバー用、ライブラリはクライアント用','違いはない'],a:0,cat:'プログラミング'},
-  {q:'RESTとは何の略ですか？',choices:['Representational State Transfer','Remote Execution Service Terminal','Recursive Endpoint Server Transfer','Reliable Entry System Token'],a:0,cat:'プログラミング'},
-  {q:'データベースの「CRUD」のCは何ですか？',choices:['Create（作成）','Copy','Connect','Check'],a:0,cat:'プログラミング'},
-  {q:'データベースの「CRUD」のRは何ですか？',choices:['Read（読み取り）','Remove','Restore','Register'],a:0,cat:'プログラミング'},
-  {q:'SQLの「SELECT」の役割はどれですか？',choices:['テーブルからデータを取得する','データを挿入する','データを更新する','テーブルを削除する'],a:0,cat:'プログラミング'},
-  {q:'「インデックス」（データベース）とは何ですか？',choices:['検索を高速化するためにデータに付けた索引','テーブルの行番号','データの並び順','テーブルの列名'],a:0,cat:'プログラミング'},
-  {q:'「トランザクション」とは何ですか？',choices:['一連のデータベース操作をひとまとまりとして扱う仕組み','データの暗号化方法','サーバーへの接続方式','データのバックアップ処理'],a:0,cat:'プログラミング'},
-  {q:'「Dockerコンテナ」とは何ですか？',choices:['アプリとその実行環境をひとまとめにした軽量な仮想環境','仮想マシンの別名','クラウドサーバーの種類','Linuxの一種'],a:0,cat:'プログラミング'},
-  {q:'CI/CDとはどういう意味ですか？',choices:['継続的インテグレーション／継続的デリバリーの自動化プロセス','コードのバックアップとデプロイのこと','テストと設計のこと','コードレビューとデプロイのこと'],a:0,cat:'プログラミング'},
-  {q:'「リファクタリング」とは何ですか？',choices:['外部からの動作を変えずにコードの内部構造を整理・改善すること','機能を追加することなくバグを修正すること','パフォーマンスを最適化すること','コードを削除してシンプルにすること'],a:0,cat:'プログラミング'},
-  {q:'「デプロイ」とは何ですか？',choices:['作成したアプリケーションを本番環境に配置して稼働させること','コードをテストすること','コードをコンパイルすること','コードを設計すること'],a:0,cat:'プログラミング'},
-  {q:'「静的型付け言語」の特徴はどれですか？',choices:['変数の型をコンパイル時に決定する','変数の型を実行時に決定する','型を宣言しなくてもよい','型が存在しない'],a:0,cat:'プログラミング'},
-  {q:'HTTPメソッドのうち「新しいデータを作成する」のに使うのはどれですか？',choices:['POST','GET','DELETE','PUT'],a:0,cat:'プログラミング'},
-  {q:'「正規表現」とは何ですか？',choices:['文字列のパターンを記述するための表現方法','変数の命名規則','データベースの正規化手法','コードの整形ルール'],a:0,cat:'プログラミング'},
-  {q:'「非同期処理」とは何ですか？',choices:['処理の完了を待たずに次の処理を実行する方式','複数CPUで並列実行する処理','エラーを後で処理する方法','バックグラウンドでサーバーを動かすこと'],a:0,cat:'プログラミング'},
-  {q:'「イテレータ」とは何ですか？',choices:['コレクション内の要素を順番に取り出す仕組み','繰り返し回数を数えるカウンター','配列の要素数を返す関数','ループ構文の別名'],a:0,cat:'プログラミング'},
+  // ===== シェル・コマンド =====
+  {q:'「Bash」とは何ですか？',choices:['LinuxやmacOSで使われるシェル（コマンド実行環境）','Pythonのフレームワーク','データベースの種類','ファイル圧縮形式'],a:0,cat:'シェル・コマンド'},
+  {q:'「Python」の特徴として正しいのはどれですか？',choices:['読みやすい文法でAIや自動化によく使われるプログラミング言語','コンパイル必須の低レベル言語','Excelのマクロ専用言語','ネットワーク設定専用のコマンドツール'],a:0,cat:'シェル・コマンド'},
+  {q:'「grep」コマンドは何をしますか？',choices:['ファイルからパターンに一致する行を検索する','ファイルをコピーする','ディレクトリ一覧を表示する','ファイルを削除する'],a:0,cat:'シェル・コマンド'},
+  {q:'「Glob」とはプログラミングで何ですか？',choices:['*(アスタリスク)などのワイルドカードでファイルパスのパターンを指定する方法','ファイルを圧縮する機能','ネットワークの通信形式','データベースの検索方法'],a:0,cat:'シェル・コマンド'},
+  {q:'Bashで「ls」コマンドは何をしますか？',choices:['現在のディレクトリのファイル一覧を表示する','ファイルを削除する','ファイルを移動する','ファイルを圧縮する'],a:0,cat:'シェル・コマンド'},
+  {q:'Bashで「cd」コマンドは何をしますか？',choices:['ディレクトリ（フォルダ）を移動する','ファイルを作成する','プロセスを終了する','ファイルの内容を表示する'],a:0,cat:'シェル・コマンド'},
+  {q:'「pip install」は何をするコマンドですか？',choices:['Pythonのライブラリ・パッケージをインストールする','Pythonのプログラムを実行する','Pythonファイルをコンパイルする','Pythonの設定を初期化する'],a:0,cat:'シェル・コマンド'},
+  {q:'Bashで「cat ファイル名」は何をしますか？',choices:['ファイルの内容をターミナルに表示する','ファイルを削除する','ファイルをコピーする','ファイルを圧縮する'],a:0,cat:'シェル・コマンド'},
+  {q:'「cron」とは何ですか？',choices:['指定した時刻・間隔でコマンドを自動実行するスケジューラー','ファイル圧縮ツール','プロセス監視ツール','ネットワーク診断ツール'],a:0,cat:'シェル・コマンド'},
+  {q:'Bashで「sudo」をつけるとどうなりますか？',choices:['管理者（root）権限でコマンドを実行する','コマンドをバックグラウンドで実行する','コマンドの実行を一時停止する','コマンドの実行履歴を表示する'],a:0,cat:'シェル・コマンド'},
+  {q:'シェルで「|」（パイプ）を使うと何ができますか？',choices:['前のコマンドの出力を次のコマンドの入力として渡す','コマンドを並列に実行する','コマンドの出力をファイルに保存する','コマンドを繰り返し実行する'],a:0,cat:'シェル・コマンド'},
+  {q:'Bashで「>」を使うと何ができますか？',choices:['コマンドの出力をファイルに書き込む（上書き）','コマンドの出力をターミナルに表示する','ファイルの内容を比較する','コマンドの出力を別のコマンドに渡す'],a:0,cat:'シェル・コマンド'},
+  {q:'「chmod」コマンドは何をしますか？',choices:['ファイルやディレクトリのアクセス権限を変更する','ファイルの所有者を変更する','ファイルを移動する','ファイルを圧縮する'],a:0,cat:'シェル・コマンド'},
+  {q:'Pythonのファイルの拡張子は何ですか？',choices:['.py','.python','.pt','.pyscript'],a:0,cat:'シェル・コマンド'},
+  {q:'Bashで「mkdir」は何をしますか？',choices:['新しいディレクトリ（フォルダ）を作成する','ディレクトリを削除する','ディレクトリを移動する','ディレクトリの一覧を表示する'],a:0,cat:'シェル・コマンド'},
+  {q:'「curl」コマンドは何をしますか？',choices:['URLにHTTPリクエストを送ってデータを取得・送信する','ファイルを暗号化する','DNSを解決する','ポートをスキャンする'],a:0,cat:'シェル・コマンド'},
+  {q:'Bashで「rm -rf」は何をしますか？',choices:['ディレクトリごと強制的に再帰削除する（取り消し不可）','ファイルをリモートサーバーに送る','ファイルをランダムに並び替える','ファイルのアクセス権をリセットする'],a:0,cat:'シェル・コマンド'},
+  {q:'「シェバン（#!）」行（例：#!/bin/bash）は何を意味しますか？',choices:['スクリプトを実行するインタープリタの場所を指定する','コメント行','プログラムのバージョン','管理者権限の要求'],a:0,cat:'シェル・コマンド'},
+  {q:'「npm install」は何をするコマンドですか？',choices:['Node.jsのパッケージをインストールする','JavaScriptを実行する','ウェブサーバーを起動する','JavaScriptをコンパイルする'],a:0,cat:'シェル・コマンド'},
+  {q:'Pythonで「import」は何をしますか？',choices:['外部ライブラリやモジュールを読み込む','ファイルをコピーする','データをデータベースに取り込む','関数を定義する'],a:0,cat:'シェル・コマンド'},
 
-  // ===== セキュリティ =====
-  {q:'「マルウェア」とは何ですか？',choices:['悪意ある目的で作られた不正なソフトウェアの総称','コンピュータを遅くするだけのソフト','広告を表示するソフト','不要ファイルのこと'],a:0,cat:'セキュリティ'},
-  {q:'「ランサムウェア」とは何ですか？',choices:['ファイルを暗号化して身代金を要求するマルウェア','スパムメールを大量送信するマルウェア','パスワードを盗むマルウェア','ウェブカメラを乗っ取るマルウェア'],a:0,cat:'セキュリティ'},
-  {q:'「フィッシング」とは何ですか？',choices:['偽サイトや偽メールで個人情報を騙し取る攻撃','大量のアクセスでサーバーを落とす攻撃','ソフトの脆弱性を突く攻撃','盗聴によってデータを取得する攻撃'],a:0,cat:'セキュリティ'},
-  {q:'「ブルートフォース攻撃」とは何ですか？',choices:['パスワードをすべての組み合わせで試す総当たり攻撃','偽サイトで情報を盗む攻撃','SQLを悪用してデータを取得する攻撃','マルウェアを感染させる攻撃'],a:0,cat:'セキュリティ'},
-  {q:'「SQLインジェクション」とは何ですか？',choices:['入力フォームに不正なSQLを埋め込んでデータベースを不正操作する攻撃','SQLサーバーに大量接続する攻撃','SQLファイルにウイルスを仕込む攻撃','データベースのパスワードを総当たりする攻撃'],a:0,cat:'セキュリティ'},
-  {q:'「XSS（クロスサイトスクリプティング）」とは何ですか？',choices:['悪意あるスクリプトをウェブページに埋め込んで閲覧者を攻撃する手法','サイト間でSQLを注入する攻撃','偽サイトを作って誘導する攻撃','Webサーバーをクラッシュさせる攻撃'],a:0,cat:'セキュリティ'},
-  {q:'「DDoS攻撃」とは何ですか？',choices:['多数の端末から大量アクセスをしてサーバーをダウンさせる攻撃','1台から大量データを送る攻撃','メールで悪意あるファイルを送る攻撃','パスワードを総当たりする攻撃'],a:0,cat:'セキュリティ'},
-  {q:'「ゼロデイ攻撃」とは何ですか？',choices:['修正パッチが公開される前の脆弱性を狙った攻撃','ゼロ時台に行われる攻撃','パスワードが「0000」のシステムを狙う攻撃','ウイルスの感染から0日で広まる攻撃'],a:0,cat:'セキュリティ'},
-  {q:'「ソーシャルエンジニアリング」とは何ですか？',choices:['技術的でなく人間の心理・行動を利用して情報を騙し取る手法','SNSを使った攻撃手法','社員同士の情報漏洩','企業のITシステムへの侵入'],a:0,cat:'セキュリティ'},
-  {q:'二要素認証で「持っているもの」の例はどれですか？',choices:['スマートフォン（認証アプリ・SMS）','パスワード','指紋','秘密の質問'],a:0,cat:'セキュリティ'},
-  {q:'「対称暗号」の特徴はどれですか？',choices:['暗号化と復号に同じ鍵を使う','暗号化と復号に異なる鍵を使う','鍵を使わずに暗号化する','公開鍵のみを使う'],a:0,cat:'セキュリティ'},
-  {q:'「公開鍵暗号」の特徴はどれですか？',choices:['公開鍵で暗号化し秘密鍵で復号する','同じ鍵で暗号化と復号を行う','暗号化した人だけが復号できる','ブロック単位で暗号化する'],a:0,cat:'セキュリティ'},
-  {q:'SSL/TLSの役割はどれですか？',choices:['通信を暗号化して盗聴・改ざんを防ぐ','ウイルスを検知して除去する','不正アクセスをブロックする','パスワードを管理する'],a:0,cat:'セキュリティ'},
-  {q:'「デジタル署名」の役割はどれですか？',choices:['送信者の認証とデータの改ざんがないことを証明する','データを暗号化する','パスワードを管理する','通信速度を上げる'],a:0,cat:'セキュリティ'},
-  {q:'セキュリティのCIAトライアードの「C」は何ですか？',choices:['Confidentiality（機密性）','Control','Credential','Certificate'],a:0,cat:'セキュリティ'},
-  {q:'セキュリティのCIAトライアードの「I」は何ですか？',choices:['Integrity（完全性・改ざんされていないこと）','Identification','Infrastructure','Input'],a:0,cat:'セキュリティ'},
-  {q:'セキュリティのCIAトライアードの「A」は何ですか？',choices:['Availability（可用性・使えること）','Authentication','Authorization','Access'],a:0,cat:'セキュリティ'},
-  {q:'「最小権限の原則」とは何ですか？',choices:['ユーザーに必要最低限の権限だけを付与すること','パスワードをできるだけ短くすること','管理者だけがシステムを使えること','権限を定期的にリセットすること'],a:0,cat:'セキュリティ'},
-  {q:'「パスワードのハッシュ化」とは何ですか？',choices:['パスワードを一方向の計算で変換して元に戻せない形で保存すること','パスワードを暗号化して保存すること','パスワードを圧縮して保存すること','パスワードをBase64で変換すること'],a:0,cat:'セキュリティ'},
-  {q:'「ソルト」（パスワード）とは何ですか？',choices:['ハッシュ化前にパスワードに付加するランダムな文字列','パスワードの最低文字数制限','パスワードを暗号化する鍵','二要素認証の一種'],a:0,cat:'セキュリティ'},
-  {q:'「ペネトレーションテスト」とは何ですか？',choices:['許可を得た上でシステムへ実際に侵入を試みてセキュリティを評価するテスト','ファイアウォールの設定を確認するテスト','社員のセキュリティ意識を調査するテスト','ウイルスの検知率を確認するテスト'],a:0,cat:'セキュリティ'},
-  {q:'「バックドア」とは何ですか？',choices:['認証を回避してシステムに侵入できる隠し入口','バックアップ用のサーバー','不要なプロセスを終了する機能','セキュリティログの削除機能'],a:0,cat:'セキュリティ'},
-  {q:'「キーロガー」とは何ですか？',choices:['キーボードの入力を記録してパスワード等を盗むマルウェア','ファイルを暗号化するマルウェア','大量のメールを送るマルウェア','Webカメラを盗撮するマルウェア'],a:0,cat:'セキュリティ'},
-  {q:'「ボットネット」とは何ですか？',choices:['マルウェアに感染して遠隔操作される端末の集団','ファイアウォールの一種','セキュリティ監視システム','正規のプログラムのネットワーク'],a:0,cat:'セキュリティ'},
-  {q:'「CSRF（クロスサイトリクエストフォージェリ）」とは何ですか？',choices:['ログイン済みユーザーに意図しないリクエストを送らせる攻撃','偽サイトで情報を盗む攻撃','スクリプトを注入する攻撃','SQLを注入する攻撃'],a:0,cat:'セキュリティ'},
-  {q:'「セキュリティパッチ」とは何ですか？',choices:['脆弱性を修正するためのソフトウェア更新プログラム','ウイルスの感染を確認するツール','セキュリティ診断レポート','ファイアウォールの設定ファイル'],a:0,cat:'セキュリティ'},
-  {q:'「多層防御」とは何ですか？',choices:['複数のセキュリティ対策を重ねることで一つが突破されても守れるようにする考え方','ファイアウォールを多数設置すること','パスワードを複雑にすること','複数の認証方式を使うこと'],a:0,cat:'セキュリティ'},
-  {q:'AES暗号の種類はどれですか？',choices:['対称暗号（共通鍵暗号）','非対称暗号（公開鍵暗号）','ハッシュ関数','電子署名'],a:0,cat:'セキュリティ'},
-  {q:'「認証」と「認可」の違いはどれですか？',choices:['認証は「誰か」の確認、認可は「何ができるか」の許可','認証はログイン、認可はパスワードリセット','認証はサーバー側、認可はクライアント側','違いはない'],a:0,cat:'セキュリティ'},
-  {q:'「インシデントレスポンス」とは何ですか？',choices:['セキュリティ事故が発生した際の対応・復旧プロセス','定期的なセキュリティ診断','社員教育プログラム','ファイアウォールの更新作業'],a:0,cat:'セキュリティ'},
-  {q:'「ホワイトリスト方式」とは何ですか？',choices:['許可するものだけを明示的に登録し、それ以外をすべて拒否する方式','禁止するものを登録し、それ以外を許可する方式','信頼できるサイトの一覧','セキュリティ研究者のリスト'],a:0,cat:'セキュリティ'},
+  // ===== Git・GitHub =====
+  {q:'「Git」とは何ですか？',choices:['ソースコードの変更履歴を管理する分散型バージョン管理システム','コードを実行するツール','コードを共有するSNS','コードを暗号化するシステム'],a:0,cat:'Git・GitHub'},
+  {q:'「GitHub」とは何ですか？',choices:['Gitリポジトリをオンラインでホスティング・共有するサービス','Gitの作成者の名前','Gitコマンドのこと','AIコード補完ツール'],a:0,cat:'Git・GitHub'},
+  {q:'「リポジトリ（repository）」とは何ですか？',choices:['プロジェクトのファイルと変更履歴をまとめて管理する場所','ファイルを保存するだけのフォルダ','コードを実行する仮想環境','クラウドストレージサービス'],a:0,cat:'Git・GitHub'},
+  {q:'「git commit」は何をしますか？',choices:['変更内容をローカルリポジトリに記録・保存する','変更をリモートに送る','リモートの変更を取得する','ブランチを切り替える'],a:0,cat:'Git・GitHub'},
+  {q:'「git push」は何をしますか？',choices:['ローカルのコミットをリモートリポジトリに送る','リモートの変更をローカルに取り込む','変更を記録する','ブランチを作成する'],a:0,cat:'Git・GitHub'},
+  {q:'「git pull」は何をしますか？',choices:['リモートの最新変更をローカルに取得して反映する','ローカルの変更をリモートに送る','変更を破棄する','ブランチを削除する'],a:0,cat:'Git・GitHub'},
+  {q:'「PAT（Personal Access Token）」とは何ですか？',choices:['GitHubへの操作を認証するための個人用トークン（パスワードの代替）','プログラムの実行権限','プロジェクトの管理権限','パスワードマネージャーのこと'],a:0,cat:'Git・GitHub'},
+  {q:'「.gitignore」ファイルの役割は何ですか？',choices:['Gitで管理しないファイル・フォルダを指定する','Gitの設定を保存する','コミットメッセージのテンプレート','ブランチの一覧を保存する'],a:0,cat:'Git・GitHub'},
+  {q:'「git clone」は何をしますか？',choices:['リモートリポジトリをローカルにコピーする','ブランチをコピーする','コミットをコピーする','ファイルをコピーする'],a:0,cat:'Git・GitHub'},
+  {q:'「git diff」は何を表示しますか？',choices:['変更前後のファイルの差分（どこが変わったか）','コミットの一覧','ブランチの一覧','リモートの状態'],a:0,cat:'Git・GitHub'},
+  {q:'「git status」は何を表示しますか？',choices:['変更されたファイルや追跡状態の一覧','コミット履歴','ブランチの一覧','リモートとローカルの差分'],a:0,cat:'Git・GitHub'},
+  {q:'「git merge」は何をしますか？',choices:['指定したブランチの変更を現在のブランチに統合する','ブランチを削除する','ブランチを作成する','コミットを取り消す'],a:0,cat:'Git・GitHub'},
+  {q:'「HEAD」とはGitで何ですか？',choices:['現在チェックアウトしているコミットを指すポインタ','最初のコミット','ブランチ名','リモートリポジトリの別名'],a:0,cat:'Git・GitHub'},
+  {q:'「fork（フォーク）」とはGitHubで何ですか？',choices:['他人のリポジトリを自分のアカウントにコピーして独立した開発をすること','ブランチを分岐させること','コードをコピーする一般的な操作','リポジトリをバックアップすること'],a:0,cat:'Git・GitHub'},
+  {q:'「git stash」は何をしますか？',choices:['コミットせずに変更内容を一時的に退避させる','変更を破棄する','ブランチを一時停止する','ファイルをバックアップする'],a:0,cat:'Git・GitHub'},
+  {q:'「git log」は何を表示しますか？',choices:['コミットの履歴（日時・作者・メッセージ）','変更ファイルの差分','ブランチの一覧','リモートの接続状態'],a:0,cat:'Git・GitHub'},
+  {q:'「Worktree（ワークツリー）」とはGitで何ですか？',choices:['1つのリポジトリから複数の作業ディレクトリを同時に使える仕組み','作業用のブランチの別名','ファイルのバックアップフォルダ','ステージングエリアの別名'],a:0,cat:'Git・GitHub'},
+  {q:'GitHubの「Pull Request（PR）」とは何ですか？',choices:['ブランチの変更をマージしてほしいと提案する機能','リモートから取得するコマンドの別名','コードを削除する申請','リポジトリを公開する操作'],a:0,cat:'Git・GitHub'},
+  {q:'「git revert」は何をしますか？',choices:['指定したコミットの変更を打ち消す新しいコミットを作る','コミット履歴ごと変更を消す','ファイルを元の状態に戻す','ブランチを削除する'],a:0,cat:'Git・GitHub'},
+  {q:'「git branch」は何を表示しますか？（引数なしの場合）',choices:['ローカルのブランチ一覧と現在のブランチ','リモートのブランチ一覧','コミット一覧','タグ一覧'],a:0,cat:'Git・GitHub'},
+
+  // ===== データ形式 =====
+  {q:'「JSON」の特徴として正しいのはどれですか？',choices:['キーと値のペアで構造化データを表現するテキスト形式','表形式のデータを表現する形式','画像を表現するファイル形式','圧縮ファイルの形式'],a:0,cat:'データ形式'},
+  {q:'「Markdown」とは何ですか？',choices:['記号を使ってテキストに見出し・太字・リストなどを表現するシンプルな記法','表計算ソフトのファイル形式','プログラミング言語の一種','データベースのクエリ言語'],a:0,cat:'データ形式'},
+  {q:'MarkdownでH1見出しを作る記号はどれですか？',choices:['# (ハッシュ1つ)','## (ハッシュ2つ)','** (アスタリスク2つ)','--- (ハイフン3つ)'],a:0,cat:'データ形式'},
+  {q:'「YAML」の特徴として正しいのはどれですか？',choices:['インデントで階層を表現する人間が読みやすい設定ファイル形式','バイナリ形式の設定ファイル','Excelと互換性のある形式','データを暗号化する形式'],a:0,cat:'データ形式'},
+  {q:'「CSV」とは何の略ですか？',choices:['Comma-Separated Values','Compact Storage Volume','Common Source Variable','Code Structured View'],a:0,cat:'データ形式'},
+  {q:'「UTF-8」とは何ですか？',choices:['世界中の文字を扱える文字エンコード（符号化）形式','ファイル圧縮の規格','通信プロトコルの種類','フォントの規格'],a:0,cat:'データ形式'},
+  {q:'JSONで配列（リスト）を表す記号はどれですか？',choices:['[] (角括弧)','{} (波括弧)','() (丸括弧)','<> (山括弧)'],a:0,cat:'データ形式'},
+  {q:'JSONでオブジェクトを表す記号はどれですか？',choices:['{} (波括弧)','[] (角括弧)','() (丸括弧)','<> (山括弧)'],a:0,cat:'データ形式'},
+  {q:'「Base64」とは何ですか？',choices:['バイナリデータをテキスト（英数字+記号）に変換するエンコード方式','64ビットの暗号化方式','データを64分割して送信する方式','64種類の文字セット'],a:0,cat:'データ形式'},
+  {q:'「正規表現」とは何ですか？',choices:['文字列のパターンをルールで記述する表現方法（検索・置換に使う）','変数の命名規則','データベースの正規化手法','コードの整形ルール'],a:0,cat:'データ形式'},
+  {q:'Markdownで太字を表現する記号はどれですか？',choices:['**テキスト** (アスタリスク2つで囲む)','__テキスト__ (アンダースコア2つで囲む)','##テキスト## (ハッシュで囲む)','||テキスト|| (パイプで囲む)'],a:0,cat:'データ形式'},
+  {q:'「.md」ファイルは何の形式ですか？',choices:['Markdownファイル','Microsoftドキュメント','Macドキュメント','Mobileデバイス用ファイル'],a:0,cat:'データ形式'},
+  {q:'「XMLとJSONの違い」として正しいのはどれですか？',choices:['XMLはタグで囲む形式、JSONは波括弧と角括弧で表現する形式','XMLはJSONの古い名前','JSONはXMLより情報量が多い','違いはない'],a:0,cat:'データ形式'},
+  {q:'「BOMなしUTF-8」が推奨される理由は何ですか？',choices:['ファイル先頭の特殊バイトがシステムやExcelで誤動作を起こすのを防ぐため','ファイルサイズが小さくなるため','読み込みが高速になるため','暗号化が適用されるため'],a:0,cat:'データ形式'},
+  {q:'「TOML」とは何ですか？',choices:['設定ファイル向けのシンプルで読みやすいファイル形式','テキスト専用のファイル形式','Pythonの設定形式の正式名称','Toolのマークアップ言語'],a:0,cat:'データ形式'},
+
+  // ===== Excel・VBA =====
+  {q:'VBAで「Debug.Print」は何をしますか？',choices:['イミディエイトウィンドウに値を出力してデバッグする','メッセージボックスを表示する','ログファイルに書き込む','エラーを無視して続行する'],a:0,cat:'Excel・VBA'},
+  {q:'「イミディエイトウィンドウ」はどこで開きますか？（VBE内）',choices:['Ctrl+G またはVBEの「表示」メニュー','ExcelのデータタブのVBAメニュー','ファイルメニューの「環境設定」','ツールメニューの「マクロ」'],a:0,cat:'Excel・VBA'},
+  {q:'「.xlsm」拡張子のファイルとは何ですか？',choices:['マクロ（VBA）を含むExcelファイル','読み取り専用のExcelファイル','Excelテンプレートファイル','暗号化されたExcelファイル'],a:0,cat:'Excel・VBA'},
+  {q:'VBAで「Sub」と「Function」の違いは何ですか？',choices:['Subは値を返さない、Functionは値を返す','SubはExcel専用、Functionは全アプリ共通','Subは1回しか使えない、Functionは何度でも使える','違いはない'],a:0,cat:'Excel・VBA'},
+  {q:'「VBE」とは何ですか？',choices:['Visual Basic Editor。VBAコードを書く開発環境','Visual Basic Engineのこと','Excelのバージョン情報画面','Excelの設定エディタ'],a:0,cat:'Excel・VBA'},
+  {q:'VBAで「MsgBox」は何をしますか？',choices:['ポップアップメッセージボックスを表示する','メッセージをログに書き込む','メールを送信する','ステータスバーにメッセージを表示する'],a:0,cat:'Excel・VBA'},
+  {q:'VBAで「Range("A1").Value」は何ですか？',choices:['セルA1の値を取得または設定するプロパティ','セルA1の書式を取得するプロパティ','セルA1の位置を取得するプロパティ','セルA1の色を取得するプロパティ'],a:0,cat:'Excel・VBA'},
+  {q:'VBAで「For Each」ループは何をしますか？',choices:['コレクション（配列・セル範囲など）の要素を1つずつ処理する','指定回数だけ繰り返す','条件が真の間繰り返す','ランダムな順番で繰り返す'],a:0,cat:'Excel・VBA'},
+  {q:'「ThisWorkbook」とはVBAで何ですか？',choices:['VBAコードが書かれているExcelファイル自身を指す','現在開いているすべてのブック','Excelアプリケーション全体','アクティブなシート'],a:0,cat:'Excel・VBA'},
+  {q:'VBAで「ActiveSheet」は何ですか？',choices:['現在選択・表示されているシート','最初のシート','一番最後のシート','コードが書かれているシート'],a:0,cat:'Excel・VBA'},
+  {q:'ExcelのVBAでショートカット「Alt + F11」は何をしますか？',choices:['VBE（Visual Basic Editor）を開く','マクロ実行ダイアログを開く','イミディエイトウィンドウを開く','Excelを終了する'],a:0,cat:'Excel・VBA'},
+  {q:'VBAで「On Error Resume Next」は何をしますか？',choices:['エラーが起きても無視して次の行に進む','エラーが起きたら処理を止める','エラーの種類を表示する','エラー発生時に特定の処理に飛ぶ'],a:0,cat:'Excel・VBA'},
+  {q:'Excelで「VLOOKUP」関数の役割は何ですか？',choices:['指定した値を表の左端で検索し同じ行の指定列の値を返す','セルの値を縦方向に合計する','条件に合うセルの数を数える','2つのセルの値を比較する'],a:0,cat:'Excel・VBA'},
+  {q:'Excelで「ピボットテーブル」とは何ですか？',choices:['大量データを集計・クロス集計して多角的に分析する機能','セルを回転させる機能','縦横を入れ替える（転置）機能','データをグラフ化する機能'],a:0,cat:'Excel・VBA'},
+  {q:'VBAで「Application.ScreenUpdating = False」の目的は何ですか？',choices:['画面の再描画を止めてマクロの処理を高速化する','画面を保護する','アニメーションを停止する','スクリーンショットを撮る'],a:0,cat:'Excel・VBA'},
+  {q:'VBAで「Split関数」は何をしますか？',choices:['文字列を指定の区切り文字で分割して配列として返す','配列を結合して文字列にする','文字列を大文字・小文字に変換する','文字列の長さを返す'],a:0,cat:'Excel・VBA'},
+  {q:'Excelで「XLOOKUP」が「VLOOKUP」より優れている点はどれですか？',choices:['検索列より左の列も参照でき完全一致がデフォルトで使いやすい','処理速度が圧倒的に速い','ピボットテーブルと連携できる','複数シートを一括検索できる'],a:0,cat:'Excel・VBA'},
+  {q:'VBAで「Workbooks.Open」は何をしますか？',choices:['指定したExcelファイルを開く','新しいブックを作成する','ブックを保存する','ブックを閉じる'],a:0,cat:'Excel・VBA'},
+  {q:'Excelの「条件付き書式」とは何ですか？',choices:['指定した条件に合うセルに自動でスタイルや色を適用する機能','セルの入力規則を設定する機能','数式を自動補完する機能','セルの保護を条件付きで行う機能'],a:0,cat:'Excel・VBA'},
+  {q:'VBAで「Cells(1, 1)」は何を指しますか？',choices:['行1、列1のセル（=A1）','A列の1行目（=A1と同じ）','シートの先頭セル','名前ボックスに「1,1」と入力したセル'],a:0,cat:'Excel・VBA'},
 ];
 
 // ===== 成績ログ =====
@@ -202,7 +184,7 @@ function quizLogAdd(score){
     String(now.getHours()).padStart(2,'0') + ':' +
     String(now.getMinutes()).padStart(2,'0');
   logs.unshift({ ts, score, total:10 });
-  if(logs.length > 50) logs.length = 50; // 最大50件
+  if(logs.length > 50) logs.length = 50;
   quizLogSave(logs);
 }
 function quizLogDelete(idx){
@@ -258,9 +240,19 @@ function renderQuizLog(){
 let _quiz = {};
 
 function initQuiz(){
+  if (_typewriterTimer) { clearInterval(_typewriterTimer); _typewriterTimer = null; }
   const questions = [...QUIZ_QUESTIONS].sort(()=>Math.random()-0.5).slice(0,10);
   _quiz = { questions, idx:0, score:0, answered:false };
   renderQuizQuestion();
+}
+
+function _showChoices() {
+  const choicesEl = document.getElementById('quizChoices');
+  if (choicesEl) {
+    choicesEl.style.opacity = '1';
+    choicesEl.style.transition = 'opacity 0.35s ease';
+    choicesEl.style.pointerEvents = 'auto';
+  }
 }
 
 function renderQuizQuestion(){
@@ -268,19 +260,36 @@ function renderQuizQuestion(){
   const num = _quiz.idx + 1;
   const pct = Math.round((_quiz.idx/10)*100);
   const shuffled = q.choices.map((c,i)=>({text:c,correct:i===q.a})).sort(()=>Math.random()-0.5);
+  _quiz.shuffled = shuffled;
   const btns = shuffled.map((c,i)=>`
     <button class="quiz-choice-btn" onclick="answerQuiz(${i},this,${c.correct})">${c.text}</button>
   `).join('');
+
   document.getElementById('gamePanel').innerHTML=`
-    <div class="game-title">ITクイズ <span style="font-size:13px;color:var(--text-muted);">${num}/10</span></div>
+    <div class="game-title">Claudeクイズ <span style="font-size:13px;color:var(--text-muted);">${num}/10</span></div>
     <div class="quiz-progress"><div class="quiz-progress-bar" style="width:${pct}%"></div></div>
     <div class="quiz-cat-badge">${q.cat}</div>
-    <div class="oth-comment" id="quizComment">${quizCmt('start')}</div>
-    <div class="quiz-question">${q.q}</div>
-    <div class="quiz-choices">${btns}</div>
+    <div style="display:flex;align-items:center;gap:8px;margin:6px 0;">
+      ${RIMA_GLASSES_SVG}
+      <div class="oth-comment" id="quizComment" style="margin:0;flex:1;">${quizCmt('start')}</div>
+    </div>
+    <div class="quiz-question" id="quizQuestion"
+      style="cursor:pointer;min-height:48px;"
+      title="タップで全文表示"
+      onclick="typewriterSkipNow()"></div>
+    <div class="quiz-choices" id="quizChoices"
+      style="opacity:0;pointer-events:none;">${btns}</div>
     <div style="margin-top:auto;">
       <button class="game-back-btn" style="width:100%;margin-top:8px;" onclick="openGameModeMenu()">やめる</button>
     </div>`;
+
+  typewriterEffect('quizQuestion', q.q, 28, _showChoices);
+}
+
+function typewriterSkipNow() {
+  const q = _quiz.questions[_quiz.idx];
+  if (!q) return;
+  typewriterSkip(q.q, _showChoices);
 }
 
 function answerQuiz(idx, btn, isCorrect){
@@ -294,8 +303,8 @@ function answerQuiz(idx, btn, isCorrect){
     document.getElementById('quizComment').textContent = quizCmt('correct');
   } else {
     btn.classList.add('quiz-wrong');
-    const correctText = _quiz.questions[_quiz.idx].choices[_quiz.questions[_quiz.idx].a];
-    allBtns.forEach(b=>{ if(b !== btn && b.textContent.trim() === correctText) b.classList.add('quiz-correct'); });
+    const correctText = _quiz.shuffled.find(s=>s.correct)?.text || '';
+    allBtns.forEach(b=>{ if(b.textContent.trim() === correctText) b.classList.add('quiz-correct'); });
     document.getElementById('quizComment').textContent = quizCmt('wrong');
   }
   const choices = document.querySelector('.quiz-choices');
@@ -341,7 +350,7 @@ function openGameModeMenu(){
     <div class="oth-comment">どっちで遊びますか？</div>
     <div style="display:flex;flex-direction:column;gap:14px;margin-top:18px;">
       <button class="game-back-btn" style="font-size:16px;padding:14px;" onclick="initOthello()">♟ オセロ</button>
-      <button class="game-back-btn" style="font-size:16px;padding:14px;background:var(--accent);color:#fff;" onclick="initQuiz()">💡 ITクイズ</button>
+      <button class="game-back-btn" style="font-size:16px;padding:14px;background:var(--accent);color:#fff;" onclick="initQuiz()">💡 Claudeクイズ</button>
     </div>
     <div style="margin-top:12px;">
       <button class="game-back-btn" style="width:100%;font-size:13px;color:var(--text-muted);" onclick="renderQuizLog()">📊 成績ログ</button>
