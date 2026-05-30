@@ -269,6 +269,9 @@ function saveEdit() {
   const deadline = document.getElementById('editDeadline').value;
   const notes    = document.getElementById('editNotes').value.trim();
   if (!title) { showToast('タイトルを入力してください'); return; }
+  // 編集前のキーを墓場に入れてGistからの再インポートを防ぐ
+  const old = getAll().find(r => r.id === _editId);
+  if (old) addGrave(old.title + '|' + (old.deadline || 'null'));
   updateReminder(_editId, { title, deadline: deadline||null, notes: notes||null });
   closeEdit();
   renderHome();
