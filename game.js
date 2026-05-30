@@ -95,5 +95,3 @@ function renderOthello(){
       <button class="game-back-btn" style="flex:1;color:var(--accent);" onclick="initOthello(_oth.difficulty)">もう一度</button>
       <button class="game-back-btn" style="flex:1;color:#e05555;" onclick="renderOthelloDiffSelect()">難易度変更</button>
     </div>`;
-}
-
