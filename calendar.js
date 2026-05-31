@@ -176,12 +176,24 @@ function renderGantt() {
   };
   if (_ganttData && _ganttData.d2h) d2h = _ganttData.d2h;
 
-  // 今日線の基準日：エクセル(AD3でずらした)デイラインがあれば優先。無ければPCの今日。
+  // 基準日（デイライン）：エクセルのd2hマップ＋base_dateだけで決める。
+  // PCの今日(new Date)は一切使わない＝エクセルファイルのミラーに徹する。
   let TODAY_ISO;
+  const _d2hKeys = Object.keys(d2h).sort();
+  let _baseReq;
   if (_ganttData && typeof _ganttData.base_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(_ganttData.base_date)) {
-    TODAY_ISO = _ganttData.base_date;
+    _baseReq = _ganttData.base_date;
   } else {
-    const _td = new Date(); TODAY_ISO = `${_td.getFullYear()}-${String(_td.getMonth()+1).padStart(2,'0')}-${String(_td.getDate()).padStart(2,'0')}`;
+    _baseReq = _d2hKeys[0]; // base_dateが無ければエクセルの最左稼働日
+  }
+  // base_dateが稼働日(d2hのキー)でなければ、その日以前の直近の稼働日にスナップ。
+  // → x=0が必ずグリッド線に乗るので、今日ラベルと翌稼働日ラベルが重ならない。
+  if (d2h[_baseReq] !== undefined) {
+    TODAY_ISO = _baseReq;
+  } else {
+    let _snap = null;
+    for (const k of _d2hKeys) { if (k <= _baseReq) _snap = k; }
+    TODAY_ISO = _snap || _d2hKeys[0];
   }
   const TODAY_H = (function() {
     if (d2h[TODAY_ISO] !== undefined) return d2h[TODAY_ISO];
