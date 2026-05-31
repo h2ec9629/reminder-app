@@ -110,6 +110,11 @@ function startRimaRotation() {
   showNextRimaComment();
 }
 
+function stopRimaRotation() {
+  clearTimeout(_rimaCycleTimer);
+  clearTimeout(_rimaTypeTimer);
+}
+
 function showNextRimaComment() {
   const text = getCurrentSlideText();
   const el   = document.getElementById('rimaNavComment');

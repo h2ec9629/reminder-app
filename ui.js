@@ -103,20 +103,24 @@ function renderSchedule() {
   const ac = _excelSchedule.ac_side || [];
   const ad = _excelSchedule.ad_side || [];
 
-  // 当日以降14日以内でフィルタ
-  const todayStr14 = todayStr();
-  const limitDate  = new Date(); limitDate.setDate(limitDate.getDate() + 14);
-  const limitStr   = limitDate.toISOString().slice(0, 10);
+  // 起点（基準日）：エクセルのbase_date（デイライン）をミラーする。
+  // PCの今日(new Date)には依存しない＝日を跨いでもエクセルがpushするまで窓は動かない。
+  const anchorStr = (_ganttData && typeof _ganttData.base_date === 'string'
+                     && /^\d{4}-\d{2}-\d{2}$/.test(_ganttData.base_date))
+                    ? _ganttData.base_date
+                    : todayStr();
+  const limitDate  = new Date(anchorStr + 'T00:00:00'); limitDate.setDate(limitDate.getDate() + 14);
+  const limitStr   = `${limitDate.getFullYear()}-${String(limitDate.getMonth()+1).padStart(2,'0')}-${String(limitDate.getDate()).padStart(2,'0')}`;
 
   // 日付でグルーピング
   const dateMap = {};
   ac.forEach(item => {
-    if (item.date < todayStr14 || item.date > limitStr) return;
+    if (item.date < anchorStr || item.date > limitStr) return;
     if (!dateMap[item.date]) dateMap[item.date] = { ac: [], ad: [] };
     dateMap[item.date].ac.push(item);
   });
   ad.forEach(item => {
-    if (item.date < todayStr14 || item.date > limitStr) return;
+    if (item.date < anchorStr || item.date > limitStr) return;
     if (!dateMap[item.date]) dateMap[item.date] = { ac: [], ad: [] };
     dateMap[item.date].ad.push(item);
   });
@@ -239,23 +243,29 @@ function initRimaToggle() {
   if (cb) cb.checked = open;
   _applyRimaState(open);
 }
-// 追加ボタン連打の隠しコマンド: 5回でリマちゃん出現（PCクリック/タップ両対応）
+// 追加ボタン連打の隠しコマンド: 5回でリマちゃん出現/非表示トグル（PCクリック/タップ両対応）
 let _rimaTapCount = 0;
 let _rimaTapTimer = null;
 function rimaTapCount() {
-  if (localStorage.getItem('rimaOpen') === '1') return; // 既に表示中なら何もしない
   _rimaTapCount++;
   clearTimeout(_rimaTapTimer); // 連打が途切れたらリセット（2秒以内に次のタップが必要）
   _rimaTapTimer = setTimeout(() => { _rimaTapCount = 0; }, 2000);
   if (_rimaTapCount >= 5) {
     _rimaTapCount = 0;
     clearTimeout(_rimaTapTimer);
-    _applyRimaState(true);
-    localStorage.setItem('rimaOpen', '1');
+    const isOpen = localStorage.getItem('rimaOpen') === '1';
+    const next = !isOpen;
+    _applyRimaState(next);
+    localStorage.setItem('rimaOpen', next ? '1' : '0');
     const cb = document.getElementById('showMascot');
-    if (cb) cb.checked = true;
-    if (typeof startRimaRotation === 'function') startRimaRotation();
-    if (typeof showToast === 'function') showToast('リマちゃん出現！🐉');
+    if (cb) cb.checked = next;
+    if (next) {
+      if (typeof startRimaRotation === 'function') startRimaRotation();
+      if (typeof showToast === 'function') showToast('リマちゃん出現！🐉');
+    } else {
+      if (typeof stopRimaRotation === 'function') stopRimaRotation();
+      if (typeof showToast === 'function') showToast('リマちゃんひっこみ！');
+    }
   }
 }
 function saveEdit() {
@@ -264,6 +274,9 @@ function saveEdit() {
   const deadline = document.getElementById('editDeadline').value;
   const notes    = document.getElementById('editNotes').value.trim();
   if (!title) { showToast('タイトルを入力してください'); return; }
+  // 編集前のキーを墓場に入れてGistからの再インポートを防ぐ
+  const old = getAll().find(r => r.id === _editId);
+  if (old) addGrave(old.title + '|' + (old.deadline || 'null'));
   updateReminder(_editId, { title, deadline: deadline||null, notes: notes||null });
   closeEdit();
   renderHome();
