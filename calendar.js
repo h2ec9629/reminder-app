@@ -154,6 +154,9 @@ function abbrevName(n) {
   return n;
 }
 
+// ▼ガントタブ＝横棒チャート。データは gantt_data.rows（VBA:Module2が生成）。
+//   完了フィルタあり（259行付近）：進捗100%or工数0は消すが、納品日(e)が未来なら残す。
+//   ※「日程タブ」のカードリストは別ファイル ui.js:renderSchedule()。混同注意。
 function renderGantt() {
   const SC = 9;
   const LW = 200;
@@ -257,7 +260,10 @@ function renderGantt() {
   // 納品日(e)が昨日以前の行を除外（当日・未来・納品日なしはそのまま表示）
   D = D.filter(r => !r.e || r.e >= TODAY_ISO);
   // 完了行を除外: 進捗100%(w>=u) または 所要時間ゼロ(y<=0) はバー長さ0で重なるため非表示
+  // ただし納品日(e)がまだ未来なら「加工完了・納品待ち」なので残す
   D = D.filter(r => {
+    const undelivered = r.e && r.e >= TODAY_ISO;            // 納品日があり、まだ来ていない＝残す
+    if (undelivered) return true;
     const yOK = (r.y || 0) > 0;                              // 所要時間あり
     const done = (r.u > 0 && r.w != null && r.w >= r.u);     // 進捗100%＝完了
     return yOK && !done;

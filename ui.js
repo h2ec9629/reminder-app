@@ -93,6 +93,9 @@ let _schSyncedAt    = null;
 let _ganttData      = null;
 let _syncAttempted  = false;
 
+// ▼日程タブ＝日付ごとのカードリスト（引取/納品）。データは excel_schedule.ac_side/ad_side（VBA:Module2が生成）。
+//   完了フィルタは無し＝来た納品行は全部出す。完了で消す挙動はこの関数には無い。
+//   ※横棒の「ガントタブ」は別ファイル calendar.js:renderGantt()。同じGistの別データを使う。混同注意。
 function renderSchedule() {
   const grid  = document.getElementById('scheduleGrid');
   const syncd = document.getElementById('schSynced');
