@@ -1,5 +1,4 @@
-// ========== 二人麻雀 ==========
-// 2プレイヤー・同一端末ホットシート方式
+// ========== 麻雀 CPU対戦 ==========
 
 // --- 牌定義 ---
 const MJ_TYPES = [
@@ -8,24 +7,19 @@ const MJ_TYPES = [
   's1','s2','s3','s4','s5','s6','s7','s8','s9',
   'z1','z2','z3','z4','z5','z6','z7'
 ];
-
-const MJ_KANJI  = ['一','二','三','四','五','六','七','八','九'];
-const MJ_HONOR  = {z1:'東',z2:'南',z3:'西',z4:'北',z5:'白',z6:'発',z7:'中'};
+const MJ_KANJI = ['一','二','三','四','五','六','七','八','九'];
+const MJ_HONOR = {z1:'東',z2:'南',z3:'西',z4:'北',z5:'白',z6:'発',z7:'中'};
 
 let _mj = null;
 
-// --- 初期化・セットアップ ---
+// --- セットアップ画面 ---
 function initMahjong() {
   document.getElementById('gamePanel').innerHTML = `
-    <div class="game-title">🀄 二人麻雀</div>
-    <div class="oth-comment" style="margin-bottom:14px;">プレイヤー名と局数を設定してください</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-      <span style="font-size:12px;color:var(--text-sub);flex-shrink:0;width:80px;">プレイヤー1</span>
-      <input class="form-input" id="mjName0" value="プレイヤー1" style="font-size:14px;padding:9px 12px;">
-    </div>
+    <div class="game-title">🀄 麻雀 CPU対戦</div>
+    <div class="oth-comment" style="margin-bottom:14px;">リマちゃんと麻雀で対決！</div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-      <span style="font-size:12px;color:var(--text-sub);flex-shrink:0;width:80px;">プレイヤー2</span>
-      <input class="form-input" id="mjName1" value="プレイヤー2" style="font-size:14px;padding:9px 12px;">
+      <span style="font-size:12px;color:var(--text-sub);flex-shrink:0;width:80px;">あなたの名前</span>
+      <input class="form-input" id="mjPlayerName" value="おじさん" style="font-size:14px;padding:9px 12px;">
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;">
       <span style="font-size:12px;color:var(--text-sub);flex-shrink:0;width:80px;">局数</span>
@@ -42,89 +36,232 @@ function initMahjong() {
 }
 
 function mjStartGame() {
-  const n0   = (document.getElementById('mjName0')?.value || '').trim() || 'プレイヤー1';
-  const n1   = (document.getElementById('mjName1')?.value || '').trim() || 'プレイヤー2';
-  const rnd  = parseInt(document.getElementById('mjRounds')?.value || '4');
-  mjNewRound({ names:[n0,n1], scores:[0,0], round:1, totalRounds:rnd, firstPlayer:0 });
+  const name = (document.getElementById('mjPlayerName')?.value||'').trim()||'あなた';
+  const rnd  = parseInt(document.getElementById('mjRounds')?.value||'4');
+  mjNewRound({ playerName:name, scores:[0,0], round:1, totalRounds:rnd, firstPlayer:0 });
 }
 
 // --- 局の開始 ---
 function mjNewRound(cfg) {
   const deck = [];
   for (const t of MJ_TYPES) for (let i=0;i<4;i++) deck.push(t);
-  // シャッフル
   for (let i=deck.length-1;i>0;i--) {
     const j = Math.floor(Math.random()*(i+1));
     [deck[i],deck[j]] = [deck[j],deck[i]];
   }
-  const fp   = cfg.firstPlayer;
-  const hand0 = deck.splice(0,13).sort(mjSort);
-  const hand1 = deck.splice(0,13).sort(mjSort);
-  const drawn  = deck.splice(0,1)[0]; // 先手の第一ツモ
+  const ph  = deck.splice(0,13).sort(mjSort);
+  const cpu = deck.splice(0,13).sort(mjSort);
 
   _mj = {
-    wall:          deck,
-    hands:         [hand0, hand1],
-    discards:      [[], []],
-    turn:          fp,
-    drawn:         drawn,
-    phase:         'pass2',   // 先手に端末を渡す
-    selected:      -1,        // デフォルト: ツモ牌選択
-    winner:        -1,
-    winType:       '',
-    scores:        cfg.scores,
-    names:         cfg.names,
-    round:         cfg.round,
-    totalRounds:   cfg.totalRounds,
-    firstPlayer:   fp,
+    wall:        deck,
+    hands:       [ph, cpu],  // 0=プレイヤー, 1=CPU
+    discards:    [[], []],
+    drawn:       null,
+    phase:       'init',
+    selected:    -1,
     pendingDiscard: null,
-    showHand:      false,
+    winner:      -1,
+    winType:     '',
+    scores:      cfg.scores,
+    playerName:  cfg.playerName,
+    round:       cfg.round,
+    totalRounds: cfg.totalRounds,
+    firstPlayer: cfg.firstPlayer,
+    thinking:    false,
   };
+
+  if (cfg.firstPlayer === 0) {
+    mjPlayerDraw();
+  } else {
+    _mj.phase = 'cpu_thinking';
+    renderMahjong();
+    setTimeout(mjCpuAutoTurn, 1000);
+  }
+}
+
+// --- ツモ処理 ---
+function mjPlayerDraw() {
+  if (!_mj || _mj.wall.length === 0) {
+    _mj.phase = 'ryukyoku'; renderMahjong(); return;
+  }
+  _mj.drawn    = _mj.wall.splice(0,1)[0];
+  _mj.selected = -1;
+  const full   = [..._mj.hands[0], _mj.drawn];
+  _mj.phase    = mjCheckWin(full) ? 'player_tsumo' : 'player_turn';
   renderMahjong();
 }
 
-// --- 牌ソート ---
+// --- プレイヤーアクション ---
+function mjSelectTile(idx) {
+  if (_mj.phase !== 'player_turn') return;
+  _mj.selected = (_mj.selected === idx) ? -2 : idx;
+  renderMahjong();
+}
+
+function mjConfirmDiscard() {
+  if (_mj.selected < -1) return;
+  mjDoPlayerDiscard(_mj.selected);
+}
+
+function mjDoPlayerDiscard(idx) {
+  let discarded;
+  if (idx === -1) {
+    discarded = _mj.drawn;
+    _mj.drawn = null;
+  } else {
+    discarded = _mj.hands[0].splice(idx, 1)[0];
+    _mj.hands[0].push(_mj.drawn);
+    _mj.hands[0].sort(mjSort);
+    _mj.drawn = null;
+  }
+  _mj.discards[0].push(discarded);
+  _mj.selected = -2;
+
+  // CPUのロンチェック
+  if (mjCheckWin([..._mj.hands[1], discarded])) {
+    _mj.phase   = 'cpu_ron';
+    _mj.thinking = true;
+    _mj.pendingDiscard = discarded;
+    renderMahjong();
+    setTimeout(() => {
+      _mj.hands[1].push(discarded);
+      _mj.hands[1].sort(mjSort);
+      _mj.winner   = 1;
+      _mj.winType  = 'ron';
+      _mj.scores[1]++;
+      _mj.phase    = 'end';
+      _mj.thinking = false;
+      renderMahjong();
+    }, 1000);
+    return;
+  }
+
+  _mj.phase = 'cpu_thinking';
+  renderMahjong();
+  setTimeout(mjCpuAutoTurn, 600 + Math.random()*600);
+}
+
+function mjDeclareTsumo() {
+  const p = _mj.hands[0];
+  p.push(_mj.drawn);
+  p.sort(mjSort);
+  _mj.drawn   = null;
+  _mj.winner  = 0;
+  _mj.winType = 'tsumo';
+  _mj.scores[0]++;
+  _mj.phase   = 'end';
+  renderMahjong();
+}
+
+function mjSkipTsumo() {
+  _mj.phase = 'player_turn';
+  renderMahjong();
+}
+
+function mjDeclareRon() {
+  const tile = _mj.pendingDiscard;
+  if (!mjCheckWin([..._mj.hands[0], tile])) return;
+  _mj.hands[0].push(tile);
+  _mj.hands[0].sort(mjSort);
+  _mj.winner   = 0;
+  _mj.winType  = 'ron';
+  _mj.scores[0]++;
+  _mj.phase    = 'end';
+  _mj.pendingDiscard = null;
+  renderMahjong();
+}
+
+function mjSkipRon() {
+  _mj.pendingDiscard = null;
+  mjPlayerDraw();
+}
+
+// --- CPU自動ターン ---
+function mjCpuAutoTurn() {
+  if (!_mj || _mj.phase !== 'cpu_thinking') return;
+
+  if (_mj.wall.length === 0) { _mj.phase='ryukyoku'; renderMahjong(); return; }
+
+  const drawn    = _mj.wall.splice(0,1)[0];
+  const fullHand = [..._mj.hands[1], drawn];
+
+  // CPUツモ判定
+  if (mjCheckWin(fullHand)) {
+    _mj.hands[1] = fullHand.sort(mjSort);
+    _mj.winner   = 1;
+    _mj.winType  = 'tsumo';
+    _mj.scores[1]++;
+    _mj.phase    = 'end';
+    renderMahjong();
+    return;
+  }
+
+  // CPU最適切り
+  const discard = mjCpuBestDiscard(fullHand);
+  const di = fullHand.indexOf(discard);
+  _mj.hands[1] = [...fullHand.slice(0,di), ...fullHand.slice(di+1)].sort(mjSort);
+  _mj.discards[1].push(discard);
+
+  // プレイヤーロン確認
+  if (mjCheckWin([..._mj.hands[0], discard])) {
+    _mj.pendingDiscard = discard;
+    _mj.phase = 'ron_check';
+    renderMahjong();
+    return;
+  }
+
+  mjPlayerDraw();
+}
+
+// --- 次の局・終局 ---
+function mjNextRound() {
+  if (_mj.round >= _mj.totalRounds) { mjFinalResult(); return; }
+  mjNewRound({
+    playerName:  _mj.playerName,
+    scores:      _mj.scores,
+    round:       _mj.round + 1,
+    totalRounds: _mj.totalRounds,
+    firstPlayer: 1 - _mj.firstPlayer,
+  });
+}
+
+function mjFinalResult() {
+  const [sp, sc] = _mj.scores;
+  const msg = sp > sc ? `🎉 ${_mj.playerName}の勝ち！` :
+              sc > sp ? '😵 リマちゃんの勝ち...' : '引き分け！';
+  document.getElementById('gamePanel').innerHTML = `
+    <div class="game-title">🀄 麻雀 CPU対戦 — 終局</div>
+    <div class="mj-final-box">
+      <div class="mj-final-row">
+        <div class="mj-final-player${sp>sc?' mj-final-winner':''}">
+          <div class="mj-final-name">${_mj.playerName}</div>
+          <div class="mj-final-score">${sp}<span>勝</span></div>
+        </div>
+        <div class="mj-final-vs">VS</div>
+        <div class="mj-final-player${sc>sp?' mj-final-winner':''}">
+          <div class="mj-final-name">リマちゃん</div>
+          <div class="mj-final-score">${sc}<span>勝</span></div>
+        </div>
+      </div>
+      <div class="mj-final-msg">${msg}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;">
+      <button class="btn btn-accent" onclick="initMahjong()">もう一度</button>
+      <button class="btn btn-secondary" onclick="openGameModeMenu()">ゲーム選択へ</button>
+      <button class="game-back-btn" style="width:100%;margin-top:2px;" onclick="closeGame()">とじる</button>
+    </div>`;
+}
+
+// ============================================================
+//  上がり判定 (ロジックは同じ)
+// ============================================================
 function mjSort(a, b) {
   const o = {m:0,p:1,s:2,z:3};
   const sa = o[a[0]], sb = o[b[0]];
-  if (sa !== sb) return sa - sb;
+  if (sa !== sb) return sa-sb;
   return parseInt(a.slice(1)) - parseInt(b.slice(1));
 }
 
-// --- 牌HTML生成 ---
-function mjTileHTML(tile, opts) {
-  opts = opts || {};
-  const { sel, sm, back, onclick } = opts;
-  const smCls  = sm   ? ' mj-sm'  : '';
-  if (back) return `<div class="mj-tile mj-back${smCls}"></div>`;
-
-  const suit = tile[0];
-  const num  = parseInt(tile.slice(1));
-
-  // スーツ別クラス
-  const suitCls = {m:'mj-m',p:'mj-p',s:'mj-s',z:'mj-z'}[suit];
-  // 三元牌は色が違うので追加クラス
-  const dragonCls = (suit==='z' && num>=5) ? ` mj-d${num}` : '';
-  const selCls   = sel ? ' mj-sel' : '';
-  const oc       = onclick ? ` onclick="${onclick}"` : '';
-
-  let top, bot;
-  if (suit === 'z') {
-    top = MJ_HONOR[tile]; bot = '';
-  } else if (suit === 'm') {
-    top = MJ_KANJI[num-1]; bot = '萬';
-  } else if (suit === 'p') {
-    top = String(num); bot = '筒';
-  } else {
-    top = String(num); bot = '索';
-  }
-
-  return `<div class="mj-tile ${suitCls}${dragonCls}${selCls}${smCls}"${oc}><span class="mj-t">${top}</span><span class="mj-b">${bot}</span></div>`;
-}
-
-// --- 上がり判定ユーティリティ ---
-
-// arr から val を n個除去 (最初のn個)
 function mjRemN(arr, val, n) {
   let c = 0;
   return arr.filter(t => !(t === val && c++ < n));
@@ -136,7 +273,6 @@ function mjCheckWin(tiles14) {
   return mjChiitoi(s) || mjStandard(s);
 }
 
-// 七対子
 function mjChiitoi(s) {
   const cnt = {};
   for (const t of s) cnt[t] = (cnt[t]||0)+1;
@@ -144,7 +280,6 @@ function mjChiitoi(s) {
   return keys.length === 7 && keys.every(k => cnt[k] === 2);
 }
 
-// 通常形(4面子1雀頭)
 function mjStandard(s) {
   const tried = new Set();
   for (const head of s) {
@@ -156,20 +291,15 @@ function mjStandard(s) {
   return false;
 }
 
-// 面子チェック(再帰)
 function mjSets(tiles) {
   if (tiles.length === 0) return true;
   if (tiles.length % 3 !== 0) return false;
   const s = [...tiles].sort(mjSort);
   const first = s[0];
-
-  // 刻子
   if (s.filter(t=>t===first).length >= 3) {
     if (mjSets(mjRemN(s, first, 3))) return true;
   }
-  // 順子(m/p/sのみ)
-  const suit = first[0];
-  const num  = parseInt(first.slice(1));
+  const suit = first[0], num = parseInt(first.slice(1));
   if ('mps'.includes(suit) && num <= 7) {
     const t2 = suit+(num+1), t3 = suit+(num+2);
     if (s.includes(t2) && s.includes(t3)) {
@@ -182,344 +312,242 @@ function mjSets(tiles) {
   return false;
 }
 
-// 聴牌チェック: 13枚の手牌に対して待ち牌リストを返す
 function mjWaiting(hand13) {
   return MJ_TYPES.filter(t => mjCheckWin([...hand13, t]));
 }
 
-// --- ゲームアクション ---
+// ============================================================
+//  CPU AI
+// ============================================================
+function mjCpuScore(hand13) {
+  // 聴牌ならば最高点
+  const waits = mjWaiting(hand13);
+  if (waits.length > 0) return 1000 + waits.length * 10;
 
-function mjRevealForTurn() {
-  const p = _mj.turn;
-  _mj.showHand = true;
-  const full = [..._mj.hands[p], _mj.drawn];
-  _mj.phase = mjCheckWin(full) ? 'tsumo_check' : 'discard';
-  renderMahjong();
-}
+  const s    = [...hand13].sort(mjSort);
+  const used = new Array(13).fill(false);
+  let score  = 0;
 
-function mjSelectTile(idx) {
-  if (_mj.phase !== 'discard') return;
-  _mj.selected = (_mj.selected === idx) ? -2 : idx;
-  renderMahjong();
-}
-
-function mjConfirmDiscard() {
-  if (_mj.selected < -1) return;
-  mjDoDiscard(_mj.selected);
-}
-
-function mjDoDiscard(idx) {
-  const p = _mj.turn;
-  let discarded;
-  if (idx === -1) {
-    // ツモ切り
-    discarded = _mj.drawn;
-    _mj.drawn = null;
-  } else {
-    // 手牌から捨てる → ツモ牌を手牌に加える
-    discarded = _mj.hands[p].splice(idx, 1)[0];
-    _mj.hands[p].push(_mj.drawn);
-    _mj.hands[p].sort(mjSort);
-    _mj.drawn = null;
+  // 刻子 +30
+  for (let i=0; i<s.length-2; i++) {
+    if (!used[i] && s[i]===s[i+1] && !used[i+1] && s[i]===s[i+2] && !used[i+2]) {
+      score += 30; used[i]=used[i+1]=used[i+2]=true; i+=2;
+    }
   }
-  _mj.discards[p].push(discarded);
-  _mj.pendingDiscard = discarded;
-  _mj.selected = -2;
-  _mj.phase = 'pass';    // 相手にロン確認を渡す
-  _mj.showHand = false;
-  renderMahjong();
-}
-
-function mjRevealForRon() {
-  _mj.showHand = true;
-  renderMahjong();
-}
-
-function mjDeclareRon() {
-  const opp  = 1 - _mj.turn;
-  const tile  = _mj.pendingDiscard;
-  if (!mjCheckWin([..._mj.hands[opp], tile])) return;
-  _mj.hands[opp].push(tile);
-  _mj.hands[opp].sort(mjSort);
-  _mj.winner  = opp;
-  _mj.winType = 'ron';
-  _mj.scores[opp]++;
-  _mj.phase   = 'end';
-  renderMahjong();
-}
-
-function mjSkipRon() {
-  _mj.showHand = false;
-  _mj.pendingDiscard = null;
-  _mj.turn = 1 - _mj.turn;
-
-  if (_mj.wall.length === 0) {
-    _mj.phase = 'ryukyoku';
-    renderMahjong();
-    return;
+  // 順子 +30
+  for (let i=0; i<s.length; i++) {
+    if (used[i]) continue;
+    const suit=s[i][0]; if (!'mps'.includes(suit)) continue;
+    const num=parseInt(s[i].slice(1));
+    const t2=suit+(num+1), t3=suit+(num+2);
+    const j=s.findIndex((t,k)=>k>i&&!used[k]&&t===t2);
+    if (j<0) continue;
+    const k=s.findIndex((t,l)=>l>j&&!used[l]&&t===t3);
+    if (k<0) continue;
+    score += 30; used[i]=used[j]=used[k]=true;
   }
-  _mj.drawn    = _mj.wall.splice(0, 1)[0];
-  _mj.selected = -1;
-  _mj.phase    = 'pass2';
-  renderMahjong();
+  // 対子 +10
+  for (let i=0; i<s.length-1; i++) {
+    if (!used[i] && s[i]===s[i+1] && !used[i+1]) {
+      score += 10; used[i]=used[i+1]=true; i++;
+    }
+  }
+  // 両面/嵌張 +5
+  for (let i=0; i<s.length-1; i++) {
+    if (used[i]) continue;
+    const suit=s[i][0]; if (!'mps'.includes(suit)) continue;
+    const num=parseInt(s[i].slice(1));
+    for (let j=i+1; j<s.length; j++) {
+      if (used[j]) continue;
+      if (s[j][0]!==suit) break;
+      const n2=parseInt(s[j].slice(1));
+      if (n2-num<=2) { score+=5; used[i]=used[j]=true; break; }
+      if (n2-num>2)  break;
+    }
+  }
+  return score;
 }
 
-function mjDeclareTsumo() {
-  const p = _mj.turn;
-  _mj.hands[p].push(_mj.drawn);
-  _mj.hands[p].sort(mjSort);
-  _mj.drawn   = null;
-  _mj.winner  = p;
-  _mj.winType = 'tsumo';
-  _mj.scores[p]++;
-  _mj.phase   = 'end';
-  renderMahjong();
+function mjCpuBestDiscard(hand14) {
+  const tried = new Set();
+  let best = hand14[0], bestScore = -1;
+  for (let i=0; i<hand14.length; i++) {
+    if (tried.has(hand14[i])) continue;
+    tried.add(hand14[i]);
+    const rem = hand14.filter((_,j)=>j!==i);
+    const sc  = mjCpuScore(rem);
+    if (sc > bestScore) { bestScore=sc; best=hand14[i]; }
+  }
+  return best;
 }
 
-function mjSkipTsumo() {
-  _mj.phase = 'discard';
-  renderMahjong();
-}
-
-function mjNextRound() {
-  if (_mj.round >= _mj.totalRounds) { mjFinalResult(); return; }
-  mjNewRound({
-    names:       _mj.names,
-    scores:      _mj.scores,
-    round:       _mj.round + 1,
-    totalRounds: _mj.totalRounds,
-    firstPlayer: 1 - _mj.firstPlayer,
-  });
-}
-
-function mjFinalResult() {
-  const [s0,s1] = _mj.scores;
-  const [n0,n1] = _mj.names;
-  const winIdx  = s0>s1 ? 0 : s1>s0 ? 1 : -1;
-  document.getElementById('gamePanel').innerHTML = `
-    <div class="game-title">🀄 二人麻雀 — 終局</div>
-    <div class="mj-final-box">
-      <div class="mj-final-row">
-        <div class="mj-final-player${winIdx===0?' mj-final-winner':''}">
-          <div class="mj-final-name">${n0}</div>
-          <div class="mj-final-score">${s0}<span>勝</span></div>
-        </div>
-        <div class="mj-final-vs">VS</div>
-        <div class="mj-final-player${winIdx===1?' mj-final-winner':''}">
-          <div class="mj-final-name">${n1}</div>
-          <div class="mj-final-score">${s1}<span>勝</span></div>
-        </div>
-      </div>
-      <div class="mj-final-msg">${winIdx>=0 ? `🎉 ${_mj.names[winIdx]}の勝ち！` : '引き分け！'}</div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;">
-      <button class="btn btn-accent" onclick="initMahjong()">もう一度</button>
-      <button class="btn btn-secondary" onclick="openGameModeMenu()">ゲーム選択へ</button>
-      <button class="game-back-btn" style="width:100%;margin-top:2px;" onclick="closeGame()">とじる</button>
-    </div>`;
-}
-
-// --- レンダリング ---
+// ============================================================
+//  レンダリング
+// ============================================================
 function renderMahjong() {
   if (!_mj) return;
   const ph = _mj.phase;
-  if (ph === 'pass')     { _renderMjPass();     return; }
-  if (ph === 'pass2')    { _renderMjPass2();    return; }
-  if (ph === 'end')      { _renderMjEnd();      return; }
-  if (ph === 'ryukyoku') { _renderMjRyukyoku(); return; }
-  _renderMjGame(); // discard / tsumo_check
+  if (ph==='end')       { _renderMjEnd();      return; }
+  if (ph==='ryukyoku')  { _renderMjRyukyoku(); return; }
+  if (ph==='ron_check') { _renderMjRonCheck(); return; }
+  _renderMjMain();
+}
+
+function mjTileHTML(tile, opts) {
+  opts = opts || {};
+  const { sel, sm, back, onclick } = opts;
+  const smCls = sm  ? ' mj-sm'  : '';
+  if (back) return `<div class="mj-tile mj-back${smCls}"></div>`;
+  const suit = tile[0], num = parseInt(tile.slice(1));
+  const suitCls   = {m:'mj-m',p:'mj-p',s:'mj-s',z:'mj-z'}[suit];
+  const dragonCls = (suit==='z'&&num>=5) ? ` mj-d${num}` : '';
+  const selCls    = sel ? ' mj-sel' : '';
+  const oc        = onclick ? ` onclick="${onclick}"` : '';
+  let top, bot;
+  if (suit==='z')      { top=MJ_HONOR[tile]; bot=''; }
+  else if (suit==='m') { top=MJ_KANJI[num-1]; bot='萬'; }
+  else if (suit==='p') { top=String(num); bot='筒'; }
+  else                 { top=String(num); bot='索'; }
+  return `<div class="mj-tile ${suitCls}${dragonCls}${selCls}${smCls}"${oc}><span class="mj-t">${top}</span><span class="mj-b">${bot}</span></div>`;
 }
 
 function _mjScoreBar() {
-  const [s0,s1] = _mj.scores;
-  const [n0,n1] = _mj.names;
+  const [sp,sc] = _mj.scores;
   return `<div class="mj-score-bar">
-    <span class="mj-sb-item">${n0}&nbsp;<b>${s0}勝</b></span>
+    <span class="mj-sb-item">${_mj.playerName}&nbsp;<b>${sp}勝</b></span>
     <span class="mj-sb-sep">|</span>
-    <span class="mj-sb-item mj-sb-right">${n1}&nbsp;<b>${s1}勝</b></span>
+    <span class="mj-sb-item mj-sb-right">リマちゃん&nbsp;<b>${sc}勝</b></span>
     <span class="mj-sb-round">${_mj.round}/${_mj.totalRounds}局</span>
   </div>`;
 }
 
-// フェーズ: pass (捨て後 → 相手のロン確認)
-function _renderMjPass() {
-  const opp     = 1 - _mj.turn;
-  const oppName = _mj.names[opp];
-  const disName = _mj.names[_mj.turn];
-  const tile    = _mj.pendingDiscard;
-  const canRon  = tile ? mjCheckWin([..._mj.hands[opp], tile]) : false;
+// メインゲーム画面 (player_turn / player_tsumo / cpu_thinking / cpu_ron)
+function _renderMjMain() {
+  const ph      = _mj.phase;
+  const isCpuTurn   = ph==='cpu_thinking'||ph==='cpu_ron';
+  const isTsumo     = ph==='player_tsumo';
+  const hand        = _mj.hands[0];
+  const drawn       = _mj.drawn;
+  const cpuHandSize = _mj.hands[1].length + (_mj.drawn&&isCpuTurn?1:0);
 
-  let handSection;
-  if (_mj.showHand) {
-    const hHTML = _mj.hands[opp].map(t => mjTileHTML(t,{sm:true})).join('');
-    handSection = `
-      <div class="mj-hand-area" style="margin-top:8px;">
-        <div class="mj-hand-label">あなたの手牌</div>
-        <div class="mj-hand-row mj-hand-scroll">${hHTML}</div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <button class="btn btn-accent" ${canRon?'':' disabled style="opacity:0.45"'} onclick="mjDeclareRon()">
-          ロン！${canRon?'':'（不可）'}
-        </button>
-      </div>
-      <button class="game-back-btn" style="width:100%;margin-top:8px;" onclick="mjSkipRon()">スキップ（ロンなし）</button>`;
-  } else {
-    handSection = `
-      <div class="mj-hidden-msg">手牌はまだ見ないでください</div>
-      <button class="btn btn-secondary" style="margin-top:10px;" onclick="mjRevealForRon()">手牌を確認する 🀫</button>
-      <button class="game-back-btn" style="width:100%;margin-top:8px;" onclick="mjSkipRon()">確認せずスキップ</button>`;
-  }
+  // CPUエリア
+  const cpuBackTiles = Array(Math.min(cpuHandSize||13, 13)).fill(0)
+    .map(()=>'<div class="mj-tile mj-back mj-sm"></div>').join('');
+  const cpuDiscards  = _mj.discards[1].slice(-9).map(t=>mjTileHTML(t,{sm:true})).join('');
+  const noDisc = '<span class="mj-empty-disc">まだなし</span>';
 
-  document.getElementById('gamePanel').innerHTML = `
-    <div class="game-title">🀄 二人麻雀</div>
-    <div class="mj-pass-card">
-      <div class="mj-pass-icon">👤</div>
-      <div class="mj-pass-to">${oppName} さんへ</div>
-      <div class="mj-pass-sub">${disName}が捨てました</div>
-    </div>
-    <div class="mj-discard-preview">
-      <span class="mj-dp-label">捨て牌</span>
-      ${tile ? mjTileHTML(tile) : ''}
-      <span class="mj-dp-hint">ロンできますか？</span>
-    </div>
-    ${handSection}
-    ${_mjScoreBar()}`;
-}
+  // CPUステータス表示
+  let cpuStatus = '';
+  if (ph==='cpu_thinking') cpuStatus = `<div class="mj-thinking-badge">CPU考え中<span class="mj-dots">...</span></div>`;
+  else if (ph==='cpu_ron') cpuStatus = `<div class="mj-thinking-badge mj-ron-alert">CPUがロン！</div>`;
+  else cpuStatus = `<div class="mj-turn-badge">あなたのターン</div>`;
 
-// フェーズ: pass2 (ツモ前 → 本人に端末を渡す)
-function _renderMjPass2() {
-  const p     = _mj.turn;
-  const pName = _mj.names[p];
-  document.getElementById('gamePanel').innerHTML = `
-    <div class="game-title">🀄 二人麻雀</div>
-    <div class="mj-pass-card">
-      <div class="mj-pass-icon">👤</div>
-      <div class="mj-pass-to">${pName} さんへ</div>
-      <div class="mj-pass-sub">あなたのターンです！端末を受け取ってください</div>
-    </div>
-    <div class="mj-wall-info">壁牌残り: <b>${_mj.wall.length}</b>枚</div>
-    <button class="btn btn-accent" style="margin-top:16px;" onclick="mjRevealForTurn()">手牌を確認する 🀫</button>
-    ${_mjScoreBar()}`;
-}
-
-// フェーズ: discard / tsumo_check (メインゲーム画面)
-function _renderMjGame() {
-  const p       = _mj.turn;
-  const pName   = _mj.names[p];
-  const oppName = _mj.names[1-p];
-  const hand    = _mj.hands[p];
-  const drawn   = _mj.drawn;
-  const isTsumo = _mj.phase === 'tsumo_check';
-
-  // 手牌HTML
-  const handHTML = hand.map((t,i) => {
-    const sel = !isTsumo && _mj.selected === i;
-    const oc  = isTsumo ? '' : `mjSelectTile(${i})`;
-    return mjTileHTML(t, {sel, onclick:oc});
+  // プレイヤー手牌
+  const handHTML = hand.map((t,i)=>{
+    const sel = !isTsumo && _mj.selected===i;
+    const oc  = (isCpuTurn||isTsumo) ? '' : `mjSelectTile(${i})`;
+    return mjTileHTML(t,{sel, onclick:oc});
   }).join('');
 
-  // ツモ牌HTML
-  const drawnSel = !isTsumo && _mj.selected === -1;
-  const drawnOC  = isTsumo ? '' : 'mjSelectTile(-1)';
+  // ツモ牌
+  const drawnSel = !isTsumo && _mj.selected===-1;
+  const drawnOC  = (isCpuTurn||isTsumo) ? '' : 'mjSelectTile(-1)';
   const drawnHTML = drawn
-    ? `<div class="mj-drawn-sep"></div>${mjTileHTML(drawn, {sel:drawnSel, onclick:drawnOC})}`
+    ? `<div class="mj-drawn-sep"></div>${mjTileHTML(drawn,{sel:drawnSel,onclick:drawnOC})}`
     : '';
 
-  // 捨て牌 (最大9枚)
-  const myDisc  = _mj.discards[p].slice(-9).map(t=>mjTileHTML(t,{sm:true})).join('');
-  const oppDisc = _mj.discards[1-p].slice(-9).map(t=>mjTileHTML(t,{sm:true})).join('');
-  const noDisc  = '<span class="mj-empty-disc">まだなし</span>';
+  // プレイヤー捨て牌
+  const myDiscards = _mj.discards[0].slice(-9).map(t=>mjTileHTML(t,{sm:true})).join('');
 
   // アクションボタン
-  let actionHTML;
+  let actionHTML = '';
   if (isTsumo) {
-    actionHTML = `
-      <div style="display:flex;gap:8px;margin-top:10px;">
-        <button class="btn btn-accent" onclick="mjDeclareTsumo()">ツモ！</button>
-        <button class="btn btn-secondary" onclick="mjSkipTsumo()">見逃す</button>
-      </div>`;
-  } else {
-    const hasSel  = _mj.selected >= -1;
-    const btnLbl  = _mj.selected === -1 ? 'ツモ切り' : _mj.selected >= 0 ? '捨てる' : '牌を選択してください';
-    actionHTML = `
-      <button class="btn btn-accent" style="margin-top:10px;"
-        ${hasSel ? '' : 'disabled style="opacity:0.4"'} onclick="mjConfirmDiscard()">
-        ${btnLbl}
-      </button>`;
+    actionHTML = `<div style="display:flex;gap:8px;margin-top:10px;">
+      <button class="btn btn-accent" onclick="mjDeclareTsumo()">ツモ！</button>
+      <button class="btn btn-secondary" onclick="mjSkipTsumo()">見逃す</button>
+    </div>`;
+  } else if (!isCpuTurn) {
+    const hasSel = _mj.selected >= -1;
+    const lbl    = _mj.selected===-1 ? 'ツモ切り' : _mj.selected>=0 ? '捨てる' : '牌を選んでください';
+    actionHTML = `<button class="btn btn-accent" style="margin-top:10px;"
+      ${hasSel?'':'disabled'} onclick="mjConfirmDiscard()">${lbl}</button>`;
   }
 
   // 聴牌ヒント
-  const waits = mjWaiting(hand); // 13枚手牌の聴牌チェック
   let tenpaiHTML = '';
-  if (waits.length > 0 && !isTsumo) {
-    const wTiles = waits.slice(0,6).map(t=>mjTileHTML(t,{sm:true})).join('');
-    const more   = waits.length > 6 ? `<span style="color:var(--text-faint);font-size:11px;margin-left:2px;">他${waits.length-6}種</span>` : '';
-    tenpaiHTML = `<div class="mj-tenpai-hint">聴牌！待ち: ${wTiles}${more}</div>`;
+  if (!isCpuTurn && !isTsumo) {
+    const waits = mjWaiting(hand);
+    if (waits.length > 0) {
+      const wt = waits.slice(0,6).map(t=>mjTileHTML(t,{sm:true})).join('');
+      const more = waits.length>6 ? `<span style="color:var(--text-faint);font-size:11px;">他${waits.length-6}種</span>` : '';
+      tenpaiHTML = `<div class="mj-tenpai-hint">聴牌！待ち: ${wt}${more}</div>`;
+    }
+  }
+  if (isTsumo) {
+    tenpaiHTML = '';
   }
 
   document.getElementById('gamePanel').innerHTML = `
-    <div class="game-title">🀄 ${pName}のターン <span style="font-size:10px;color:var(--text-faint);">残${_mj.wall.length}枚</span></div>
+    <div class="game-title">🀄 麻雀 CPU対戦 <span style="font-size:10px;color:var(--text-faint);">残${_mj.wall.length}枚</span></div>
 
-    <div class="mj-discard-section">
-      <div class="mj-ds-label">${oppName}の捨て牌</div>
-      <div class="mj-disc-row">${oppDisc||noDisc}</div>
-    </div>
-    <div class="mj-discard-section">
-      <div class="mj-ds-label">自分の捨て牌</div>
-      <div class="mj-disc-row">${myDisc||noDisc}</div>
+    <!-- CPUエリア -->
+    <div class="mj-cpu-area">
+      <div class="mj-cpu-header">
+        <span class="mj-cpu-name">リマちゃん (CPU)</span>
+        ${cpuStatus}
+      </div>
+      <div class="mj-cpu-hand">${cpuBackTiles}</div>
+      <div class="mj-discard-section" style="margin-top:6px;">
+        <div class="mj-ds-label">CPUの捨て牌</div>
+        <div class="mj-disc-row">${cpuDiscards||noDisc}</div>
+      </div>
     </div>
 
-    <div class="mj-hand-area">
-      <div class="mj-hand-label">${isTsumo ? '🎉 ツモ上がり！' : 'タップで選択 → 捨てる'}</div>
-      <div class="mj-hand-row mj-hand-scroll">${handHTML}${drawnHTML}</div>
+    <!-- プレイヤーエリア -->
+    <div class="mj-player-area">
+      <div class="mj-discard-section">
+        <div class="mj-ds-label">あなたの捨て牌</div>
+        <div class="mj-disc-row">${myDiscards||noDisc}</div>
+      </div>
+      <div class="mj-hand-area">
+        <div class="mj-hand-label">${isTsumo?'🎉 ツモ！上がれます！':isCpuTurn?'CPUのターン...':'タップで選択 → 捨てる'}</div>
+        <div class="mj-hand-row mj-hand-scroll">${handHTML}${drawnHTML}</div>
+      </div>
+      ${tenpaiHTML}
+      ${actionHTML}
     </div>
 
-    ${tenpaiHTML}
-    ${actionHTML}
     ${_mjScoreBar()}`;
 }
 
-// フェーズ: end (上がり)
-function _renderMjEnd() {
-  const w      = _mj.winner;
-  const wName  = _mj.names[w];
-  const wType  = _mj.winType === 'ron' ? 'ロン！' : 'ツモ！';
-  const hHTML  = _mj.hands[w].map(t=>mjTileHTML(t)).join('');
-  const isLast = _mj.round >= _mj.totalRounds;
-
+// ロン確認画面 (CPUが捨てた後)
+function _renderMjRonCheck() {
+  const tile  = _mj.pendingDiscard;
+  const hHTML = _mj.hands[0].map(t=>mjTileHTML(t,{sm:true})).join('');
   document.getElementById('gamePanel').innerHTML = `
-    <div class="game-title">🀄 二人麻雀</div>
-    <div class="mj-win-box">
-      <div class="mj-win-name">${wName}</div>
-      <div class="mj-win-type">${wType}</div>
+    <div class="game-title">🀄 麻雀 CPU対戦</div>
+    <div class="mj-cpu-discard-notice">
+      <div class="mj-cdn-label">CPUが捨てました</div>
+      <div class="mj-cdn-tile">${mjTileHTML(tile)}</div>
+      <div class="mj-cdn-ron">ロンできます！</div>
     </div>
-    <div class="mj-hand-area" style="margin-top:10px;">
-      <div class="mj-hand-label">上がり手牌</div>
+    <div class="mj-hand-area" style="margin-top:8px;">
+      <div class="mj-hand-label">あなたの手牌</div>
       <div class="mj-hand-row mj-hand-scroll">${hHTML}</div>
     </div>
-    ${_mjScoreBar()}
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
-      ${isLast
-        ? `<button class="btn btn-accent" onclick="mjFinalResult()">最終結果へ</button>`
-        : `<button class="btn btn-accent" onclick="mjNextRound()">次の局へ (${_mj.round+1}/${_mj.totalRounds}局)</button>`}
-      <button class="game-back-btn" style="width:100%;margin-top:2px;" onclick="openGameModeMenu()">ゲーム選択へ</button>
-    </div>`;
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button class="btn btn-accent" onclick="mjDeclareRon()">ロン！</button>
+      <button class="btn btn-secondary" onclick="mjSkipRon()">スキップ</button>
+    </div>
+    ${_mjScoreBar()}`;
 }
 
-// フェーズ: ryukyoku (流局)
-function _renderMjRyukyoku() {
+// 上がり画面
+function _renderMjEnd() {
+  const pWin = _mj.winner === 0;
+  const wName  = pWin ? _mj.playerName : 'リマちゃん';
+  const wType  = _mj.winType==='ron' ? 'ロン！' : 'ツモ！';
+  const wHand  = _mj.hands[_mj.winner].map(t=>mjTileHTML(t)).join('');
   const isLast = _mj.round >= _mj.totalRounds;
-  document.getElementById('gamePanel').innerHTML = `
-    <div class="game-title">🀄 二人麻雀</div>
-    <div class="mj-win-box mj-ryukyoku-box">
-      <div class="mj-win-name">流局</div>
-      <div class="mj-win-type">牌が尽きました</div>
-    </div>
-    ${_mjScoreBar()}
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
-      ${isLast
-        ? `<button class="btn btn-accent" onclick="mjFinalResult()">最終結果へ</button>`
-        : `<button class="btn btn-accent" onclick="mjNextRound()">次の局へ</button>`}
-      <button class="game-back-btn" style="width:100%;margin-top:2px;" onclick="openGameModeMenu()">ゲーム選択へ</button>
-    </div>`;
-}
+
+  document.getElementById('gamePanel').
