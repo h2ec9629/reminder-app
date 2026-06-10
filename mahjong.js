@@ -550,4 +550,39 @@ function _renderMjEnd() {
   const wHand  = _mj.hands[_mj.winner].map(t=>mjTileHTML(t)).join('');
   const isLast = _mj.round >= _mj.totalRounds;
 
-  document.getElementById('gamePanel').
+  document.getElementById('gamePanel').innerHTML = `
+    <div class="game-title">🀄 麻雀 CPU対戦</div>
+    <div class="mj-win-box${pWin?'':' mj-cpu-win-box'}">
+      <div class="mj-win-name">${wName}</div>
+      <div class="mj-win-type">${wType}</div>
+    </div>
+    <div class="mj-hand-area" style="margin-top:10px;">
+      <div class="mj-hand-label">上がり手牌</div>
+      <div class="mj-hand-row mj-hand-scroll">${wHand}</div>
+    </div>
+    ${_mjScoreBar()}
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+      ${isLast
+        ? `<button class="btn btn-accent" onclick="mjFinalResult()">最終結果へ</button>`
+        : `<button class="btn btn-accent" onclick="mjNextRound()">次の局へ (${_mj.round+1}/${_mj.totalRounds}局)</button>`}
+      <button class="game-back-btn" style="width:100%;margin-top:2px;" onclick="openGameModeMenu()">ゲーム選択へ</button>
+    </div>`;
+}
+
+// 流局
+function _renderMjRyukyoku() {
+  const isLast = _mj.round >= _mj.totalRounds;
+  document.getElementById('gamePanel').innerHTML = `
+    <div class="game-title">🀄 麻雀 CPU対戦</div>
+    <div class="mj-win-box mj-ryukyoku-box">
+      <div class="mj-win-name">流局</div>
+      <div class="mj-win-type">牌が尽きました</div>
+    </div>
+    ${_mjScoreBar()}
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+      ${isLast
+        ? `<button class="btn btn-accent" onclick="mjFinalResult()">最終結果へ</button>`
+        : `<button class="btn btn-accent" onclick="mjNextRound()">次の局へ</button>`}
+      <button class="game-back-btn" style="width:100%;margin-top:2px;" onclick="openGameModeMenu()">ゲーム選択へ</button>
+    </div>`;
+}
