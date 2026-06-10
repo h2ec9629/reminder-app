@@ -456,9 +456,10 @@ function renderQuizResult(){
 function openGameModeMenu(){
   document.getElementById('gamePanel').innerHTML=`
     <div class="game-title">ゲームモード</div>
-    <div class="oth-comment">どっちで遊びますか？</div>
+    <div class="oth-comment">どれで遊びますか？</div>
     <div style="display:flex;flex-direction:column;gap:14px;margin-top:18px;">
       <button class="game-back-btn" style="font-size:16px;padding:14px;" onclick="initOthello()">♟ オセロ</button>
+      <button class="game-back-btn" style="font-size:16px;padding:14px;background:var(--purple);color:#fff;" onclick="initMahjong()">🀄 二人麻雀</button>
       <button class="game-back-btn" style="font-size:16px;padding:14px;background:var(--accent);color:#fff;" onclick="initQuiz()">💡 Claudeクイズ</button>
     </div>
     <div style="margin-top:12px;">

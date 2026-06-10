@@ -375,6 +375,130 @@
       background: rgba(200,92,58,0.35);
     }
 
+    /* ===== 二人麻雀 ===== */
+    .mj-tile {
+      display: inline-flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      width: 26px; height: 36px;
+      background: linear-gradient(155deg, #F6F0E8, #E4D8CC);
+      border: 1.5px solid #A89880;
+      border-radius: 4px 4px 5px 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.25);
+      cursor: pointer; user-select: none; flex-shrink: 0;
+      transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+    }
+    .mj-tile.mj-sel {
+      transform: translateY(-7px);
+      border-color: var(--accent);
+      box-shadow: 0 7px 16px rgba(200,92,58,0.55), inset 0 1px 0 rgba(255,255,255,0.25);
+    }
+    .mj-tile.mj-back {
+      background: linear-gradient(155deg, var(--surface-2), var(--bg-2));
+      border-color: var(--border); cursor: default;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.35);
+    }
+    .mj-tile.mj-back::after { content: '░'; font-size: 13px; color: var(--border); }
+    .mj-tile.mj-sm { width: 20px; height: 28px; }
+    .mj-t { font-size: 12px; font-weight: 800; line-height: 1.1; }
+    .mj-b { font-size: 7px;  font-weight: 700; line-height: 1; opacity: 0.6; }
+    .mj-tile.mj-sm .mj-t { font-size: 9px; }
+    .mj-tile.mj-sm .mj-b { font-size: 5px; }
+    /* スーツカラー */
+    .mj-m { color: #B02018; }   /* 萬子: 深紅 */
+    .mj-p { color: #186038; }   /* 筒子: 深緑 */
+    .mj-s { color: #183878; }   /* 索子: 深青 */
+    .mj-z { color: #3A1A70; }   /* 字牌: 紫 */
+    .mj-d5 { color: #807870; }  /* 白 */
+    .mj-d6 { color: #186038; }  /* 発 */
+    .mj-d7 { color: #B02018; }  /* 中 */
+    /* 手牌エリア */
+    .mj-hand-row {
+      display: flex; align-items: flex-end; gap: 2px;
+      padding: 8px 0 12px;
+    }
+    .mj-hand-scroll {
+      overflow-x: auto; overflow-y: visible;
+      -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .mj-hand-scroll::-webkit-scrollbar { display: none; }
+    .mj-drawn-sep {
+      width: 8px; min-width: 8px; height: 36px; flex-shrink: 0;
+      border-left: 2px dashed var(--border);
+    }
+    .mj-hand-area { margin-bottom: 6px; }
+    .mj-hand-label { font-size: 11px; color: var(--text-sub); font-weight: 700; margin-bottom: 2px; }
+    /* 捨て牌 */
+    .mj-discard-section { margin-bottom: 8px; }
+    .mj-ds-label { font-size: 10px; color: var(--text-faint); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .mj-disc-row { display: flex; gap: 2px; flex-wrap: wrap; min-height: 29px; align-items: flex-start; }
+    .mj-empty-disc { font-size: 11px; color: var(--text-faint); line-height: 28px; }
+    /* 端末パス画面 */
+    .mj-pass-card {
+      background: var(--surface-2); border: 1px solid var(--accent);
+      border-radius: 12px; padding: 16px; text-align: center; margin: 8px 0;
+    }
+    .mj-pass-icon { font-size: 28px; margin-bottom: 6px; }
+    .mj-pass-to   { font-size: 16px; font-weight: 700; color: var(--text); }
+    .mj-pass-sub  { font-size: 12px; color: var(--text-sub); margin-top: 3px; }
+    .mj-wall-info { font-size: 11px; color: var(--text-faint); text-align: center; margin-top: 6px; }
+    /* 捨て牌プレビュー */
+    .mj-discard-preview {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 12px; margin: 8px 0;
+    }
+    .mj-dp-label { font-size: 11px; color: var(--text-sub); font-weight: 700; }
+    .mj-dp-hint  { font-size: 11px; color: var(--text-faint); margin-left: auto; }
+    /* 手牌非表示メッセージ */
+    .mj-hidden-msg {
+      font-size: 12px; color: var(--text-faint); text-align: center;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px; margin-top: 8px;
+    }
+    /* 聴牌ヒント */
+    .mj-tenpai-hint {
+      display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+      background: var(--success-dim); border: 1px solid var(--success);
+      border-radius: 8px; padding: 5px 8px; margin-top: 6px;
+      font-size: 11px; color: var(--text-sub);
+    }
+    /* 上がり画面 */
+    .mj-win-box {
+      text-align: center; padding: 14px;
+      background: var(--accent-dim); border: 1px solid var(--accent);
+      border-radius: 12px; margin: 8px 0;
+    }
+    .mj-win-name { font-size: 17px; font-weight: 700; color: var(--text); }
+    .mj-win-type { font-size: 22px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+    .mj-ryukyoku-box { background: var(--surface-2); border-color: var(--border); }
+    .mj-ryukyoku-box .mj-win-name { color: var(--text-sub); }
+    .mj-ryukyoku-box .mj-win-type { font-size: 15px; color: var(--text-faint); }
+    /* スコアバー */
+    .mj-score-bar {
+      display: flex; align-items: center;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 6px 10px; margin-top: 10px; font-size: 12px; gap: 4px;
+    }
+    .mj-sb-item { flex: 1; color: var(--text-sub); font-weight: 600; }
+    .mj-sb-right { text-align: right; }
+    .mj-sb-item b { color: var(--accent); }
+    .mj-sb-sep   { color: var(--border); }
+    .mj-sb-round { color: var(--text-faint); font-size: 10px; margin-left: 4px; flex-shrink: 0; }
+    /* 最終結果 */
+    .mj-final-box {
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px; margin: 8px 0;
+    }
+    .mj-final-row    { display: flex; align-items: center; }
+    .mj-final-player { flex: 1; text-align: center; }
+    .mj-final-name   { font-size: 13px; color: var(--text-sub); font-weight: 600; }
+    .mj-final-score  { font-size: 26px; font-weight: 700; color: var(--text); margin-top: 4px; }
+    .mj-final-score span { font-size: 12px; color: var(--text-faint); margin-left: 2px; }
+    .mj-final-winner .mj-final-name  { color: var(--accent); }
+    .mj-final-winner .mj-final-score { color: var(--accent); }
+    .mj-final-vs  { color: var(--text-faint); font-size: 14px; font-weight: 700; padding: 0 10px; }
+    .mj-final-msg { text-align: center; font-size: 15px; font-weight: 700; color: var(--text); margin-top: 12px; }
+
     /* ===== IT QUIZ ===== */
     .quiz-progress { height:4px; background:var(--border); border-radius:2px; margin:6px 0 10px; }
     .quiz-progress-bar { height:4px; background:var(--accent); border-radius:2px; transition:width 0.4s; }
