@@ -10,6 +10,42 @@ const MJ_TYPES = [
 const MJ_KANJI = ['一','二','三','四','五','六','七','八','九'];
 const MJ_HONOR = {z1:'東',z2:'南',z3:'西',z4:'北',z5:'白',z6:'発',z7:'中'};
 
+// --- 牌デザイン: 筒子/索子のピップ配置 (0-100スケール、1は特殊絵柄なので対象外) ---
+const MJ_PIP_LAYOUTS = {
+  2: [[50,15],[50,85]],
+  3: [[50,15],[50,50],[50,85]],
+  4: [[25,15],[75,15],[25,85],[75,85]],
+  5: [[25,15],[75,15],[50,50],[25,85],[75,85]],
+  6: [[25,15],[25,50],[25,85],[75,15],[75,50],[75,85]],
+  7: [[25,15],[25,50],[25,85],[75,15],[75,50],[75,85],[50,30]],
+  8: [[25,12],[25,37],[25,63],[25,88],[75,12],[75,37],[75,63],[75,88]],
+  9: [[25,15],[50,15],[75,15],[25,50],[50,50],[75,50],[25,85],[50,85],[75,85]],
+};
+
+// 筒子1: リマちゃん本人
+const MJ_RIMA_SVG = `<svg viewBox="0 0 100 100"><circle cx="50" cy="56" r="44" fill="#F0EBE6"/><circle cx="33" cy="44" r="3.5" fill="#1A1614"/><circle cx="59" cy="44" r="3.5" fill="#1A1614"/><path d="M39 54 Q46 58 53 54" stroke="#1A1614" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`;
+
+// 索子1: リマちゃん風の鳥マーク
+const MJ_BIRD_SVG = `<svg viewBox="0 0 100 100"><path d="M28 40 Q20 22 38 20 Q35 32 32 38 Z" fill="#F0EBE6" stroke="#1A1614" stroke-width="2.5"/><circle cx="50" cy="58" r="32" fill="#F0EBE6" stroke="#1A1614" stroke-width="1"/><path d="M76 52 L92 47 L76 62 Z" fill="#1A1614"/><circle cx="61" cy="47" r="3.5" fill="#1A1614"/><path d="M22 66 Q8 64 13 80" stroke="#1A1614" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`;
+
+function mjPinFace(num) {
+  if (num === 1) return MJ_RIMA_SVG;
+  const pts = MJ_PIP_LAYOUTS[num] || [];
+  const dots = pts.map(([x,y]) =>
+    `<circle cx="${x}" cy="${y}" r="9" fill="#186038"/><circle cx="${x-2.5}" cy="${y-2.5}" r="2.5" fill="#5FA377" opacity="0.6"/>`
+  ).join('');
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${dots}</svg>`;
+}
+
+function mjSouFace(num) {
+  if (num === 1) return MJ_BIRD_SVG;
+  const pts = MJ_PIP_LAYOUTS[num] || [];
+  const bars = pts.map(([x,y]) =>
+    `<rect x="${x-6}" y="${y-13}" width="12" height="26" rx="4" fill="#183878"/><rect x="${x-2}" y="${y-9}" width="4" height="6" rx="1.5" fill="#5B79B8" opacity="0.7"/>`
+  ).join('');
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${bars}</svg>`;
+}
+
 let _mj = null;
 
 // --- セットアップ画面 ---
@@ -387,10 +423,29 @@ function mjCpuBestDiscard(hand14) {
 function renderMahjong() {
   if (!_mj) return;
   const ph = _mj.phase;
-  if (ph==='end')       { _renderMjEnd();      return; }
+  if (ph==='end')       { _renderMjEnd();      mjFitHandRow(); return; }
   if (ph==='ryukyoku')  { _renderMjRyukyoku(); return; }
-  if (ph==='ron_check') { _renderMjRonCheck(); return; }
-  _renderMjMain();
+  if (ph==='ron_check') { _renderMjRonCheck(); mjFitHandRow(); return; }
+  _renderMjMain(); mjFitHandRow();
+}
+
+// スマホ縦画面でも手牌が横スクロールなしで収まるよう、牌幅を実測して自動調整
+function mjFitHandRow() {
+  document.querySelectorAll('.mj-hand-row.mj-hand-scroll').forEach(row => {
+    const avail = row.clientWidth;
+    const n = row.children.length;
+    if (!avail || !n) return;
+    const hasSep   = !!row.querySelector('.mj-drawn-sep');
+    const sepWidth = hasSep ? 8 : 0;
+    const tileSlots = hasSep ? n - 1 : n;
+    if (tileSlots <= 0) return;
+    const gapTotal = 2 * (n - 1);
+    let tw = Math.floor((avail - gapTotal - sepWidth) / tileSlots);
+    tw = Math.max(15, Math.min(26, tw));
+    const th = Math.round(tw * (36 / 26));
+    row.style.setProperty('--mj-tw', tw + 'px');
+    row.style.setProperty('--mj-th', th + 'px');
+  });
 }
 
 function mjTileHTML(tile, opts) {
@@ -403,12 +458,19 @@ function mjTileHTML(tile, opts) {
   const dragonCls = (suit==='z'&&num>=5) ? ` mj-d${num}` : '';
   const selCls    = sel ? ' mj-sel' : '';
   const oc        = onclick ? ` onclick="${onclick}"` : '';
-  let top, bot;
-  if (suit==='z')      { top=MJ_HONOR[tile]; bot=''; }
-  else if (suit==='m') { top=MJ_KANJI[num-1]; bot='萬'; }
-  else if (suit==='p') { top=String(num); bot='筒'; }
-  else                 { top=String(num); bot='索'; }
-  return `<div class="mj-tile ${suitCls}${dragonCls}${selCls}${smCls}"${oc}><span class="mj-t">${top}</span><span class="mj-b">${bot}</span></div>`;
+  const specialCls = ((suit==='p'||suit==='s') && num===1) ? ' mj-special' : '';
+
+  let inner;
+  if (suit==='z') {
+    inner = `<span class="mj-t">${MJ_HONOR[tile]}</span>`;
+  } else if (suit==='m') {
+    inner = `<span class="mj-t">${MJ_KANJI[num-1]}</span><span class="mj-b">萬</span>`;
+  } else if (suit==='p') {
+    inner = `<span class="mj-face">${mjPinFace(num)}</span>`;
+  } else {
+    inner = `<span class="mj-face">${mjSouFace(num)}</span>`;
+  }
+  return `<div class="mj-tile ${suitCls}${dragonCls}${selCls}${smCls}${specialCls}"${oc}>${inner}</div>`;
 }
 
 function _mjScoreBar() {

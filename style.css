@@ -377,9 +377,9 @@
 
     /* ===== 二人麻雀 ===== */
     .mj-tile {
-      display: inline-flex; flex-direction: column;
+      display: inline-flex; flex-direction: column; position: relative;
       align-items: center; justify-content: center;
-      width: 26px; height: 36px;
+      width: var(--mj-tw, 26px); height: var(--mj-th, 36px);
       background: linear-gradient(155deg, #F6F0E8, #E4D8CC);
       border: 1.5px solid #A89880;
       border-radius: 4px 4px 5px 5px;
@@ -387,6 +387,10 @@
       cursor: pointer; user-select: none; flex-shrink: 0;
       transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
     }
+    .mj-tile.mj-special { border-color: var(--accent); }
+    .mj-face { position: absolute; inset: 3px; }
+    .mj-face svg { width: 100%; height: 100%; display: block; }
+    .mj-tile.mj-sm .mj-face { inset: 1.5px; }
     .mj-tile.mj-sel {
       transform: translateY(-7px);
       border-color: var(--accent);
@@ -1197,4 +1201,3 @@
       font-size: 12px; color: var(--text-faint);
       font-weight: 600; flex-shrink: 0; min-width: 44px;
     }
- 
