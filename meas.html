@@ -634,7 +634,9 @@ function measCalc(ph) {
     onV  = onEl  ? parseFloat(onEl.value)  : NaN;
     offV = offEl ? parseFloat(offEl.value) : NaN;
     if (!isNaN(onV) && !isNaN(offV)) {
-      diff    = Math.round((onV - offV) * 1000) / 1000;
+      // 緑-赤＝差数（B・RはON時に緑、Aだけ逆相でOFF時に緑になるため列ごとに向きが変わる）
+      diff    = col === 'a' ? Math.round((offV - onV) * 1000) / 1000
+                             : Math.round((onV - offV) * 1000) / 1000;
       diffStr = diff.toFixed(2);
       if (diff >= 1.83 && diff <= 1.97) {
         _setDiff(dEl, diffStr, '[正常]', '#4ADE80');
@@ -831,7 +833,10 @@ function saveMeas() {
       offV  = offEl ? offEl.value : '';
       diff  = '';
       if (onV !== '' && offV !== '') {
-        diff = (Math.round((parseFloat(onV) - parseFloat(offV)) * 1000) / 1000).toFixed(2);
+        // B・RはON時に緑、Aだけ物理的に逆相でOFF時に緑になる → 緑-赤＝差数
+        diff = col === 'a'
+          ? (Math.round((parseFloat(offV) - parseFloat(onV)) * 1000) / 1000).toFixed(2)
+          : (Math.round((parseFloat(onV) - parseFloat(offV)) * 1000) / 1000).toFixed(2);
         hasAny = true;
       }
       data.phases[ph][col] = { on: onV, off: offV, diff: diff };
