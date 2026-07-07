@@ -547,7 +547,7 @@
   <div class="save-panel-title">オプション</div>
   <div class="save-kiban-row">
     <span class="save-kiban-label">PAT</span>
-    <input class="opt-pat-input" id="optPatInput" type="password" placeholder="GitHubトークン" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <input class="opt-pat-input" id="optPatInput" type="text" placeholder="GitHubトークン" autocomplete="off" autocapitalize="off" spellcheck="false">
   </div>
   <div class="save-act-row" style="margin-bottom:8px;">
     <button class="save-act-cancel" style="-webkit-flex:1;flex:1;" onclick="document.getElementById('optPatFile').click()">📄 テキストファイルから読込</button>
@@ -559,6 +559,13 @@
   </div>
   <div class="save-act-row" style="margin-top:8px;">
     <button class="save-act-ok" style="-webkit-flex:1;flex:1;" onclick="forceUpdate()">Update（強制更新）</button>
+  </div>
+  <div style="margin-top:10px;">
+    <div style="font-size:11px;color:var(--text-faint);margin-bottom:4px;display:flex;justify-content:space-between;">
+      <span>通信ログ（新しい順）</span>
+      <button class="col-reset" onclick="clearDebugLog()">消去</button>
+    </div>
+    <pre id="debugLogBox" style="background:var(--bg-2);border:1px solid var(--border);border-radius:6px;padding:6px;font-size:11px;color:var(--text-sub);max-height:120px;overflow-y:auto;white-space:pre-wrap;margin:0;font-family:inherit;"></pre>
   </div>
 </div>
 
@@ -767,6 +774,28 @@ function showToast(msg) {
   _tt = setTimeout(function(){ t.className = 'toast'; }, 2200);
 }
 
+// ===== 通信ログ（消えるトーストと違い、オプションパネルに残る） =====
+var _debugLines = [];
+function _debugLog(msg) {
+  var now = new Date();
+  var hh = ('0' + now.getHours()).slice(-2);
+  var mi = ('0' + now.getMinutes()).slice(-2);
+  var ss = ('0' + now.getSeconds()).slice(-2);
+  _debugLines.unshift(hh + ':' + mi + ':' + ss + ' ' + msg);
+  if (_debugLines.length > 20) _debugLines = _debugLines.slice(0, 20);
+  var box = document.getElementById('debugLogBox');
+  if (box) box.textContent = _debugLines.join('\n');
+}
+function clearDebugLog() {
+  _debugLines = [];
+  var box = document.getElementById('debugLogBox');
+  if (box) box.textContent = '';
+}
+function _notify(msg) {
+  showToast(msg);
+  _debugLog(msg);
+}
+
 // ===== 保存・履歴機能 =====
 var STORE_KEY = 'meas_history';
 var _histMode = false;
@@ -855,7 +884,7 @@ function _pushHistoryIndex(arr) {
 // 他端末が追加した分を上書きで消してしまう事故を防ぐための安全版。
 function _syncNewRecord(newRecord) {
   var pat = _getMeasPat();
-  if (!pat) { showToast('共有NG：PAT未設定（オプションで設定して）'); return; }
+  if (!pat) { _notify('共有NG：PAT未設定（オプションで設定して）'); return; }
   var apiUrl = 'https://api.github.com/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
 
   var getXhr = new XMLHttpRequest();
@@ -899,22 +928,22 @@ function _syncNewRecord(newRecord) {
     putXhr.onreadystatechange = function() {
       if (putXhr.readyState !== 4) return;
       if (putXhr.status === 200 || putXhr.status === 201) {
-        showToast('共有OK：索引ファイル更新済み');
+        _notify('共有OK：索引ファイル更新済み');
       } else {
-        showToast('共有NG：索引書き込み失敗（status:' + putXhr.status + '）');
+        _notify('共有NG：索引書き込み失敗（status:' + putXhr.status + '）');
       }
     };
-    putXhr.onerror = function() { showToast('共有NG：索引書き込み通信エラー'); };
+    putXhr.onerror = function() { _notify('共有NG：索引書き込み通信エラー'); };
     putXhr.send(JSON.stringify(body));
   };
-  getXhr.onerror = function() { showToast('共有NG：索引取得の通信エラー'); };
+  getXhr.onerror = function() { _notify('共有NG：索引取得の通信エラー'); };
   getXhr.send();
 }
 
 // 機番ごとにフォルダ分け、ステータス別にjsonで個別保存（再測定は連番で履歴として残す）
 function _saveRecordFile(data) {
   var pat = _getMeasPat();
-  if (!pat) { showToast('個別ファイル保存NG：PAT未設定'); return; }
+  if (!pat) { _notify('個別ファイル保存NG：PAT未設定'); return; }
   var kiban  = String(data.kiban || '未入力');
   var status = String(data.status || '不明');
   var dirUrl = 'https://api.github.com/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
@@ -958,15 +987,15 @@ function _saveRecordFile(data) {
     putXhr.onreadystatechange = function() {
       if (putXhr.readyState !== 4) return;
       if (putXhr.status === 200 || putXhr.status === 201) {
-        showToast('共有OK：個別ファイル保存済み（' + filename + '）');
+        _notify('共有OK：個別ファイル保存済み（' + filename + '）');
       } else {
-        showToast('共有NG：個別ファイル保存失敗（status:' + putXhr.status + '）');
+        _notify('共有NG：個別ファイル保存失敗（status:' + putXhr.status + '）');
       }
     };
-    putXhr.onerror = function() { showToast('共有NG：個別ファイル通信エラー'); };
+    putXhr.onerror = function() { _notify('共有NG：個別ファイル通信エラー'); };
     putXhr.send(JSON.stringify(body));
   };
-  listXhr.onerror = function() { showToast('共有NG：フォルダ確認の通信エラー'); };
+  listXhr.onerror = function() { _notify('共有NG：フォルダ確認の通信エラー'); };
   listXhr.send();
 }
 
@@ -979,13 +1008,13 @@ function _fetchGist(callback) {
   xhr.onreadystatechange = function() {
     if (xhr.readyState !== 4) return;
     if (xhr.status !== 200) {
-      showToast('Gist取得失敗（status:' + xhr.status + '）');
+      _notify('Gist取得失敗（status:' + xhr.status + '）');
       return;
     }
     try {
       var remote = JSON.parse(xhr.responseText);
       if (!Array.isArray(remote)) {
-        showToast('Gist取得：形式が配列じゃない');
+        _notify('Gist取得：形式が配列じゃない');
         return;
       }
       var local  = _loadHistory();
@@ -1000,14 +1029,14 @@ function _fetchGist(callback) {
       merged.sort(function(a, b) { return b.date < a.date ? -1 : 1; });
       if (merged.length > 50) merged = merged.slice(0, 50);
       _saveHistory(merged);
-      showToast('Gist取得成功：件数 ' + merged.length + '（うちリモート ' + remote.length + '）');
+      _notify('Gist取得成功：件数 ' + merged.length + '（うちリモート ' + remote.length + '）');
       if (callback) callback();
     } catch(e) {
-      showToast('Gist取得：解析エラー ' + e.message);
+      _notify('Gist取得：解析エラー ' + e.message);
     }
   };
   xhr.onerror = function() {
-    showToast('Gist取得：通信エラー（オフライン？）');
+    _notify('Gist取得：通信エラー（オフライン？）');
   };
   xhr.send();
 }
