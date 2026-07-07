@@ -820,10 +820,16 @@ function _fetchGist(callback) {
   xhr.open('GET', url, true);
   xhr.onreadystatechange = function() {
     if (xhr.readyState !== 4) return;
-    if (xhr.status !== 200) return;
+    if (xhr.status !== 200) {
+      showToast('Gist取得失敗（status:' + xhr.status + '）');
+      return;
+    }
     try {
       var remote = JSON.parse(xhr.responseText);
-      if (!Array.isArray(remote)) return;
+      if (!Array.isArray(remote)) {
+        showToast('Gist取得：形式が配列じゃない');
+        return;
+      }
       var local  = _loadHistory();
       var seen   = {};
       var merged = [];
@@ -836,8 +842,14 @@ function _fetchGist(callback) {
       merged.sort(function(a, b) { return b.date < a.date ? -1 : 1; });
       if (merged.length > 50) merged = merged.slice(0, 50);
       _saveHistory(merged);
+      showToast('Gist取得成功：件数 ' + merged.length + '（うちリモート ' + remote.length + '）');
       if (callback) callback();
-    } catch(e) {}
+    } catch(e) {
+      showToast('Gist取得：解析エラー ' + e.message);
+    }
+  };
+  xhr.onerror = function() {
+    showToast('Gist取得：通信エラー（オフライン？）');
   };
   xhr.send();
 }
