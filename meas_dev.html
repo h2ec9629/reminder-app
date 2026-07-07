@@ -549,6 +549,10 @@
     <span class="save-kiban-label">PAT</span>
     <input class="opt-pat-input" id="optPatInput" type="password" placeholder="GitHubトークン" autocomplete="off" autocapitalize="off" spellcheck="false">
   </div>
+  <div class="save-act-row" style="margin-bottom:8px;">
+    <button class="save-act-cancel" style="-webkit-flex:1;flex:1;" onclick="document.getElementById('optPatFile').click()">📄 テキストファイルから読込</button>
+    <input type="file" id="optPatFile" accept=".txt,text/plain" style="display:none" onchange="loadPatFromFile(this)">
+  </div>
   <div class="save-act-row">
     <button class="save-act-cancel" onclick="closeOptionPanel()">閉じる</button>
     <button class="save-act-ok"     onclick="saveOptionPat()">PAT保存</button>
@@ -780,7 +784,7 @@ function _saveHistory(arr) {
 }
 
 // === GIST SYNC (XHR / iOS9互換) ===
-var MEAS_GIST_ID       = '34f07c829b92ea7141367874f8777512';
+var MEAS_GIST_ID       = '508338b7ab7658fb6334a7caf8f1dacc';
 var MEAS_HIST_GIST_RAW = 'https://gist.githubusercontent.com/H2EC9629/' + MEAS_GIST_ID + '/raw/meas_history.json';
 
 function _getMeasCfg() {
@@ -963,6 +967,26 @@ function saveOptionPat() {
   _setMeasPat(v);
   showToast(v ? 'PATを保存しました' : 'PATを削除しました');
   closeOptionPanel();
+}
+
+// テキストファイルからPATを読み込んでそのまま保存
+function loadPatFromFile(fileInput) {
+  var f = fileInput.files && fileInput.files[0];
+  if (!f) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var v = String(e.target.result || '').trim();
+    document.getElementById('optPatInput').value = v;
+    if (v) {
+      _setMeasPat(v);
+      showToast('PATを読み込んで保存しました');
+    } else {
+      showToast('ファイルが空です');
+    }
+  };
+  reader.onerror = function() { showToast('読み込みに失敗しました'); };
+  reader.readAsText(f);
+  fileInput.value = '';
 }
 
 function confirmSave() {
