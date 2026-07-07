@@ -855,7 +855,7 @@ function _pushHistoryIndex(arr) {
 // 他端末が追加した分を上書きで消してしまう事故を防ぐための安全版。
 function _syncNewRecord(newRecord) {
   var pat = _getMeasPat();
-  if (!pat) return;
+  if (!pat) { showToast('共有NG：PAT未設定（オプションで設定して）'); return; }
   var apiUrl = 'https://api.github.com/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
 
   var getXhr = new XMLHttpRequest();
@@ -896,15 +896,25 @@ function _syncNewRecord(newRecord) {
     putXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
     putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
     putXhr.setRequestHeader('Content-Type', 'application/json');
+    putXhr.onreadystatechange = function() {
+      if (putXhr.readyState !== 4) return;
+      if (putXhr.status === 200 || putXhr.status === 201) {
+        showToast('共有OK：索引ファイル更新済み');
+      } else {
+        showToast('共有NG：索引書き込み失敗（status:' + putXhr.status + '）');
+      }
+    };
+    putXhr.onerror = function() { showToast('共有NG：索引書き込み通信エラー'); };
     putXhr.send(JSON.stringify(body));
   };
+  getXhr.onerror = function() { showToast('共有NG：索引取得の通信エラー'); };
   getXhr.send();
 }
 
 // 機番ごとにフォルダ分け、ステータス別にjsonで個別保存（再測定は連番で履歴として残す）
 function _saveRecordFile(data) {
   var pat = _getMeasPat();
-  if (!pat) return;
+  if (!pat) { showToast('個別ファイル保存NG：PAT未設定'); return; }
   var kiban  = String(data.kiban || '未入力');
   var status = String(data.status || '不明');
   var dirUrl = 'https://api.github.com/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
@@ -945,8 +955,18 @@ function _saveRecordFile(data) {
     putXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
     putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
     putXhr.setRequestHeader('Content-Type', 'application/json');
+    putXhr.onreadystatechange = function() {
+      if (putXhr.readyState !== 4) return;
+      if (putXhr.status === 200 || putXhr.status === 201) {
+        showToast('共有OK：個別ファイル保存済み（' + filename + '）');
+      } else {
+        showToast('共有NG：個別ファイル保存失敗（status:' + putXhr.status + '）');
+      }
+    };
+    putXhr.onerror = function() { showToast('共有NG：個別ファイル通信エラー'); };
     putXhr.send(JSON.stringify(body));
   };
+  listXhr.onerror = function() { showToast('共有NG：フォルダ確認の通信エラー'); };
   listXhr.send();
 }
 
