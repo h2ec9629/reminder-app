@@ -492,7 +492,7 @@
 
   <!-- 左：サイドメニュー -->
   <div class="numpad-side">
-    <div class="numpad-app-title">v1.501 中継版　三相測定</div>
+    <div class="numpad-app-title">v1.502 中継版　三相測定</div>
     <button class="numpad-side-btn btn-save" onclick="saveMeas()">SAVE</button>
     <button class="numpad-side-btn btn-hist" id="histBtn" onclick="toggleHist()">LOG</button>
     <button class="numpad-side-btn btn-reset" onclick="resetAll()">全リセット</button>
@@ -1275,8 +1275,10 @@ function confirmSave() {
   _saveHistory(arr);       // 即時のローカル反映（オフラインでも一覧に出るように）
   // 索引ファイルと個別ファイルを同時に書き込むとGitHub側のコミットが競合するため、
   // 索引ファイル更新が終わってから個別ファイル保存を行う（直列実行）
-  _syncNewRecord(_pendingData, function() {
-    _saveRecordFile(_pendingData); // 機番／ステータス別ファイルにも個別保存
+  // ※closeSaveDialog()が_pendingDataをnullにするので、先にローカル変数へ退避しておく
+  var recordToSave = _pendingData;
+  _syncNewRecord(recordToSave, function() {
+    _saveRecordFile(recordToSave); // 機番／ステータス別ファイルにも個別保存
   });
   closeSaveDialog();
   showToast('保存しました');
