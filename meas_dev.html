@@ -799,6 +799,17 @@ function testApiConnection() {
   };
   xhrC.onerror = function() { _notify('テストC(GitHub以外の他ドメイン)：通信エラー'); };
   xhrC.send();
+
+  // テストD：他ドメイン＋独自ヘッダー付き（preflightが絡んでも他ドメインなら通るかを確認）
+  var xhrD = new XMLHttpRequest();
+  xhrD.open('GET', 'https://jsonplaceholder.typicode.com/todos/2?d=' + Date.now(), true);
+  xhrD.setRequestHeader('Authorization', 'Bearer dummy-test-token');
+  xhrD.onreadystatechange = function() {
+    if (xhrD.readyState !== 4) return;
+    _notify('テストD(他ドメイン+ヘッダー付き)：status ' + xhrD.status);
+  };
+  xhrD.onerror = function() { _notify('テストD(他ドメイン+ヘッダー付き)：通信エラー'); };
+  xhrD.send();
 }
 
 // ===== トースト =====
