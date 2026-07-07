@@ -769,7 +769,7 @@ function forceUpdate() {
 
 // ===== API接続テスト（ヘッダーあり/なしで切り分け） =====
 function testApiConnection() {
-  var base = 'https://api.github.com/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME;
+  var base = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME;
 
   var xhrA = new XMLHttpRequest();
   xhrA.open('GET', base + '?a=' + Date.now(), true);
@@ -867,6 +867,9 @@ var MEAS_REPO_OWNER = 'h2ec9629';
 var MEAS_REPO_NAME  = 'reminder-app';
 var MEAS_REPO_PATH  = 'meas_history.json';
 var MEAS_HIST_SAME_ORIGIN_URL = 'meas_history.json'; // 同一オリジン（相対パス）
+// iPad2はapi.github.comへの直接通信がTLS/ネットワークの都合で全滅するため、
+// Cloudflare Worker中継（cloudflare_worker_relay.js）経由でGitHub APIを叩く
+var MEAS_API_BASE = 'https://morning-resonance-c98bh.h2ec9629.workers.dev';
 
 function _b64EncodeUtf8(str) {
   return btoa(unescape(encodeURIComponent(str)));
@@ -899,7 +902,7 @@ function _setMeasPat(pat) {
 function _pushHistoryIndex(arr) {
   var pat = _getMeasPat();
   if (!pat) return;
-  var apiUrl = 'https://api.github.com/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
+  var apiUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
 
   // 更新には現在のファイルのshaが要るので先にGETしてから書き込む
   var getXhr = new XMLHttpRequest();
@@ -933,7 +936,7 @@ function _pushHistoryIndex(arr) {
 function _syncNewRecord(newRecord) {
   var pat = _getMeasPat();
   if (!pat) { _notify('共有NG：PAT未設定（オプションで設定して）'); return; }
-  var apiUrl = 'https://api.github.com/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
+  var apiUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
 
   var getXhr = new XMLHttpRequest();
   getXhr.open('GET', apiUrl + '?t=' + Date.now(), true);
@@ -994,7 +997,7 @@ function _saveRecordFile(data) {
   if (!pat) { _notify('個別ファイル保存NG：PAT未設定'); return; }
   var kiban  = String(data.kiban || '未入力');
   var status = String(data.status || '不明');
-  var dirUrl = 'https://api.github.com/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+  var dirUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
              + '/contents/records/' + encodeURIComponent(kiban);
 
   var listXhr = new XMLHttpRequest();
@@ -1020,7 +1023,7 @@ function _saveRecordFile(data) {
     }
     var filename = found ? (status + '_' + (maxN + 1) + '.json') : (status + '.json');
     var path    = 'records/' + kiban + '/' + filename;
-    var putUrl  = 'https://api.github.com/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+    var putUrl  = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
                 + '/contents/' + path.split('/').map(encodeURIComponent).join('/');
     var body = {
       message: '測定記録保存：機番' + kiban + '・' + status,
