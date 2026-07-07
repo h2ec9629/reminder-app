@@ -560,6 +560,9 @@
   <div class="save-act-row" style="margin-top:8px;">
     <button class="save-act-ok" style="-webkit-flex:1;flex:1;" onclick="forceUpdate()">Update（強制更新）</button>
   </div>
+  <div class="save-act-row" style="margin-top:8px;">
+    <button class="save-act-cancel" style="-webkit-flex:1;flex:1;" onclick="testApiConnection()">API接続テスト</button>
+  </div>
   <div style="margin-top:10px;">
     <div style="font-size:11px;color:var(--text-faint);margin-bottom:4px;display:flex;justify-content:space-between;">
       <span>通信ログ（新しい順）</span>
@@ -762,6 +765,30 @@ function forceUpdate() {
     }
   } catch(e) {}
   setTimeout(function() { location.reload(true); }, 1000);
+}
+
+// ===== API接続テスト（ヘッダーあり/なしで切り分け） =====
+function testApiConnection() {
+  var base = 'https://api.github.com/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME;
+
+  var xhrA = new XMLHttpRequest();
+  xhrA.open('GET', base + '?a=' + Date.now(), true);
+  xhrA.onreadystatechange = function() {
+    if (xhrA.readyState !== 4) return;
+    _notify('テストA(素の通信)：status ' + xhrA.status);
+  };
+  xhrA.onerror = function() { _notify('テストA(素の通信)：通信エラー'); };
+  xhrA.send();
+
+  var xhrB = new XMLHttpRequest();
+  xhrB.open('GET', base + '?b=' + Date.now(), true);
+  xhrB.setRequestHeader('Accept', 'application/vnd.github+json');
+  xhrB.onreadystatechange = function() {
+    if (xhrB.readyState !== 4) return;
+    _notify('テストB(ヘッダー付き)：status ' + xhrB.status);
+  };
+  xhrB.onerror = function() { _notify('テストB(ヘッダー付き)：通信エラー'); };
+  xhrB.send();
 }
 
 // ===== トースト =====
