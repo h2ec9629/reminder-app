@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1A1614">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="三相測定">
+  <link rel="manifest" href="meas_manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>三相測定</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #1A1614;
+      --bg-2:       #141210;
+      --surface:    #262220;
+      --surface-2:  #302C2A;
+      --border:     #3A3532;
+      --text:       #F0EBE6;
+      --text-sub:   #9E9691;
+      --text-faint: #615D5A;
+      --accent:     #C85C3A;
+      --header-h:   44px;
+      --numpad-h:   299px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+      background: var(--bg); color: var(--text);
+      overflow-x: hidden; overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== HEADER 廃止 ===== */
+    .header { display: none; }
+
+    /* ===== MAIN ===== */
+    .main {
+      margin-top: 0;
+      padding: 12px 10px;
+      margin-bottom: var(--numpad-h);
+    }
+
+    /* ===== PHASE BLOCK ===== */
+    .phase-block {
+      margin-bottom: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .phase-hd { font-size: 13px; font-weight: 700; padding: 7px 10px; border-bottom: 2px solid currentColor; }
+    .th-u { color: #ff9800; }
+    .th-v { color: #69d469; }
+    .th-w { color: #5bc8ff; }
+
+    /* ===== TABLE ===== */
+    .meas-tbl { width: 100%; border-collapse: collapse; font-size: 15px; table-layout: fixed; }
+    .meas-tbl th {
+      padding: 5px 6px; text-align: left;
+      color: var(--text-sub); font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-2);
+    }
+    .meas-tbl td { padding: 4px 5px; text-align: center; border-bottom: 1px solid var(--border); }
+    .meas-tbl tr:last-child td { border-bottom: none; }
+    .col-lbl { text-align: left !important; color: var(--text-sub); font-size: 14px; white-space: nowrap; width: 14%; padding: 4px 3px !important; }
+
+    /* ===== INPUT CELL ===== */
+    .meas-td-wrap {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: stretch; align-items: stretch;
+      border: 1px solid var(--border); border-radius: 999px;
+      overflow: hidden; background: var(--surface-2);
+    }
+    .meas-td-wrap .meas-in { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; min-width: 0; border: none !important; background: transparent; border-radius: 0; }
+    .meas-td-wrap.mc-g { background: #000; }
+    .meas-td-wrap.mc-r { background: #000; }
+    .meas-x {
+      -webkit-flex-shrink: 0; flex-shrink: 0;
+      background: none; border: none;
+      border-left: 1px solid var(--border);
+      color: var(--text-faint); font-size: 14px;
+      cursor: pointer; padding: 4px 7px;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+    }
+
+    .meas-in {
+      width: 100%; border: 1px solid var(--border); border-radius: 4px;
+      background: var(--surface-2); color: var(--text);
+      font-size: 16px; padding: 5px 3px;
+      text-align: right; font-family: inherit;
+      -webkit-appearance: none; appearance: none; outline: none;
+    }
+    .meas-in.active-inp { border-color: var(--accent) !important; background: #FFFFFF !important; color: #000000 !important; }
+
+    /* ===== DIFF CELL ===== */
+    .meas-diff { font-weight: 700; font-size: 14px; line-height: 1.1; vertical-align: middle; padding: 3px; }
+    .d-num { display: block; }
+    .d-lbl { display: block; font-size: 13px; font-weight: 600; }
+
+    /* ===== COL HEADER ===== */
+    .col-hd-wrap {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      -webkit-justify-content: space-between; justify-content: space-between;
+    }
+    .col-reset {
+      background: none; border: 1px solid var(--border);
+      border-radius: 4px; color: var(--text-faint);
+      font-size: 12px; padding: 2px 5px;
+      cursor: pointer; font-family: inherit;
+    }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed; bottom: calc(var(--numpad-h) + 10px); left: 50%;
+      -webkit-transform: translateX(-50%);
+      transform: translateX(-50%);
+      background: var(--surface-2); color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 18px; border-radius: 10px;
+      font-size: 15px; font-weight: 600;
+      z-index: 999; white-space: nowrap;
+      display: none;
+    }
+    .toast.show { display: block; }
+
+    /* ===== NUMPAD 常駐 ===== */
+    .numpad {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      height: var(--numpad-h);
+      background: var(--surface);
+      border-top: 2px solid var(--accent);
+      z-index: 200;
+      padding: 6px 6px 10px;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-flex-direction: row; flex-direction: row;
+      -webkit-justify-content: space-between; justify-content: space-between;
+      gap: 6px;
+    }
+
+    /* 左パネル：サイドメニュー */
+    .numpad-side {
+      -webkit-flex: 0 0 28%; flex: 0 0 28%;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-flex-direction: column; flex-direction: column;
+      gap: 4px;
+    }
+    .numpad-app-title {
+      font-size: 11px; font-weight: 700;
+      color: var(--text-faint);
+      padding: 2px 4px;
+      letter-spacing: 0.5px;
+    }
+    .numpad-side-btn {
+      -webkit-flex: 1; flex: 1;
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text-sub); font-size: 14px; font-weight: 700;
+      border-radius: 8px; cursor: pointer; font-family: inherit;
+      text-align: center; line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .numpad-side-btn:active { background: var(--border); }
+    .numpad-side-btn.btn-save { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .numpad-side-btn.btn-hist { }
+    .numpad-side-btn.btn-hist.active { border-color: var(--accent); color: var(--accent); }
+    .numpad-side-btn.btn-reset { color: #F87171; border-color: #2A1010; }
+
+    /* 右パネル：テンキー */
+    .numpad-right {
+      -webkit-flex: 0 0 60%; flex: 0 0 60%;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-flex-direction: column; flex-direction: column;
+      gap: 4px;
+    }
+
+    /* 現在値バー */
+    .numpad-val-bar {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      background: var(--bg-2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 4px 8px; gap: 6px;
+      -webkit-flex-shrink: 0; flex-shrink: 0;
+    }
+    .numpad-target-label {
+      font-size: 13px; font-weight: 700; color: #fff;
+      -webkit-flex: 1; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .numpad-target-val {
+      font-size: 20px; font-weight: 700; color: var(--text);
+      text-align: right; min-width: 60px;
+    }
+
+    /* 4×3 グリッド */
+    .numpad-grid {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-flex-wrap: wrap; flex-wrap: wrap;
+      gap: 4px; -webkit-flex: 1; flex: 1;
+    }
+    .np-btn {
+      -webkit-box-flex: 1; -webkit-flex: 1 1 28%; flex: 1 1 28%;
+      min-width: 0;
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text); font-size: 24px; font-weight: 600;
+      border-radius: 8px; cursor: pointer; font-family: inherit;
+      text-align: center; line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .np-btn:active { background: var(--border); }
+    .np-btn-bs    { background: var(--bg-2); color: #F87171; font-size: 20px; }
+    .np-btn-ok    { background: var(--accent); color: #fff; border-color: var(--accent); font-size: 20px; }
+
+    /* ===== 履歴画面 ===== */
+    .hist-view {
+      display: none;
+      margin-top: 0;
+      height: 100vh;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+    }
+    .hist-view.hidden { display: none !important; }
+
+    /* サイドバー */
+    .hist-sidebar {
+      width: 38%;
+      min-width: 110px;
+      max-width: 160px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      -webkit-flex-shrink: 0; flex-shrink: 0;
+    }
+    .hist-sidebar-hd {
+      font-size: 11px; font-weight: 700; color: var(--text-faint);
+      padding: 8px 10px 6px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-2);
+      position: sticky; top: 0;
+    }
+    .hist-back-btn {
+      display: block; width: 100%;
+      background: var(--accent); border: none;
+      color: #fff; font-size: 15px; font-weight: 700;
+      padding: 12px 10px;
+      cursor: pointer; font-family: inherit;
+      text-align: center; letter-spacing: 1px;
+      border-bottom: 2px solid rgba(0,0,0,0.25);
+      position: sticky; top: 0; z-index: 10;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hist-back-btn:active { opacity: 0.8; }
+    .hist-item {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .hist-item.selected { background: var(--surface-2); border-left: 3px solid var(--accent); }
+    .hist-item-date { font-size: 11px; color: var(--text-sub); }
+    .hist-item-memo { font-size: 12px; font-weight: 700; color: var(--text); margin-top: 2px; word-break: break-all; }
+    .hist-item-del  { float: right; background: none; border: none; color: var(--text-faint); font-size: 14px; cursor: pointer; padding: 0 2px; }
+    .hist-empty     { font-size: 12px; color: var(--text-faint); padding: 16px 10px; text-align: center; }
+
+    /* 結果エリア */
+    .hist-detail {
+      -webkit-flex: 1; flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 10px 10px 20px;
+      background: var(--bg);
+    }
+    .hist-detail-empty { font-size: 13px; color: var(--text-faint); padding: 30px 10px; text-align: center; }
+    .hist-detail-date  { font-size: 11px; color: var(--text-faint); margin-bottom: 4px; }
+    .hist-detail-memo  { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+
+    /* 結果テーブル */
+    .hr-tbl { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px; table-layout: fixed; }
+    .hr-tbl th {
+      background: var(--bg-2); color: var(--text-sub); font-weight: 600;
+      padding: 4px 5px; border: 1px solid var(--border); text-align: center;
+    }
+    .hr-tbl td {
+      padding: 4px 5px; border: 1px solid var(--border); text-align: right;
+      color: var(--text); background: var(--surface);
+    }
+    .hr-tbl td.lbl { text-align: left; color: var(--text-sub); font-size: 11px; background: var(--bg-2); }
+    .hr-tbl td.diff-ok  { color: #4ADE80; font-weight: 700; }
+    .hr-tbl td.diff-warn { color: #fff; font-weight: 700; }
+    .hr-tbl td.diff-ng  { color: #ff9800; font-weight: 700; }
+    .hr-ph-hd { font-size: 12px; font-weight: 700; padding: 6px 2px 3px; }
+    .hr-ph-u  { color: #ff9800; }
+    .hr-ph-v  { color: #69d469; }
+    .hr-ph-w  { color: #5bc8ff; }
+
+    /* ===== 保存パネル（テンキー上） ===== */
+    .save-panel {
+      display: none;
+      position: fixed; left: 0; right: 0;
+      bottom: var(--numpad-h);
+      background: var(--surface);
+      border-top: 2px solid var(--accent);
+      border-bottom: 1px solid var(--border);
+      z-index: 210;
+      padding: 10px 12px;
+    }
+    .save-panel.show { display: block; }
+    .save-panel-title { font-size: 12px; font-weight: 700; color: var(--text-faint); margin-bottom: 8px; }
+    /* 機番行 */
+    .save-kiban-row {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      gap: 8px; margin-bottom: 8px;
+    }
+    .save-kiban-label { font-size: 11px; color: var(--text-sub); font-weight: 600; -webkit-flex-shrink: 0; flex-shrink: 0; }
+    .save-kiban-val {
+      -webkit-flex: 1; flex: 1;
+      background: var(--surface-2); border: 1px solid var(--accent);
+      border-radius: 6px; color: #FFB899;
+      font-size: 20px; font-weight: 700;
+      padding: 4px 10px; text-align: right;
+      min-height: 34px;
+    }
+    /* 状態ボタン行 */
+    .save-status-row {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      gap: 5px; margin-bottom: 8px;
+    }
+    .save-status-btn {
+      -webkit-flex: 1; flex: 1;
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text-sub); font-size: 11px; font-weight: 700;
+      padding: 6px 2px; border-radius: 6px;
+      cursor: pointer; font-family: inherit; text-align: center;
+    }
+    .save-status-btn.sel { background: var(--accent); border-color: var(--accent); color: #fff; }
+    /* 操作ボタン行 */
+    .save-act-row {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      gap: 8px;
+    }
+    .save-act-cancel {
+      -webkit-flex: 1; flex: 1;
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text-sub); font-size: 13px; font-weight: 700;
+      padding: 7px; border-radius: 7px; cursor: pointer; font-family: inherit;
+    }
+    .save-act-ok {
+      -webkit-flex: 2; flex: 2;
+      background: var(--accent); border: 1px solid var(--accent);
+      color: #fff; font-size: 13px; font-weight: 700;
+      padding: 7px; border-radius: 7px; cursor: pointer; font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+
+<header class="header"></header>
+
+<main class="main">
+
+  <!-- U相 -->
+  <div class="phase-block">
+    <div class="phase-hd th-u">U相</div>
+    <table class="meas-tbl">
+      <thead><tr>
+        <th style="width:14%"></th>
+        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" onclick="clearCol('u','b')">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" onclick="clearCol('u','a')">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span class="th-u">R</span><button class="col-reset" onclick="clearCol('u','r')">CLR</button></div></th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td class="col-lbl"></td>
+          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mu_on_b" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_b" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mu_on_a" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_a" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mu_on_r" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_r" data-ph="u">×</button></div></td>
+        </tr>
+        <tr>
+          <td class="col-lbl"></td>
+          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mu_off_b" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_b" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mu_off_a" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_a" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mu_off_r" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_r" data-ph="u">×</button></div></td>
+        </tr>
+        <tr>
+          <td class="col-lbl">判定</td>
+          <td class="meas-diff" id="mu_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mu_d_a"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mu_d_r"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- V相 -->
+  <div class="phase-block">
+    <div class="phase-hd th-v">V相</div>
+    <table class="meas-tbl">
+      <thead><tr>
+        <th style="width:14%"></th>
+        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" onclick="clearCol('v','b')">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" onclick="clearCol('v','a')">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span class="th-v">R</span><button class="col-reset" onclick="clearCol('v','r')">CLR</button></div></th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td class="col-lbl"></td>
+          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mv_on_b" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_b" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mv_on_a" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_a" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mv_on_r" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_r" data-ph="v">×</button></div></td>
+        </tr>
+        <tr>
+          <td class="col-lbl"></td>
+          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mv_off_b" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_b" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mv_off_a" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_a" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mv_off_r" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_r" data-ph="v">×</button></div></td>
+        </tr>
+        <tr>
+          <td class="col-lbl">判定</td>
+          <td class="meas-diff" id="mv_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mv_d_a"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mv_d_r"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- W相 -->
+  <div class="phase-block">
+    <div class="phase-hd th-w">W相</div>
+    <table class="meas-tbl">
+      <thead><tr>
+        <th style="width:14%"></th>
+        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" onclick="clearCol('w','b')">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" onclick="clearCol('w','a')">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span class="th-w">R</span><button class="col-reset" onclick="clearCol('w','r')">CLR</button></div></th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td class="col-lbl"></td>
+          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mw_on_b" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_b" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mw_on_a" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_a" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mw_on_r" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_r" data-ph="w">×</button></div></td>
+        </tr>
+        <tr>
+          <td class="col-lbl"></td>
+          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mw_off_b" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_b" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mw_off_a" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_a" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mw_off_r" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_r" data-ph="w">×</button></div></td>
+        </tr>
+        <tr>
+          <td class="col-lbl">判定</td>
+          <td class="meas-diff" id="mw_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mw_d_a"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mw_d_r"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<!-- ===== 履歴画面 ===== -->
+<div class="hist-view hidden" id="histView">
+  <div class="hist-sidebar" id="histSidebar">
+    <button class="hist-back-btn" onclick="toggleHist()">◀ 測定へ戻る</button>
+    <div class="hist-sidebar-hd">保存履歴</div>
+    <div id="histList"></div>
+  </div>
+  <div class="hist-detail" id="histDetail">
+    <div class="hist-detail-empty">←履歴を選択</div>
+  </div>
+</div>
+
+<!-- ===== 常駐テンキー ===== -->
+<div class="numpad">
+
+  <!-- 左：サイドメニュー -->
+  <div class="numpad-side">
+    <div class="numpad-app-title">v1.4　三相測定</div>
+    <button class="numpad-side-btn btn-save" onclick="saveMeas()">SAVE</button>
+    <button class="numpad-side-btn btn-hist" id="histBtn" onclick="toggleHist()">LOG</button>
+    <button class="numpad-side-btn btn-reset" onclick="resetAll()">全リセット</button>
+    <button class="numpad-side-btn" onclick="forceUpdate()">Update</button>
+  </div>
+
+  <!-- 右：テンキー -->
+  <div class="numpad-right">
+    <div class="numpad-val-bar">
+      <span class="numpad-target-label" id="padLabel">欄をタップ</span>
+      <span class="numpad-target-val"   id="padVal">—</span>
+    </div>
+    <div class="numpad-grid" id="numpadGrid">
+      <button class="np-btn" data-key="7">7</button>
+      <button class="np-btn" data-key="8">8</button>
+      <button class="np-btn" data-key="9">9</button>
+      <button class="np-btn" data-key="4">4</button>
+      <button class="np-btn" data-key="5">5</button>
+      <button class="np-btn" data-key="6">6</button>
+      <button class="np-btn" data-key="1">1</button>
+      <button class="np-btn" data-key="2">2</button>
+      <button class="np-btn" data-key="3">3</button>
+      <button class="np-btn np-btn-bs"  data-key="BS">⌫</button>
+      <button class="np-btn" data-key="0">0</button>
+      <button class="np-btn np-btn-ok"  data-key="OK">↵</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== 保存パネル（テンキー上） ===== -->
+<div class="save-panel" id="savePanel">
+  <div class="save-panel-title">SAVE — テンキーで機番入力 → ↵で保存</div>
+  <div class="save-kiban-row">
+    <span class="save-kiban-label">機番</span>
+    <span class="save-kiban-val" id="saveKibanVal">—</span>
+  </div>
+  <div class="save-status-row" id="saveStatusRow">
+    <button class="save-status-btn sel" data-status="完成時">完成時</button>
+    <button class="save-status-btn"     data-status="出荷前">出荷前</button>
+    <button class="save-status-btn"     data-status="エイジング途中">AG中</button>
+    <button class="save-status-btn"     data-status="エイジング後">AG後</button>
+  </div>
+  <div class="save-act-row">
+    <button class="save-act-cancel" onclick="closeSaveDialog()">キャンセル</button>
+    <button class="save-act-ok"     onclick="confirmSave()">保存する</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var PHASES = ['u','v','w'];
+var COLS   = ['b','a','r'];
+
+// ===== フォーカス管理 =====
+var _padTarget = null;
+var _padPh     = '';
+var _padRaw    = '';
+var _padNeg    = false;
+var _inputs    = [];  // ① 起動時にキャッシュ
+
+function focusInp(inp) {
+  if (_padTarget) {
+    _padTarget.className = _padTarget.className.replace(' active-inp','').replace('active-inp','');
+    measCalc(_padPh);
+  }
+  _padTarget = inp;
+  _padPh     = inp.getAttribute('data-ph');
+  var cur    = inp.value || '';
+  _padNeg    = (cur.charAt(0) === '-');
+  _padRaw    = cur.replace(/[^0-9]/g, '');
+
+  inp.className += ' active-inp';
+
+  var id    = inp.id;
+  var parts = id.split('_');
+  var phMap = { u:'U相', v:'V相', w:'W相' };
+  document.getElementById('padLabel').textContent = phMap[_padPh] + '-' + parts[2].toUpperCase();
+  _refreshPadVal();
+}
+
+// ===== テンキー入力 =====
+function _npTap(key) {
+  // 保存モード中は機番入力に横取り
+  if (_saveMode) { _savePadKey(key); return; }
+  if (!_padTarget) return;
+  if (key === 'BS') {
+    if (_padRaw.length > 0) _padRaw = _padRaw.slice(0, -1);
+    else _padNeg = false;
+    _refreshPadVal();
+  } else if (key === 'OK') {
+    if (_padPh) measCalc(_padPh);
+    _nextFocus();
+  } else {
+    if (_padRaw.length < 6) _padRaw += key;
+    _refreshPadVal();
+  }
+}
+
+function _nextFocus() {
+  var i;
+  for (i = 0; i < _inputs.length - 1; i++) {  // ① キャッシュ済み配列を使用
+    if (_inputs[i] === _padTarget) {
+      focusInp(_inputs[i + 1]);
+      return;
+    }
+  }
+  if (_padTarget) {
+    _padTarget.className = _padTarget.className.replace(' active-inp','').replace('active-inp','');
+    _padTarget = null;
+    document.getElementById('padLabel').textContent = '欄をタップして入力';
+    document.getElementById('padVal').textContent   = '—';
+  }
+}
+
+function _refreshPadVal() {
+  var d = _padRaw, fmt;
+  if (d.length === 0)      fmt = '';
+  else if (d.length <= 2)  fmt = d;
+  else if (d.length === 3) fmt = d.slice(0, 2) + '.' + d.slice(2);
+  else                     fmt = d.slice(0, 2) + '.' + d.slice(2);
+  if (_padNeg && fmt) fmt = '-' + fmt;
+  if (_padTarget) _padTarget.value = fmt;
+  document.getElementById('padVal').textContent = fmt || '—';
+}
+
+// ===== 判定計算（③ textContent で DOM更新）=====
+function _setDiff(dEl, numStr, lblStr, color) {
+  var spans = dEl.getElementsByTagName('span');
+  dEl.style.color = color;
+  if (spans.length >= 2) {
+    spans[0].textContent = numStr;
+    spans[1].textContent = lblStr;
+  } else {
+    // フォールバック（念のため）
+    dEl.textContent = numStr + ' ' + lblStr;
+  }
+}
+
+function measCalc(ph) {
+  var i, col, onEl, offEl, dEl, onV, offV, diff, diffStr, tmp;
+  var gap, dir, absGap, full, whole, half, label;
+  for (i = 0; i < COLS.length; i++) {
+    col   = COLS[i];
+    onEl  = document.getElementById('m' + ph + '_on_'  + col);
+    offEl = document.getElementById('m' + ph + '_off_' + col);
+    dEl   = document.getElementById('m' + ph + '_d_'   + col);
+    if (!dEl) continue;
+    onV  = onEl  ? parseFloat(onEl.value)  : NaN;
+    offV = offEl ? parseFloat(offEl.value) : NaN;
+    if (!isNaN(onV) && !isNaN(offV)) {
+      // 大きい値＝ON・小さい値＝OFFになるよう表示欄を入れ替える
+      if (onV < offV) {
+        tmp = onEl.value; onEl.value = offEl.value; offEl.value = tmp;
+        tmp = onV; onV = offV; offV = tmp;
+      }
+      // 大きい値－小さい値＝差数（入力ミスで段が逆でも計算できるように）
+      diff    = Math.round(Math.abs(onV - offV) * 1000) / 1000;
+      diffStr = diff.toFixed(2);
+      if (diff >= 1.83 && diff <= 1.97) {
+        _setDiff(dEl, diffStr, '[正常]', '#4ADE80');
+      } else {
+        gap    = Math.round((1.90 - diff) * 1000) / 1000;
+        dir    = gap > 0 ? '緩め' : '締め';
+        absGap = Math.abs(gap);
+        full   = Math.floor(Math.round(absGap / 0.125));
+        whole  = Math.floor(full / 2);
+        half   = (full % 2 === 1);
+        label  = whole > 0 && half  ? whole + '角半'
+               : whole > 0 && !half ? whole + '角'
+               : half                ? '半角' : '？';
+        _setDiff(dEl, diffStr, '[' + label + dir + ']', (diff >= 1.80 && diff <= 2.00) ? '#fff' : '#ff9800');
+      }
+    } else {
+      _setDiff(dEl, '—', '', '');
+    }
+  }
+}
+
+// ===== クリア =====
+function clearOne(id, ph) {
+  var el = document.getElementById(id);
+  if (el) {
+    el.value = '';
+    if (_padTarget === el) { _padRaw = ''; _padNeg = false; _refreshPadVal(); }
+  }
+  measCalc(ph);
+}
+
+function clearCol(ph, col) {
+  var rows = ['on','off'], i, el;
+  for (i = 0; i < rows.length; i++) {
+    el = document.getElementById('m' + ph + '_' + rows[i] + '_' + col);
+    if (el) {
+      el.value = '';
+      if (_padTarget === el) { _padRaw = ''; _padNeg = false; _refreshPadVal(); }
+    }
+  }
+  measCalc(ph);
+}
+
+function resetAll() {
+  if (!confirm('全ての入力をリセットしますか？')) return;
+  var pi, ci, ri, ph, col, rows, el, dEl;
+  rows = ['on','off'];
+  for (pi = 0; pi < PHASES.length; pi++) {
+    ph = PHASES[pi];
+    for (ci = 0; ci < COLS.length; ci++) {
+      col = COLS[ci];
+      for (ri = 0; ri < rows.length; ri++) {
+        el = document.getElementById('m' + ph + '_' + rows[ri] + '_' + col);
+        if (el) el.value = '';
+      }
+      dEl = document.getElementById('m' + ph + '_d_' + col);
+      if (dEl) { _setDiff(dEl, '—', '', ''); }
+    }
+  }
+  _padTarget = null; _padRaw = ''; _padNeg = false;
+  document.getElementById('padLabel').textContent = '欄をタップして入力';
+  document.getElementById('padVal').textContent   = '—';
+  showToast('リセットしました');
+}
+
+// ===== 強制更新 =====
+function forceUpdate() {
+  showToast('更新中...');
+  try {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        var i;
+        for (i = 0; i < regs.length; i++) regs[i].unregister();
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(keys) {
+        var i;
+        for (i = 0; i < keys.length; i++) caches.delete(keys[i]);
+      });
+    }
+  } catch(e) {}
+  setTimeout(function() { location.reload(true); }, 1000);
+}
+
+// ===== トースト =====
+var _tt;
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'toast show';
+  clearTimeout(_tt);
+  _tt = setTimeout(function(){ t.className = 'toast'; }, 2200);
+}
+
+// ===== 保存・履歴機能 =====
+var STORE_KEY = 'meas_history';
+var _histMode = false;
+var _selIdx   = -1;
+
+function _loadHistory() {
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function _saveHistory(arr) {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+// === GIST SYNC (XHR / iOS9互換) ===
+var MEAS_GIST_ID       = '34f07c829b92ea7141367874f8777512';
+var MEAS_HIST_GIST_RAW = 'https://gist.githubusercontent.com/H2EC9629/' + MEAS_GIST_ID + '/raw/meas_history.json';
+
+function _getMeasPat() {
+  try {
+    var cfg = JSON.parse(localStorage.getItem('ojisan_mailbox_cfg_v1') || '{}');
+    return cfg.pat || '';
+  } catch(e) { return ''; }
+}
+
+function _syncGist(arr) {
+  var pat = _getMeasPat();
+  if (!pat) return;
+  var body = JSON.stringify({ files: { 'meas_history.json': { content: JSON.stringify(arr, null, 2) } } });
+  var xhr = new XMLHttpRequest();
+  xhr.open('PATCH', 'https://api.github.com/gists/' + MEAS_GIST_ID, true);
+  xhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  xhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.send(body);
+}
+
+function _fetchGist(callback) {
+  var pat = _getMeasPat();
+  if (!pat) return;
+  var url = MEAS_HIST_GIST_RAW + '?t=' + Date.now();
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    if (xhr.status !== 200) return;
+    try {
+      var remote = JSON.parse(xhr.responseText);
+      if (!Array.isArray(remote)) return;
+      var local  = _loadHistory();
+      var seen   = {};
+      var merged = [];
+      var all = remote.concat(local);
+      var i, k;
+      for (i = 0; i < all.length; i++) {
+        k = all[i].date + '|' + all[i].memo;
+        if (!seen[k]) { seen[k] = true; merged.push(all[i]); }
+      }
+      merged.sort(function(a, b) { return b.date < a.date ? -1 : 1; });
+      if (merged.length > 50) merged = merged.slice(0, 50);
+      _saveHistory(merged);
+      if (callback) callback();
+    } catch(e) {}
+  };
+  xhr.send();
+}
+
+// ===== 保存パネル（テンキー横取りモード） =====
+var _pendingData  = null;
+var _saveMode     = false;   // テンキーを機番入力に横取り中
+var _saveRaw      = '';      // 機番の生文字列
+var _saveStatus   = '完成時'; // 選択中の状態
+
+function saveMeas() {
+  var ph, col, i, ci, onEl, offEl, onV, offV, diff;
+  var data = { date: '', memo: '', phases: {} };
+
+  // 保存前に大小入れ替えを確定させる（OK未確定のまま保存されても正しい並びにする）
+  for (i = 0; i < PHASES.length; i++) measCalc(PHASES[i]);
+
+  // 日時
+  var now = new Date();
+  var yy  = now.getFullYear();
+  var mm  = ('0' + (now.getMonth() + 1)).slice(-2);
+  var dd  = ('0' + now.getDate()).slice(-2);
+  var hh  = ('0' + now.getHours()).slice(-2);
+  var mi  = ('0' + now.getMinutes()).slice(-2);
+  data.date = yy + '/' + mm + '/' + dd + ' ' + hh + ':' + mi;
+
+  // 入力値収集
+  var hasAny = false;
+  for (i = 0; i < PHASES.length; i++) {
+    ph = PHASES[i];
+    data.phases[ph] = {};
+    for (ci = 0; ci < COLS.length; ci++) {
+      col   = COLS[ci];
+      onEl  = document.getElementById('m' + ph + '_on_'  + col);
+      offEl = document.getElementById('m' + ph + '_off_' + col);
+      onV   = onEl  ? onEl.value  : '';
+      offV  = offEl ? offEl.value : '';
+      diff  = '';
+      if (onV !== '' && offV !== '') {
+        // 大きい値－小さい値＝差数（入力ミスで段が逆でも計算できるように）
+        diff = (Math.round(Math.abs(parseFloat(onV) - parseFloat(offV)) * 1000) / 1000).toFixed(2);
+        hasAny = true;
+      }
+      data.phases[ph][col] = { on: onV, off: offV, diff: diff };
+    }
+  }
+
+  if (!hasAny) { showToast('入力がありません'); return; }
+
+  _pendingData = data;
+  _saveRaw     = '';
+  _saveStatus  = '完成時';
+  _saveMode    = true;
+
+  // 測定欄のハイライトを外す
+  if (_padTarget) {
+    _padTarget.className = _padTarget.className.replace(' active-inp','').replace('active-inp','');
+    _padTarget = null;
+  }
+
+  // val-bar のラベルを書き換え
+  document.getElementById('padLabel').textContent = '機番を入力';
+  document.getElementById('padVal').textContent   = '—';
+
+  // パネル表示・状態ボタン初期化
+  _refreshSaveStatus();
+  document.getElementById('saveKibanVal').textContent = '—';
+  document.getElementById('savePanel').className = 'save-panel show';
+}
+
+function _refreshSaveKiban() {
+  var v = _saveRaw || '—';
+  document.getElementById('saveKibanVal').textContent = v;
+  document.getElementById('padVal').textContent       = v;
+}
+
+function _refreshSaveStatus() {
+  var btns = document.getElementById('saveStatusRow').getElementsByTagName('button');
+  var k;
+  for (k = 0; k < btns.length; k++) {
+    if (btns[k].getAttribute('data-status') === _saveStatus) {
+      btns[k].className = 'save-status-btn sel';
+    } else {
+      btns[k].className = 'save-status-btn';
+    }
+  }
+}
+
+// テンキーから横取りして呼ばれる
+function _savePadKey(key) {
+  if (key === 'BS') {
+    if (_saveRaw.length > 0) _saveRaw = _saveRaw.slice(0, -1);
+  } else if (key === 'OK') {
+    confirmSave();
+    return;
+  } else {
+    if (_saveRaw.length < 8) _saveRaw += key;
+  }
+  _refreshSaveKiban();
+}
+
+function closeSaveDialog() {
+  _saveMode    = false;
+  _pendingData = null;
+  document.getElementById('savePanel').className = 'save-panel';
+  document.getElementById('padLabel').textContent = '欄をタップして入力';
+  document.getElementById('padVal').textContent   = '—';
+}
+
+function confirmSave() {
+  if (!_pendingData) return;
+  if (_saveRaw === '') { showToast('機番を入力してください'); return; }
+
+  _pendingData.memo   = '機番 ' + _saveRaw + '　' + _saveStatus;
+  _pendingData.kiban  = _saveRaw;
+  _pendingData.status = _saveStatus;
+
+  var arr = _loadHistory();
+  arr.unshift(_pendingData);
+  if (arr.length > 50) arr = arr.slice(0, 50);
+  _saveHistory(arr);
+  _syncGist(arr);
+  closeSaveDialog();
+  showToast('保存しました');
+  _renderSidebar();
+}
+
+// 履歴画面 ON/OFF
+function toggleHist() {
+  _histMode = !_histMode;
+  var mv   = document.getElementById('histView');
+  var main = document.getElementsByTagName('main')[0];
+  var np   = document.getElementsByClassName('numpad')[0];
+  var btn  = document.getElementById('histBtn');
+  if (_histMode) {
+    main.style.display = 'none';
+    np.style.display   = 'none';
+    mv.className       = 'hist-view';
+    btn.classList.add('active');
+    _selIdx = -1;
+    _renderSidebar();
+    _fetchGist(function() { _renderSidebar(); });
+  } else {
+    mv.className       = 'hist-view hidden';
+    main.style.display = '';
+    np.style.display   = '';
+    btn.classList.remove('active');
+  }
+}
+
+// サイドバー描画
+function _renderSidebar() {
+  var arr  = _loadHistory();
+  var list = document.getElementById('histList');
+  var html = '', i, it;
+  if (arr.length === 0) {
+    list.innerHTML = '<div class="hist-empty">保存データなし</div>';
+    return;
+  }
+  for (i = 0; i < arr.length; i++) {
+    it = arr[i];
+    html += '<div class="hist-item' + (i === _selIdx ? ' selected' : '') + '" id="hi_' + i + '">'
+          + '<button class="hist-item-del" data-didx="' + i + '">×</button>'
+          + '<div class="hist-item-date">' + _esc(it.date) + '</div>'
+          + '<div class="hist-item-memo">' + _esc(it.memo) + '</div>'
+          + '</div>';
+  }
+  list.innerHTML = html;
+
+  // タップ処理（ontouchend + onclick フォールバック）
+  var items = list.getElementsByClassName('hist-item');
+  var k;
+  for (k = 0; k < items.length; k++) {
+    items[k].ontouchend = (function(idx) {
+      return function(e) {
+        // ×ボタンタップは無視
+        if (e.target.getAttribute('data-didx') !== null) return;
+        e.preventDefault();
+        _selIdx = idx;
+        _renderSidebar();
+        _renderDetail(idx);
+      };
+    })(k);
+    items[k].onclick = (function(idx) {
+      return function(e) {
+        if (e.target.getAttribute('data-didx') !== null) return;
+        _selIdx = idx;
+        _renderSidebar();
+        _renderDetail(idx);
+      };
+    })(k);
+  }
+
+  // ×削除ボタン
+  var dels = list.getElementsByClassName('hist-item-del');
+  for (k = 0; k < dels.length; k++) {
+    dels[k].ontouchend = (function(idx) {
+      return function(e) {
+        e.preventDefault(); e.stopPropagation();
+        _deleteHist(idx);
+      };
+    })(k);
+    dels[k].onclick = (function(idx) {
+      return function(e) {
+        e.stopPropagation();
+        _deleteHist(idx);
+      };
+    })(k);
+  }
+
+  // 選択中があれば詳細を維持
+  if (_selIdx >= 0 && _selIdx < arr.length) _renderDetail(_selIdx);
+}
+
+function _deleteHist(idx) {
+  if (!confirm('この記録を削除しますか？')) return;
+  var arr = _loadHistory();
+  arr.splice(idx, 1);
+  _saveHistory(arr);
+  _syncGist(arr);
+  if (_selIdx >= arr.length) _selIdx = arr.length - 1;
+  _renderSidebar();
+  if (_selIdx < 0) {
+    document.getElementById('histDetail').innerHTML = '<div class="hist-detail-empty">←履歴を選択</div>';
+  }
+}
+
+// 詳細エリア描画
+function _renderDetail(idx) {
+  var arr = _loadHistory();
+  if (idx < 0 || idx >= arr.length) return;
+  var it = arr[idx];
+  var phNames = { u:'U相', v:'V相', w:'W相' };
+  var phColors= { u:'hr-ph-u', v:'hr-ph-v', w:'hr-ph-w' };
+  var html = '<div class="hist-detail-date">' + _esc(it.date) + '</div>'
+           + '<div class="hist-detail-memo">' + _esc(it.memo) + '</div>';
+
+  var ph, col, ci, row, dv, cls;
+  for (var pi = 0; pi < PHASES.length; pi++) {
+    ph = PHASES[pi];
+    html += '<div class="hr-ph-hd ' + phColors[ph] + '">' + phNames[ph] + '</div>';
+    html += '<table class="hr-tbl"><thead><tr>'
+          + '<th style="width:20%"></th><th>B</th><th>A</th><th>R</th>'
+          + '</tr></thead><tbody>';
+    var rows2 = [['','on'],['','off'],['差数','diff']];
+    for (var ri = 0; ri < rows2.length; ri++) {
+      row = rows2[ri];
+      html += '<tr><td class="lbl">' + row[0] + '</td>';
+      for (ci = 0; ci < COLS.length; ci++) {
+        col = COLS[ci];
+        dv  = it.phases[ph] && it.phases[ph][col] ? it.phases[ph][col][row[1]] : '';
+        if (row[1] === 'diff' && dv !== '') {
+          var dNum = parseFloat(dv);
+          cls = dNum >= 1.83 && dNum <= 1.97 ? 'diff-ok'
+              : dNum >= 1.80 && dNum <= 2.00 ? 'diff-warn'
+              : 'diff-ng';
+          html += '<td class="' + cls + '">' + _esc(dv) + '</td>';
+        } else {
+          html += '<td>' + _esc(dv || '—') + '</td>';
+        }
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+  }
+
+  document.getElementById('histDetail').innerHTML = html;
+}
+
+function _esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ===== SW登録 =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('meas_sw.js').catch(function() {});
+}
+
+// ===== 初期化 =====
+window.onload = function() {
+  var i, allInputs, btns, grid;
+
+  // ① 入力欄を起動時にキャッシュ（meas-in クラスのみ）
+  allInputs = document.getElementsByTagName('input');
+  for (i = 0; i < allInputs.length; i++) {
+    if (allInputs[i].getAttribute('data-ph')) {
+      _inputs.push(allInputs[i]);
+    }
+  }
+
+  // ② 入力欄タップ → ontouchend で300ms遅延解消
+  for (i = 0; i < _inputs.length; i++) {
+    _inputs[i].ontouchend = (function(inp) {
+      return function(e) { e.preventDefault(); focusInp(inp); };
+    })(_inputs[i]);
+    // PC/マウス用フォールバック
+    _inputs[i].onclick = (function(inp) {
+      return function() { focusInp(inp); };
+    })(_inputs[i]);
+  }
+
+  // ×ボタン → 2秒長押しで削除（誤タップ防止）
+  btns = document.getElementsByTagName('button');
+  for (i = 0; i < btns.length; i++) {
+    if (btns[i].getAttribute('data-clear')) {
+      (function(btn) {
+        var id = btn.getAttribute('data-clear');
+        var ph = btn.getAttribute('data-ph');
+        var holdTimer = null;
+        function startHold(e) {
+          e.preventDefault();
+          if (holdTimer) clearTimeout(holdTimer);
+          holdTimer = setTimeout(function() {
+            holdTimer = null;
+            clearOne(id, ph);
+          }, 2000);
+        }
+        function cancelHold(e) {
+          if (e) e.preventDefault();
+          if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+        }
+        btn.ontouchstart  = startHold;
+        btn.ontouchend    = cancelHold;
+        btn.ontouchcancel = cancelHold;
+        btn.onmousedown   = startHold;
+        btn.onmouseup     = cancelHold;
+        btn.onmouseleave  = cancelHold;
+        btn.onclick       = function(e) { e.preventDefault(); };
+      })(btns[i]);
+    }
+  }
+
+  // ② テンキー：ontouchend でイベント委譲（300ms遅延解消）
+  grid = document.getElementById('numpadGrid');
+  grid.ontouchend = function(e) {
+    var b = e.target;
+    if (b.tagName === 'BUTTON') {
+      e.preventDefault();
+      _npTap(b.getAttribute('data-key'));
+    }
+  };
+  // PC/マウス用フォールバック
+  grid.onclick = function(e) {
+    var b = e.target;
+    if (b.tagName === 'BUTTON') _npTap(b.getAttribute('data-key'));
+  };
+
+  // 状態選択ボタン（委譲）
+  var srow = document.getElementById('saveStatusRow');
+  srow.ontouchend = function(e) {
+    var b = e.target;
+    if (b.tagName === 'BUTTON') {
+      e.preventDefault();
+      _saveStatus = b.getAttribute('data-status');
+      _refreshSaveStatus();
+    }
+  };
+  srow.onclick = function(e) {
+    var b = e.target;
+    if (b.tagName === 'BUTTON') {
+      _saveStatus = b.getAttribute('data-status');
+      _refreshSaveStatus();
+    }
+  };
+};
+</script>
+</body>
+</html>
