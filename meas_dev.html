@@ -789,6 +789,16 @@ function testApiConnection() {
   };
   xhrB.onerror = function() { _notify('テストB(ヘッダー付き)：通信エラー'); };
   xhrB.send();
+
+  // テストC：GitHub以外の他ドメインへの素の通信（cross-origin自体がダメなのか、GitHub側特有の問題かを切り分け）
+  var xhrC = new XMLHttpRequest();
+  xhrC.open('GET', 'https://jsonplaceholder.typicode.com/todos/1?c=' + Date.now(), true);
+  xhrC.onreadystatechange = function() {
+    if (xhrC.readyState !== 4) return;
+    _notify('テストC(GitHub以外の他ドメイン)：status ' + xhrC.status);
+  };
+  xhrC.onerror = function() { _notify('テストC(GitHub以外の他ドメイン)：通信エラー'); };
+  xhrC.send();
 }
 
 // ===== トースト =====
@@ -1478,27 +1488,4 @@ window.onload = function() {
   // PC/マウス用フォールバック
   grid.onclick = function(e) {
     var b = e.target;
-    if (b.tagName === 'BUTTON') _npTap(b.getAttribute('data-key'));
-  };
-
-  // 状態選択ボタン（委譲）
-  var srow = document.getElementById('saveStatusRow');
-  srow.ontouchend = function(e) {
-    var b = e.target;
-    if (b.tagName === 'BUTTON') {
-      e.preventDefault();
-      _saveStatus = b.getAttribute('data-status');
-      _refreshSaveStatus();
-    }
-  };
-  srow.onclick = function(e) {
-    var b = e.target;
-    if (b.tagName === 'BUTTON') {
-      _saveStatus = b.getAttribute('data-status');
-      _refreshSaveStatus();
-    }
-  };
-};
-</script>
-</body>
-</html>
+    if (b.t
