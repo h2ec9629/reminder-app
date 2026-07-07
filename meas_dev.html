@@ -54,7 +54,7 @@
       overflow: hidden;
     }
     .phase-hd { font-size: 13px; font-weight: 700; padding: 7px 10px; border-bottom: 2px solid currentColor; }
-    .th-u { color: #ff9800; }
+    .th-u { color: #FFEB3B; }
     .th-v { color: #69d469; }
     .th-w { color: #5bc8ff; }
 
@@ -84,8 +84,8 @@
       -webkit-flex-shrink: 0; flex-shrink: 0;
       background: none; border: none;
       border-left: 1px solid var(--border);
-      color: #D97757; font-size: 14px;
-      cursor: pointer; padding: 4px 7px;
+      color: #D97757; font-size: 21px;
+      cursor: pointer; padding: 6px 11px;
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-align-items: center; align-items: center;
     }
@@ -293,7 +293,7 @@
     .hr-tbl td.diff-warn { color: #fff; font-weight: 700; }
     .hr-tbl td.diff-ng  { color: #ff9800; font-weight: 700; }
     .hr-ph-hd { font-size: 12px; font-weight: 700; padding: 6px 2px 3px; }
-    .hr-ph-u  { color: #ff9800; }
+    .hr-ph-u  { color: #FFEB3B; }
     .hr-ph-v  { color: #69d469; }
     .hr-ph-w  { color: #5bc8ff; }
 
@@ -369,9 +369,9 @@
     <table class="meas-tbl">
       <thead><tr>
         <th style="width:14%"></th>
-        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" onclick="clearCol('u','b')">CLR</button></div></th>
-        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" onclick="clearCol('u','a')">CLR</button></div></th>
-        <th><div class="col-hd-wrap"><span class="th-u">R</span><button class="col-reset" onclick="clearCol('u','r')">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" data-colclear="b" data-ph="u">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" data-colclear="a" data-ph="u">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span class="th-u">R</span><button class="col-reset" data-colclear="r" data-ph="u">CLR</button></div></th>
       </tr></thead>
       <tbody>
         <tr>
@@ -402,9 +402,9 @@
     <table class="meas-tbl">
       <thead><tr>
         <th style="width:14%"></th>
-        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" onclick="clearCol('v','b')">CLR</button></div></th>
-        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" onclick="clearCol('v','a')">CLR</button></div></th>
-        <th><div class="col-hd-wrap"><span class="th-v">R</span><button class="col-reset" onclick="clearCol('v','r')">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" data-colclear="b" data-ph="v">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" data-colclear="a" data-ph="v">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span class="th-v">R</span><button class="col-reset" data-colclear="r" data-ph="v">CLR</button></div></th>
       </tr></thead>
       <tbody>
         <tr>
@@ -435,9 +435,9 @@
     <table class="meas-tbl">
       <thead><tr>
         <th style="width:14%"></th>
-        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" onclick="clearCol('w','b')">CLR</button></div></th>
-        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" onclick="clearCol('w','a')">CLR</button></div></th>
-        <th><div class="col-hd-wrap"><span class="th-w">R</span><button class="col-reset" onclick="clearCol('w','r')">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" data-colclear="b" data-ph="w">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" data-colclear="a" data-ph="w">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span class="th-w">R</span><button class="col-reset" data-colclear="r" data-ph="w">CLR</button></div></th>
       </tr></thead>
       <tbody>
         <tr>
@@ -1102,7 +1102,7 @@ window.onload = function() {
     })(_inputs[i]);
   }
 
-  // ×ボタン → 2秒長押しで削除（誤タップ防止）
+  // ×ボタン → 1.5秒長押しで削除（誤タップ防止）
   btns = document.getElementsByTagName('button');
   for (i = 0; i < btns.length; i++) {
     if (btns[i].getAttribute('data-clear')) {
@@ -1116,6 +1116,33 @@ window.onload = function() {
           holdTimer = setTimeout(function() {
             holdTimer = null;
             clearOne(id, ph);
+          }, 1500);
+        }
+        function cancelHold(e) {
+          if (e) e.preventDefault();
+          if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+        }
+        btn.ontouchstart  = startHold;
+        btn.ontouchend    = cancelHold;
+        btn.ontouchcancel = cancelHold;
+        btn.onmousedown   = startHold;
+        btn.onmouseup     = cancelHold;
+        btn.onmouseleave  = cancelHold;
+        btn.onclick       = function(e) { e.preventDefault(); };
+      })(btns[i]);
+    }
+    // CLRボタン → 1.5秒長押しで列クリア（誤タップ防止）
+    if (btns[i].getAttribute('data-colclear')) {
+      (function(btn) {
+        var col = btn.getAttribute('data-colclear');
+        var ph  = btn.getAttribute('data-ph');
+        var holdTimer = null;
+        function startHold(e) {
+          e.preventDefault();
+          if (holdTimer) clearTimeout(holdTimer);
+          holdTimer = setTimeout(function() {
+            holdTimer = null;
+            clearCol(ph, col);
           }, 1500);
         }
         function cancelHold(e) {
