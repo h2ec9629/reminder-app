@@ -795,6 +795,14 @@ function _b64EncodeUtf8(str) {
   return btoa(unescape(encodeURIComponent(str)));
 }
 
+function _b64DecodeUtf8(b64) {
+  return decodeURIComponent(escape(atob(b64.replace(/\n/g, ''))));
+}
+
+function _escRe(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function _getMeasCfg() {
   try { return JSON.parse(localStorage.getItem('ojisan_mailbox_cfg_v1') || '{}'); } catch(e) { return {}; }
 }
@@ -809,7 +817,9 @@ function _setMeasPat(pat) {
   try { localStorage.setItem('ojisan_mailbox_cfg_v1', JSON.stringify(cfg)); } catch(e) {}
 }
 
-function _syncGist(arr) {
+// 索引ファイル（meas_history.json）を「指定した配列でそのまま上書き」する。
+// 削除操作など、呼び出し側が最終形を確定済みのケース専用。
+function _pushHistoryIndex(arr) {
   var pat = _getMeasPat();
   if (!pat) return;
   var apiUrl = 'https://api.github.com/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
@@ -839,6 +849,105 @@ function _syncGist(arr) {
     putXhr.send(JSON.stringify(body));
   };
   getXhr.send();
+}
+
+// 新規1件を保存するとき専用：保存直前にリモートの最新を取りに行ってからマージして書き込む。
+// 他端末が追加した分を上書きで消してしまう事故を防ぐための安全版。
+function _syncNewRecord(newRecord) {
+  var pat = _getMeasPat();
+  if (!pat) return;
+  var apiUrl = 'https://api.github.com/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
+
+  var getXhr = new XMLHttpRequest();
+  getXhr.open('GET', apiUrl + '?t=' + Date.now(), true);
+  getXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  getXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  getXhr.onreadystatechange = function() {
+    if (getXhr.readyState !== 4) return;
+    var sha = null, remote = [];
+    if (getXhr.status === 200) {
+      try {
+        var meta = JSON.parse(getXhr.responseText);
+        sha = meta.sha;
+        remote = JSON.parse(_b64DecodeUtf8(meta.content));
+        if (!Array.isArray(remote)) remote = [];
+      } catch(e) { remote = []; }
+    }
+    var local = _loadHistory();
+    var all = [newRecord].concat(remote, local);
+    var seen = {}, merged = [], i, k;
+    for (i = 0; i < all.length; i++) {
+      k = all[i].date + '|' + all[i].memo;
+      if (!seen[k]) { seen[k] = true; merged.push(all[i]); }
+    }
+    merged.sort(function(a, b) { return b.date < a.date ? -1 : 1; });
+    if (merged.length > 50) merged = merged.slice(0, 50);
+    _saveHistory(merged);
+    _renderSidebar();
+
+    var body = {
+      message: '測定ログ更新（機番 ' + (newRecord.kiban || '') + '）',
+      content: _b64EncodeUtf8(JSON.stringify(merged, null, 2)),
+      branch: 'main'
+    };
+    if (sha) body.sha = sha;
+    var putXhr = new XMLHttpRequest();
+    putXhr.open('PUT', apiUrl, true);
+    putXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+    putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    putXhr.setRequestHeader('Content-Type', 'application/json');
+    putXhr.send(JSON.stringify(body));
+  };
+  getXhr.send();
+}
+
+// 機番ごとにフォルダ分け、ステータス別にjsonで個別保存（再測定は連番で履歴として残す）
+function _saveRecordFile(data) {
+  var pat = _getMeasPat();
+  if (!pat) return;
+  var kiban  = String(data.kiban || '未入力');
+  var status = String(data.status || '不明');
+  var dirUrl = 'https://api.github.com/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+             + '/contents/records/' + encodeURIComponent(kiban);
+
+  var listXhr = new XMLHttpRequest();
+  listXhr.open('GET', dirUrl + '?t=' + Date.now(), true);
+  listXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  listXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  listXhr.onreadystatechange = function() {
+    if (listXhr.readyState !== 4) return;
+    var existing = [];
+    if (listXhr.status === 200) {
+      try {
+        var parsed = JSON.parse(listXhr.responseText);
+        if (Array.isArray(parsed)) existing = parsed;
+      } catch(e) {}
+    }
+    var maxN = 0, found = false, i, name, m;
+    var reSuffix = new RegExp('^' + _escRe(status) + '_(\\d+)\\.json$');
+    for (i = 0; i < existing.length; i++) {
+      name = existing[i].name || '';
+      if (name === status + '.json') { found = true; }
+      m = name.match(reSuffix);
+      if (m) { found = true; var n = parseInt(m[1], 10); if (n > maxN) maxN = n; }
+    }
+    var filename = found ? (status + '_' + (maxN + 1) + '.json') : (status + '.json');
+    var path    = 'records/' + kiban + '/' + filename;
+    var putUrl  = 'https://api.github.com/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+                + '/contents/' + path.split('/').map(encodeURIComponent).join('/');
+    var body = {
+      message: '測定記録保存：機番' + kiban + '・' + status,
+      content: _b64EncodeUtf8(JSON.stringify(data, null, 2)),
+      branch: 'main'
+    };
+    var putXhr = new XMLHttpRequest();
+    putXhr.open('PUT', putUrl, true);
+    putXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+    putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    putXhr.setRequestHeader('Content-Type', 'application/json');
+    putXhr.send(JSON.stringify(body));
+  };
+  listXhr.send();
 }
 
 function _fetchGist(callback) {
@@ -1041,8 +1150,9 @@ function confirmSave() {
   var arr = _loadHistory();
   arr.unshift(_pendingData);
   if (arr.length > 50) arr = arr.slice(0, 50);
-  _saveHistory(arr);
-  _syncGist(arr);
+  _saveHistory(arr);       // 即時のローカル反映（オフラインでも一覧に出るように）
+  _syncNewRecord(_pendingData); // 索引ファイルは安全マージ版で更新
+  _saveRecordFile(_pendingData); // 機番／ステータス別ファイルにも個別保存
   closeSaveDialog();
   showToast('保存しました');
   _renderSidebar();
@@ -1140,7 +1250,7 @@ function _deleteHist(idx) {
   var arr = _loadHistory();
   arr.splice(idx, 1);
   _saveHistory(arr);
-  _syncGist(arr);
+  _pushHistoryIndex(arr); // 削除は最終形が確定済みなので索引ファイルへそのまま上書き
   if (_selIdx >= arr.length) _selIdx = arr.length - 1;
   _renderSidebar();
   if (_selIdx < 0) {
