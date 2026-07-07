@@ -784,8 +784,16 @@ function _saveHistory(arr) {
 }
 
 // === GIST SYNC (XHR / iOS9互換) ===
-var MEAS_GIST_ID       = '508338b7ab7658fb6334a7caf8f1dacc';
-var MEAS_HIST_GIST_RAW = 'https://gist.githubusercontent.com/H2EC9629/' + MEAS_GIST_ID + '/raw/meas_history.json';
+// 旧Gist方式は廃止（古いiPadのホーム画面アプリで他ドメイン通信がブロックされたため）
+// 同じreminder-app内のファイルを直接読み書きする方式に変更
+var MEAS_REPO_OWNER = 'h2ec9629';
+var MEAS_REPO_NAME  = 'reminder-app';
+var MEAS_REPO_PATH  = 'meas_history.json';
+var MEAS_HIST_SAME_ORIGIN_URL = 'meas_history.json'; // 同一オリジン（相対パス）
+
+function _b64EncodeUtf8(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
 
 function _getMeasCfg() {
   try { return JSON.parse(localStorage.getItem('ojisan_mailbox_cfg_v1') || '{}'); } catch(e) { return {}; }
@@ -804,18 +812,39 @@ function _setMeasPat(pat) {
 function _syncGist(arr) {
   var pat = _getMeasPat();
   if (!pat) return;
-  var body = JSON.stringify({ files: { 'meas_history.json': { content: JSON.stringify(arr, null, 2) } } });
-  var xhr = new XMLHttpRequest();
-  xhr.open('PATCH', 'https://api.github.com/gists/' + MEAS_GIST_ID, true);
-  xhr.setRequestHeader('Authorization', 'Bearer ' + pat);
-  xhr.setRequestHeader('Accept', 'application/vnd.github+json');
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.send(body);
+  var apiUrl = 'https://api.github.com/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
+
+  // 更新には現在のファイルのshaが要るので先にGETしてから書き込む
+  var getXhr = new XMLHttpRequest();
+  getXhr.open('GET', apiUrl + '?t=' + Date.now(), true);
+  getXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  getXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  getXhr.onreadystatechange = function() {
+    if (getXhr.readyState !== 4) return;
+    var sha = null;
+    if (getXhr.status === 200) {
+      try { sha = JSON.parse(getXhr.responseText).sha; } catch(e) {}
+    }
+    var body = {
+      message: '測定ログ更新',
+      content: _b64EncodeUtf8(JSON.stringify(arr, null, 2)),
+      branch: 'main'
+    };
+    if (sha) body.sha = sha;
+    var putXhr = new XMLHttpRequest();
+    putXhr.open('PUT', apiUrl, true);
+    putXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+    putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    putXhr.setRequestHeader('Content-Type', 'application/json');
+    putXhr.send(JSON.stringify(body));
+  };
+  getXhr.send();
 }
 
 function _fetchGist(callback) {
   // 読み取りのみなのでPAT未設定でも取得可能（閲覧専用端末はPAT不要）
-  var url = MEAS_HIST_GIST_RAW + '?t=' + Date.now();
+  // 同一オリジンの相対パスなので、古いiPad等の他ドメイン通信制限も回避できる
+  var url = MEAS_HIST_SAME_ORIGIN_URL + '?t=' + Date.now();
   var xhr = new XMLHttpRequest();
   xhr.open('GET', url, true);
   xhr.onreadystatechange = function() {
