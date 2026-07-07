@@ -1488,4 +1488,27 @@ window.onload = function() {
   // PC/マウス用フォールバック
   grid.onclick = function(e) {
     var b = e.target;
-    if (b.t
+    if (b.tagName === 'BUTTON') _npTap(b.getAttribute('data-key'));
+  };
+
+  // 状態選択ボタン（委譲）
+  var srow = document.getElementById('saveStatusRow');
+  srow.ontouchend = function(e) {
+    var b = e.target;
+    if (b.tagName === 'BUTTON') {
+      e.preventDefault();
+      _saveStatus = b.getAttribute('data-status');
+      _refreshSaveStatus();
+    }
+  };
+  srow.onclick = function(e) {
+    var b = e.target;
+    if (b.tagName === 'BUTTON') {
+      _saveStatus = b.getAttribute('data-status');
+      _refreshSaveStatus();
+    }
+  };
+};
+</script>
+</body>
+</html>
