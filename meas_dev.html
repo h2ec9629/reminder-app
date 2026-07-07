@@ -933,9 +933,9 @@ function _pushHistoryIndex(arr) {
 
 // 新規1件を保存するとき専用：保存直前にリモートの最新を取りに行ってからマージして書き込む。
 // 他端末が追加した分を上書きで消してしまう事故を防ぐための安全版。
-function _syncNewRecord(newRecord) {
+function _syncNewRecord(newRecord, callback) {
   var pat = _getMeasPat();
-  if (!pat) { _notify('共有NG：PAT未設定（オプションで設定して）'); return; }
+  if (!pat) { _notify('共有NG：PAT未設定（オプションで設定して）'); if (callback) callback(); return; }
   var apiUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
 
   // 他端末が同時に索引ファイルを更新すると、GET時点のshaがPUT時点で古くなり
@@ -983,17 +983,19 @@ function _syncNewRecord(newRecord) {
         if (putXhr.readyState !== 4) return;
         if (putXhr.status === 200 || putXhr.status === 201) {
           _notify('共有OK：索引ファイル更新済み');
+          if (callback) callback();
         } else if (putXhr.status === 409 && triesLeft > 0) {
           _notify('共有再試行中：他端末との競合を検知（残り' + triesLeft + '回）');
           setTimeout(function() { attempt(triesLeft - 1); }, 400 + Math.random() * 400);
         } else {
           _notify('共有NG：索引書き込み失敗（status:' + putXhr.status + '）');
+          if (callback) callback();
         }
       };
-      putXhr.onerror = function() { _notify('共有NG：索引書き込み通信エラー'); };
+      putXhr.onerror = function() { _notify('共有NG：索引書き込み通信エラー'); if (callback) callback(); };
       putXhr.send(JSON.stringify(body));
     };
-    getXhr.onerror = function() { _notify('共有NG：索引取得の通信エラー'); };
+    getXhr.onerror = function() { _notify('共有NG：索引取得の通信エラー'); if (callback) callback(); };
     getXhr.send();
   }
 
@@ -1001,62 +1003,73 @@ function _syncNewRecord(newRecord) {
 }
 
 // 機番ごとにフォルダ分け、ステータス別にjsonで個別保存（再測定は連番で履歴として残す）
-function _saveRecordFile(data) {
+// 索引ファイル更新と同時に走らせるとGitHub側のコミットが競合してstatus:409になることがあるため、
+// こちらも最新状態を取り直して再試行する。
+function _saveRecordFile(data, callback) {
   var pat = _getMeasPat();
-  if (!pat) { _notify('個別ファイル保存NG：PAT未設定'); return; }
+  if (!pat) { _notify('個別ファイル保存NG：PAT未設定'); if (callback) callback(); return; }
   var kiban  = String(data.kiban || '未入力');
   var status = String(data.status || '不明');
   var dirUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
              + '/contents/records/' + encodeURIComponent(kiban);
 
-  var listXhr = new XMLHttpRequest();
-  listXhr.open('GET', dirUrl + '?t=' + Date.now(), true);
-  listXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
-  listXhr.setRequestHeader('Accept', 'application/vnd.github+json');
-  listXhr.onreadystatechange = function() {
-    if (listXhr.readyState !== 4) return;
-    var existing = [];
-    if (listXhr.status === 200) {
-      try {
-        var parsed = JSON.parse(listXhr.responseText);
-        if (Array.isArray(parsed)) existing = parsed;
-      } catch(e) {}
-    }
-    var maxN = 0, found = false, i, name, m;
-    var reSuffix = new RegExp('^' + _escRe(status) + '_(\\d+)\\.json$');
-    for (i = 0; i < existing.length; i++) {
-      name = existing[i].name || '';
-      if (name === status + '.json') { found = true; }
-      m = name.match(reSuffix);
-      if (m) { found = true; var n = parseInt(m[1], 10); if (n > maxN) maxN = n; }
-    }
-    var filename = found ? (status + '_' + (maxN + 1) + '.json') : (status + '.json');
-    var path    = 'records/' + kiban + '/' + filename;
-    var putUrl  = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
-                + '/contents/' + path.split('/').map(encodeURIComponent).join('/');
-    var body = {
-      message: '測定記録保存：機番' + kiban + '・' + status,
-      content: _b64EncodeUtf8(JSON.stringify(data, null, 2)),
-      branch: 'main'
-    };
-    var putXhr = new XMLHttpRequest();
-    putXhr.open('PUT', putUrl, true);
-    putXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
-    putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
-    putXhr.setRequestHeader('Content-Type', 'application/json');
-    putXhr.onreadystatechange = function() {
-      if (putXhr.readyState !== 4) return;
-      if (putXhr.status === 200 || putXhr.status === 201) {
-        _notify('共有OK：個別ファイル保存済み（' + filename + '）');
-      } else {
-        _notify('共有NG：個別ファイル保存失敗（status:' + putXhr.status + '）');
+  function attempt(triesLeft) {
+    var listXhr = new XMLHttpRequest();
+    listXhr.open('GET', dirUrl + '?t=' + Date.now(), true);
+    listXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+    listXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    listXhr.onreadystatechange = function() {
+      if (listXhr.readyState !== 4) return;
+      var existing = [];
+      if (listXhr.status === 200) {
+        try {
+          var parsed = JSON.parse(listXhr.responseText);
+          if (Array.isArray(parsed)) existing = parsed;
+        } catch(e) {}
       }
+      var maxN = 0, found = false, i, name, m;
+      var reSuffix = new RegExp('^' + _escRe(status) + '_(\\d+)\\.json$');
+      for (i = 0; i < existing.length; i++) {
+        name = existing[i].name || '';
+        if (name === status + '.json') { found = true; }
+        m = name.match(reSuffix);
+        if (m) { found = true; var n = parseInt(m[1], 10); if (n > maxN) maxN = n; }
+      }
+      var filename = found ? (status + '_' + (maxN + 1) + '.json') : (status + '.json');
+      var path    = 'records/' + kiban + '/' + filename;
+      var putUrl  = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+                  + '/contents/' + path.split('/').map(encodeURIComponent).join('/');
+      var body = {
+        message: '測定記録保存：機番' + kiban + '・' + status,
+        content: _b64EncodeUtf8(JSON.stringify(data, null, 2)),
+        branch: 'main'
+      };
+      var putXhr = new XMLHttpRequest();
+      putXhr.open('PUT', putUrl, true);
+      putXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+      putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+      putXhr.setRequestHeader('Content-Type', 'application/json');
+      putXhr.onreadystatechange = function() {
+        if (putXhr.readyState !== 4) return;
+        if (putXhr.status === 200 || putXhr.status === 201) {
+          _notify('共有OK：個別ファイル保存済み（' + filename + '）');
+          if (callback) callback();
+        } else if (putXhr.status === 409 && triesLeft > 0) {
+          _notify('共有再試行中：個別ファイルが競合（残り' + triesLeft + '回）');
+          setTimeout(function() { attempt(triesLeft - 1); }, 400 + Math.random() * 400);
+        } else {
+          _notify('共有NG：個別ファイル保存失敗（status:' + putXhr.status + '）');
+          if (callback) callback();
+        }
+      };
+      putXhr.onerror = function() { _notify('共有NG：個別ファイル通信エラー'); if (callback) callback(); };
+      putXhr.send(JSON.stringify(body));
     };
-    putXhr.onerror = function() { _notify('共有NG：個別ファイル通信エラー'); };
-    putXhr.send(JSON.stringify(body));
-  };
-  listXhr.onerror = function() { _notify('共有NG：フォルダ確認の通信エラー'); };
-  listXhr.send();
+    listXhr.onerror = function() { _notify('共有NG：フォルダ確認の通信エラー'); if (callback) callback(); };
+    listXhr.send();
+  }
+
+  attempt(3);
 }
 
 function _fetchGist(callback) {
@@ -1260,8 +1273,11 @@ function confirmSave() {
   arr.unshift(_pendingData);
   if (arr.length > 50) arr = arr.slice(0, 50);
   _saveHistory(arr);       // 即時のローカル反映（オフラインでも一覧に出るように）
-  _syncNewRecord(_pendingData); // 索引ファイルは安全マージ版で更新
-  _saveRecordFile(_pendingData); // 機番／ステータス別ファイルにも個別保存
+  // 索引ファイルと個別ファイルを同時に書き込むとGitHub側のコミットが競合するため、
+  // 索引ファイル更新が終わってから個別ファイル保存を行う（直列実行）
+  _syncNewRecord(_pendingData, function() {
+    _saveRecordFile(_pendingData); // 機番／ステータス別ファイルにも個別保存
+  });
   closeSaveDialog();
   showToast('保存しました');
   _renderSidebar();
