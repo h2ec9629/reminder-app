@@ -816,20 +816,16 @@ function _syncGist(arr) {
 function _fetchGist(callback) {
   // 読み取りのみなのでPAT未設定でも取得可能（閲覧専用端末はPAT不要）
   var url = MEAS_HIST_GIST_RAW + '?t=' + Date.now();
-  if (!window.fetch) {
-    showToast('この端末はfetch非対応');
-    return;
-  }
-  fetch(url, { method: 'GET', cache: 'no-store' }).then(function(res) {
-    if (!res.ok) {
-      showToast('Gist取得失敗（status:' + res.status + '）');
-      return null;
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    if (xhr.status !== 200) {
+      showToast('Gist取得失敗（status:' + xhr.status + '）');
+      return;
     }
-    return res.text();
-  }).then(function(text) {
-    if (text == null) return;
     try {
-      var remote = JSON.parse(text);
+      var remote = JSON.parse(xhr.responseText);
       if (!Array.isArray(remote)) {
         showToast('Gist取得：形式が配列じゃない');
         return;
@@ -851,9 +847,11 @@ function _fetchGist(callback) {
     } catch(e) {
       showToast('Gist取得：解析エラー ' + e.message);
     }
-  }).catch(function(err) {
-    showToast('Gist取得：通信エラー ' + (err && err.message ? err.message : ''));
-  });
+  };
+  xhr.onerror = function() {
+    showToast('Gist取得：通信エラー（オフライン？）');
+  };
+  xhr.send();
 }
 
 // ===== 保存パネル（テンキー横取りモード） =====
