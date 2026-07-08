@@ -492,7 +492,7 @@
 
   <!-- 左：サイドメニュー -->
   <div class="numpad-side">
-    <div class="numpad-app-title">v1.503 中継版　三相測定</div>
+    <div class="numpad-app-title">v1.504 中継版　三相測定</div>
     <button class="numpad-side-btn btn-save" onclick="saveMeas()">SAVE</button>
     <button class="numpad-side-btn btn-hist" id="histBtn" onclick="toggleHist()">LOG</button>
     <button class="numpad-side-btn btn-reset" onclick="resetAll()">全リセット</button>
@@ -1129,21 +1129,28 @@ function _deleteRecordFile(path) {
 }
 
 function _fetchGist(callback) {
-  // 読み取りのみなのでPAT未設定でも取得可能（閲覧専用端末はPAT不要）
-  // 同一オリジンの相対パスなので、古いiPad等の他ドメイン通信制限も回避できる
-  var url = MEAS_HIST_SAME_ORIGIN_URL + '?t=' + Date.now();
+  // 索引ファイルは書き込みと同じ経路（Worker中継→GitHub API）で読む。
+  // 以前は同一オリジンの相対パス（GitHub Pages経由）で読んでいたが、
+  // Pagesのビルド反映待ち・CDNキャッシュのせいで他端末が書いた更新がすぐ見えない
+  // ことがあった（PCで保存してもiPadの一覧に出てこない不具合の原因）。
+  // Worker中継は既にiPad2でも通ることを確認済みなので、書き込み側と統一する。
+  var apiUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
+  var pat = _getMeasPat();
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', url, true);
+  xhr.open('GET', apiUrl + '?t=' + Date.now(), true);
+  xhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  if (pat) xhr.setRequestHeader('Authorization', 'Bearer ' + pat);
   xhr.onreadystatechange = function() {
     if (xhr.readyState !== 4) return;
     if (xhr.status !== 200) {
-      _notify('Gist取得失敗（status:' + xhr.status + '）');
+      _notify('索引取得失敗（status:' + xhr.status + '）');
       return;
     }
     try {
-      var remote = JSON.parse(xhr.responseText);
+      var meta   = JSON.parse(xhr.responseText);
+      var remote = JSON.parse(_b64DecodeUtf8(meta.content));
       if (!Array.isArray(remote)) {
-        _notify('Gist取得：形式が配列じゃない');
+        _notify('索引取得：形式が配列じゃない');
         return;
       }
       var local  = _loadHistory();
@@ -1158,14 +1165,14 @@ function _fetchGist(callback) {
       merged.sort(function(a, b) { return b.date < a.date ? -1 : 1; });
       if (merged.length > 50) merged = merged.slice(0, 50);
       _saveHistory(merged);
-      _notify('Gist取得成功：件数 ' + merged.length + '（うちリモート ' + remote.length + '）');
+      _notify('共有OK：最新の索引を取得（件数 ' + merged.length + '・リモート ' + remote.length + '）');
       if (callback) callback();
     } catch(e) {
-      _notify('Gist取得：解析エラー ' + e.message);
+      _notify('索引取得：解析エラー ' + e.message);
     }
   };
   xhr.onerror = function() {
-    _notify('Gist取得：通信エラー（オフライン？）');
+    _notify('索引取得：通信エラー（オフライン？）');
   };
   xhr.send();
 }
