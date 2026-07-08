@@ -492,7 +492,7 @@
 
   <!-- 左：サイドメニュー -->
   <div class="numpad-side">
-    <div class="numpad-app-title">v1.502 中継版　三相測定</div>
+    <div class="numpad-app-title">v1.503 中継版　三相測定</div>
     <button class="numpad-side-btn btn-save" onclick="saveMeas()">SAVE</button>
     <button class="numpad-side-btn btn-hist" id="histBtn" onclick="toggleHist()">LOG</button>
     <button class="numpad-side-btn btn-reset" onclick="resetAll()">全リセット</button>
@@ -1002,74 +1002,130 @@ function _syncNewRecord(newRecord, callback) {
   attempt(3);
 }
 
-// 機番ごとにフォルダ分け、ステータス別にjsonで個別保存（再測定は連番で履歴として残す）
+// 機番ごとにフォルダ分け、ステータス別にjsonで個別保存する際のファイル名を先に決める。
+// （再測定は連番で履歴として残す。削除時に対応ファイルを特定できるよう、決めた名前は
+//   呼び出し側で履歴レコードのrecordFileとして保存しておく）
+function _resolveRecordFilename(kiban, status, callback) {
+  var pat = _getMeasPat();
+  if (!pat) { callback(status + '.json'); return; }
+  var dirUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+             + '/contents/records/' + encodeURIComponent(kiban);
+  var listXhr = new XMLHttpRequest();
+  listXhr.open('GET', dirUrl + '?t=' + Date.now(), true);
+  listXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  listXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  listXhr.onreadystatechange = function() {
+    if (listXhr.readyState !== 4) return;
+    var existing = [];
+    if (listXhr.status === 200) {
+      try {
+        var parsed = JSON.parse(listXhr.responseText);
+        if (Array.isArray(parsed)) existing = parsed;
+      } catch(e) {}
+    }
+    var maxN = 0, found = false, i, name, m;
+    var reSuffix = new RegExp('^' + _escRe(status) + '_(\\d+)\\.json$');
+    for (i = 0; i < existing.length; i++) {
+      name = existing[i].name || '';
+      if (name === status + '.json') { found = true; }
+      m = name.match(reSuffix);
+      if (m) { found = true; var n = parseInt(m[1], 10); if (n > maxN) maxN = n; }
+    }
+    var filename = found ? (status + '_' + (maxN + 1) + '.json') : (status + '.json');
+    callback(filename);
+  };
+  listXhr.onerror = function() { callback(status + '.json'); };
+  listXhr.send();
+}
+
+// 決まったファイル名で個別ファイルを書き込む。
 // 索引ファイル更新と同時に走らせるとGitHub側のコミットが競合してstatus:409になることがあるため、
-// こちらも最新状態を取り直して再試行する。
-function _saveRecordFile(data, callback) {
+// こちらも自動で再試行する。
+function _putRecordFile(data, filename, callback) {
   var pat = _getMeasPat();
   if (!pat) { _notify('個別ファイル保存NG：PAT未設定'); if (callback) callback(); return; }
   var kiban  = String(data.kiban || '未入力');
   var status = String(data.status || '不明');
-  var dirUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
-             + '/contents/records/' + encodeURIComponent(kiban);
+  var path    = 'records/' + kiban + '/' + filename;
+  var putUrl  = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+              + '/contents/' + path.split('/').map(encodeURIComponent).join('/');
 
   function attempt(triesLeft) {
-    var listXhr = new XMLHttpRequest();
-    listXhr.open('GET', dirUrl + '?t=' + Date.now(), true);
-    listXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
-    listXhr.setRequestHeader('Accept', 'application/vnd.github+json');
-    listXhr.onreadystatechange = function() {
-      if (listXhr.readyState !== 4) return;
-      var existing = [];
-      if (listXhr.status === 200) {
-        try {
-          var parsed = JSON.parse(listXhr.responseText);
-          if (Array.isArray(parsed)) existing = parsed;
-        } catch(e) {}
-      }
-      var maxN = 0, found = false, i, name, m;
-      var reSuffix = new RegExp('^' + _escRe(status) + '_(\\d+)\\.json$');
-      for (i = 0; i < existing.length; i++) {
-        name = existing[i].name || '';
-        if (name === status + '.json') { found = true; }
-        m = name.match(reSuffix);
-        if (m) { found = true; var n = parseInt(m[1], 10); if (n > maxN) maxN = n; }
-      }
-      var filename = found ? (status + '_' + (maxN + 1) + '.json') : (status + '.json');
-      var path    = 'records/' + kiban + '/' + filename;
-      var putUrl  = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
-                  + '/contents/' + path.split('/').map(encodeURIComponent).join('/');
-      var body = {
-        message: '測定記録保存：機番' + kiban + '・' + status,
-        content: _b64EncodeUtf8(JSON.stringify(data, null, 2)),
-        branch: 'main'
-      };
-      var putXhr = new XMLHttpRequest();
-      putXhr.open('PUT', putUrl, true);
-      putXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
-      putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
-      putXhr.setRequestHeader('Content-Type', 'application/json');
-      putXhr.onreadystatechange = function() {
-        if (putXhr.readyState !== 4) return;
-        if (putXhr.status === 200 || putXhr.status === 201) {
-          _notify('共有OK：個別ファイル保存済み（' + filename + '）');
-          if (callback) callback();
-        } else if (putXhr.status === 409 && triesLeft > 0) {
-          _notify('共有再試行中：個別ファイルが競合（残り' + triesLeft + '回）');
-          setTimeout(function() { attempt(triesLeft - 1); }, 400 + Math.random() * 400);
-        } else {
-          _notify('共有NG：個別ファイル保存失敗（status:' + putXhr.status + '）');
-          if (callback) callback();
-        }
-      };
-      putXhr.onerror = function() { _notify('共有NG：個別ファイル通信エラー'); if (callback) callback(); };
-      putXhr.send(JSON.stringify(body));
+    var body = {
+      message: '測定記録保存：機番' + kiban + '・' + status,
+      content: _b64EncodeUtf8(JSON.stringify(data, null, 2)),
+      branch: 'main'
     };
-    listXhr.onerror = function() { _notify('共有NG：フォルダ確認の通信エラー'); if (callback) callback(); };
-    listXhr.send();
+    var putXhr = new XMLHttpRequest();
+    putXhr.open('PUT', putUrl, true);
+    putXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+    putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    putXhr.setRequestHeader('Content-Type', 'application/json');
+    putXhr.onreadystatechange = function() {
+      if (putXhr.readyState !== 4) return;
+      if (putXhr.status === 200 || putXhr.status === 201) {
+        _notify('共有OK：個別ファイル保存済み（' + filename + '）');
+        if (callback) callback();
+      } else if (putXhr.status === 409 && triesLeft > 0) {
+        _notify('共有再試行中：個別ファイルが競合（残り' + triesLeft + '回）');
+        setTimeout(function() { attempt(triesLeft - 1); }, 400 + Math.random() * 400);
+      } else {
+        _notify('共有NG：個別ファイル保存失敗（status:' + putXhr.status + '）');
+        if (callback) callback();
+      }
+    };
+    putXhr.onerror = function() { _notify('共有NG：個別ファイル通信エラー'); if (callback) callback(); };
+    putXhr.send(JSON.stringify(body));
   }
 
   attempt(3);
+}
+
+// 端末上でログを削除したとき、対応する個別ファイルもGitHub側から削除する。
+// recordFile未設定の古い履歴（この機能を入れる前に保存した分）は対象外。
+function _deleteRecordFile(path) {
+  var pat = _getMeasPat();
+  if (!pat) { _notify('個別ファイル削除NG：PAT未設定'); return; }
+  var url = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+          + '/contents/' + path.split('/').map(encodeURIComponent).join('/');
+
+  var getXhr = new XMLHttpRequest();
+  getXhr.open('GET', url + '?t=' + Date.now(), true);
+  getXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  getXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  getXhr.onreadystatechange = function() {
+    if (getXhr.readyState !== 4) return;
+    if (getXhr.status === 404) {
+      _notify('個別ファイル削除：GitHub側に見当たりませんでした（' + path + '）');
+      return;
+    }
+    if (getXhr.status !== 200) {
+      _notify('個別ファイル削除NG：sha取得失敗（status:' + getXhr.status + '）');
+      return;
+    }
+    var sha;
+    try { sha = JSON.parse(getXhr.responseText).sha; } catch(e) {}
+    if (!sha) { _notify('個別ファイル削除NG：sha取得できず'); return; }
+
+    var body = { message: '測定記録削除：' + path, sha: sha, branch: 'main' };
+    var delXhr = new XMLHttpRequest();
+    delXhr.open('DELETE', url, true);
+    delXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+    delXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    delXhr.setRequestHeader('Content-Type', 'application/json');
+    delXhr.onreadystatechange = function() {
+      if (delXhr.readyState !== 4) return;
+      if (delXhr.status === 200 || delXhr.status === 204) {
+        _notify('共有OK：個別ファイルも削除しました（' + path + '）');
+      } else {
+        _notify('共有NG：個別ファイル削除失敗（status:' + delXhr.status + '）');
+      }
+    };
+    delXhr.onerror = function() { _notify('共有NG：個別ファイル削除の通信エラー'); };
+    delXhr.send(JSON.stringify(body));
+  };
+  getXhr.onerror = function() { _notify('個別ファイル削除NG：sha取得の通信エラー'); };
+  getXhr.send();
 }
 
 function _fetchGist(callback) {
@@ -1273,13 +1329,28 @@ function confirmSave() {
   arr.unshift(_pendingData);
   if (arr.length > 50) arr = arr.slice(0, 50);
   _saveHistory(arr);       // 即時のローカル反映（オフラインでも一覧に出るように）
-  // 索引ファイルと個別ファイルを同時に書き込むとGitHub側のコミットが競合するため、
-  // 索引ファイル更新が終わってから個別ファイル保存を行う（直列実行）
   // ※closeSaveDialog()が_pendingDataをnullにするので、先にローカル変数へ退避しておく
   var recordToSave = _pendingData;
-  _syncNewRecord(recordToSave, function() {
-    _saveRecordFile(recordToSave); // 機番／ステータス別ファイルにも個別保存
+
+  // 個別ファイル名を先に決めて履歴側にも記録しておく（削除時に対応ファイルを特定するため）。
+  // 索引ファイルと個別ファイルを同時に書き込むとGitHub側のコミットが競合するため、
+  // 索引ファイル更新が終わってから個別ファイル保存を行う（直列実行）。
+  _resolveRecordFilename(recordToSave.kiban, recordToSave.status, function(filename) {
+    recordToSave.recordFile = 'records/' + recordToSave.kiban + '/' + filename;
+    var arr2 = _loadHistory();
+    for (var i = 0; i < arr2.length; i++) {
+      if (arr2[i].date === recordToSave.date && arr2[i].memo === recordToSave.memo) {
+        arr2[i].recordFile = recordToSave.recordFile;
+        break;
+      }
+    }
+    _saveHistory(arr2);
+
+    _syncNewRecord(recordToSave, function() {
+      _putRecordFile(recordToSave, filename);
+    });
   });
+
   closeSaveDialog();
   showToast('保存しました');
   _renderSidebar();
@@ -1375,9 +1446,13 @@ function _renderSidebar() {
 function _deleteHist(idx) {
   if (!confirm('この記録を削除しますか？')) return;
   var arr = _loadHistory();
+  var removed = arr[idx];
   arr.splice(idx, 1);
   _saveHistory(arr);
   _pushHistoryIndex(arr); // 削除は最終形が確定済みなので索引ファイルへそのまま上書き
+  if (removed && removed.recordFile) {
+    _deleteRecordFile(removed.recordFile); // 対応する個別ファイルもGitHub側から削除
+  }
   if (_selIdx >= arr.length) _selIdx = arr.length - 1;
   _renderSidebar();
   if (_selIdx < 0) {
