@@ -492,7 +492,7 @@
 
   <!-- 左：サイドメニュー -->
   <div class="numpad-side">
-    <div class="numpad-app-title">v1.504 中継版　三相測定</div>
+    <div class="numpad-app-title">v1.505 中継版　三相測定</div>
     <button class="numpad-side-btn btn-save" onclick="saveMeas()">SAVE</button>
     <button class="numpad-side-btn btn-hist" id="histBtn" onclick="toggleHist()">LOG</button>
     <button class="numpad-side-btn btn-reset" onclick="resetAll()">全リセット</button>
@@ -956,8 +956,10 @@ function _syncNewRecord(newRecord, callback) {
           if (!Array.isArray(remote)) remote = [];
         } catch(e) { remote = []; }
       }
-      var local = _loadHistory();
-      var all = [newRecord].concat(remote, local);
+      // ローカルキャッシュ全体は混ぜない（他端末が削除した記録がローカルにだけ
+      // 残っていると、それを保存のたびに復活させてリモートに書き戻してしまうため）。
+      // 今取得した最新のリモートに、今回保存する新規分だけを足す。
+      var all = [newRecord].concat(remote);
       var seen = {}, merged = [], i, k;
       for (i = 0; i < all.length; i++) {
         k = all[i].date + '|' + all[i].memo;
@@ -1153,19 +1155,14 @@ function _fetchGist(callback) {
         _notify('索引取得：形式が配列じゃない');
         return;
       }
-      var local  = _loadHistory();
-      var seen   = {};
-      var merged = [];
-      var all = remote.concat(local);
-      var i, k;
-      for (i = 0; i < all.length; i++) {
-        k = all[i].date + '|' + all[i].memo;
-        if (!seen[k]) { seen[k] = true; merged.push(all[i]); }
-      }
-      merged.sort(function(a, b) { return b.date < a.date ? -1 : 1; });
-      if (merged.length > 50) merged = merged.slice(0, 50);
-      _saveHistory(merged);
-      _notify('共有OK：最新の索引を取得（件数 ' + merged.length + '・リモート ' + remote.length + '）');
+      // ローカルとの合算(union)はしない：共有索引ファイル（リモート）を正として
+      // そのまま採用する。以前はローカルにある分を足していたため、他端末で
+      // 削除した記録がこの端末のローカルキャッシュにだけ残り続けて、一覧から
+      // 消えないという不具合があった。
+      remote.sort(function(a, b) { return b.date < a.date ? -1 : 1; });
+      if (remote.length > 50) remote = remote.slice(0, 50);
+      _saveHistory(remote);
+      _notify('共有OK：最新の索引を取得（件数 ' + remote.length + '）');
       if (callback) callback();
     } catch(e) {
       _notify('索引取得：解析エラー ' + e.message);
