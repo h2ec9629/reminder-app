@@ -492,7 +492,7 @@
 
   <!-- 左：サイドメニュー -->
   <div class="numpad-side">
-    <div class="numpad-app-title">v1.505 中継版　三相測定</div>
+    <div class="numpad-app-title">v1.506 中継版　三相測定</div>
     <button class="numpad-side-btn btn-save" onclick="saveMeas()">SAVE</button>
     <button class="numpad-side-btn btn-hist" id="histBtn" onclick="toggleHist()">LOG</button>
     <button class="numpad-side-btn btn-reset" onclick="resetAll()">全リセット</button>
@@ -848,6 +848,12 @@ function _notify(msg) {
 var STORE_KEY = 'meas_history';
 var _histMode = false;
 var _selIdx   = -1;
+// 古いiPad(iOS9系)はconfirm()等のブロッキングダイアログをtouchend中に呼ぶと、
+// preventDefault()していても後から合成clickイベントが発火してしまうことがある。
+// その結果、削除ボタンが「touchend→click」で二重に呼ばれ、削除確認が2回出た上に
+// 2回目でYESすると（1回目の削除で配列がずれた後の）別の行が消えてしまう。
+// touchendが処理した直後は一定時間clickを無視することで二重実行を防ぐ。
+var _delTouchAt = 0;
 
 function _loadHistory() {
   try {
@@ -1432,12 +1438,15 @@ function _renderSidebar() {
     dels[k].ontouchend = (function(idx) {
       return function(e) {
         e.preventDefault(); e.stopPropagation();
+        _delTouchAt = Date.now();
         _deleteHist(idx);
       };
     })(k);
     dels[k].onclick = (function(idx) {
       return function(e) {
         e.stopPropagation();
+        // 直前のontouchendで処理済みなら、後から来た合成clickは無視する
+        if (Date.now() - _delTouchAt < 800) return;
         _deleteHist(idx);
       };
     })(k);
