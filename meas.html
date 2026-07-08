@@ -54,7 +54,7 @@
       overflow: hidden;
     }
     .phase-hd { font-size: 13px; font-weight: 700; padding: 7px 10px; border-bottom: 2px solid currentColor; }
-    .th-u { color: #ff9800; }
+    .th-u { color: #FFEB3B; }
     .th-v { color: #69d469; }
     .th-w { color: #5bc8ff; }
 
@@ -74,18 +74,18 @@
     .meas-td-wrap {
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-align-items: stretch; align-items: stretch;
-      border: 1px solid var(--border); border-radius: 6px;
+      border: 1px solid var(--border); border-radius: 999px;
       overflow: hidden; background: var(--surface-2);
     }
     .meas-td-wrap .meas-in { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; min-width: 0; border: none !important; background: transparent; border-radius: 0; }
-    .meas-td-wrap.mc-g { background: rgba(74,222,128,0.22); }
-    .meas-td-wrap.mc-r { background: rgba(248,113,113,0.22); }
+    .meas-td-wrap.mc-g { background: #000; }
+    .meas-td-wrap.mc-r { background: #000; }
     .meas-x {
       -webkit-flex-shrink: 0; flex-shrink: 0;
       background: none; border: none;
       border-left: 1px solid var(--border);
-      color: var(--text-faint); font-size: 14px;
-      cursor: pointer; padding: 4px 7px;
+      color: #D97757; font-size: 21px;
+      cursor: pointer; padding: 6px 11px;
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-align-items: center; align-items: center;
     }
@@ -112,7 +112,7 @@
     }
     .col-reset {
       background: none; border: 1px solid var(--border);
-      border-radius: 4px; color: var(--text-faint);
+      border-radius: 4px; color: #D97757;
       font-size: 12px; padding: 2px 5px;
       cursor: pointer; font-family: inherit;
     }
@@ -293,7 +293,7 @@
     .hr-tbl td.diff-warn { color: #fff; font-weight: 700; }
     .hr-tbl td.diff-ng  { color: #ff9800; font-weight: 700; }
     .hr-ph-hd { font-size: 12px; font-weight: 700; padding: 6px 2px 3px; }
-    .hr-ph-u  { color: #ff9800; }
+    .hr-ph-u  { color: #FFEB3B; }
     .hr-ph-v  { color: #69d469; }
     .hr-ph-w  { color: #5bc8ff; }
 
@@ -355,6 +355,17 @@
       color: #fff; font-size: 13px; font-weight: 700;
       padding: 7px; border-radius: 7px; cursor: pointer; font-family: inherit;
     }
+    /* ===== オプションパネル：PAT入力欄 ===== */
+    .opt-pat-input {
+      -webkit-box-flex: 1; -webkit-flex: 1; flex: 1;
+      background: var(--surface-2); border: 1px solid var(--accent);
+      border-radius: 6px; color: #FFB899;
+      font-size: 14px; font-weight: 600;
+      padding: 6px 10px; text-align: left;
+      font-family: inherit; outline: none;
+      min-height: 34px;
+      -webkit-appearance: none; appearance: none;
+    }
   </style>
 </head>
 <body>
@@ -369,9 +380,9 @@
     <table class="meas-tbl">
       <thead><tr>
         <th style="width:14%"></th>
-        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" onclick="clearCol('u','b')">CLR</button></div></th>
-        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" onclick="clearCol('u','a')">CLR</button></div></th>
-        <th><div class="col-hd-wrap"><span class="th-u">R</span><button class="col-reset" onclick="clearCol('u','r')">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" data-colclear="b" data-ph="u">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" data-colclear="a" data-ph="u">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span class="th-u">R</span><button class="col-reset" data-colclear="r" data-ph="u">CLR</button></div></th>
       </tr></thead>
       <tbody>
         <tr>
@@ -402,9 +413,9 @@
     <table class="meas-tbl">
       <thead><tr>
         <th style="width:14%"></th>
-        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" onclick="clearCol('v','b')">CLR</button></div></th>
-        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" onclick="clearCol('v','a')">CLR</button></div></th>
-        <th><div class="col-hd-wrap"><span class="th-v">R</span><button class="col-reset" onclick="clearCol('v','r')">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" data-colclear="b" data-ph="v">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" data-colclear="a" data-ph="v">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span class="th-v">R</span><button class="col-reset" data-colclear="r" data-ph="v">CLR</button></div></th>
       </tr></thead>
       <tbody>
         <tr>
@@ -435,9 +446,9 @@
     <table class="meas-tbl">
       <thead><tr>
         <th style="width:14%"></th>
-        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" onclick="clearCol('w','b')">CLR</button></div></th>
-        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" onclick="clearCol('w','a')">CLR</button></div></th>
-        <th><div class="col-hd-wrap"><span class="th-w">R</span><button class="col-reset" onclick="clearCol('w','r')">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" data-colclear="b" data-ph="w">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" data-colclear="a" data-ph="w">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span class="th-w">R</span><button class="col-reset" data-colclear="r" data-ph="w">CLR</button></div></th>
       </tr></thead>
       <tbody>
         <tr>
@@ -481,11 +492,11 @@
 
   <!-- 左：サイドメニュー -->
   <div class="numpad-side">
-    <div class="numpad-app-title">v1.4　三相測定</div>
+    <div class="numpad-app-title">v1.506 中継版　三相測定</div>
     <button class="numpad-side-btn btn-save" onclick="saveMeas()">SAVE</button>
     <button class="numpad-side-btn btn-hist" id="histBtn" onclick="toggleHist()">LOG</button>
     <button class="numpad-side-btn btn-reset" onclick="resetAll()">全リセット</button>
-    <button class="numpad-side-btn" onclick="forceUpdate()">Update</button>
+    <button class="numpad-side-btn" onclick="toggleOptionPanel()">オプション</button>
   </div>
 
   <!-- 右：テンキー -->
@@ -528,6 +539,36 @@
   <div class="save-act-row">
     <button class="save-act-cancel" onclick="closeSaveDialog()">キャンセル</button>
     <button class="save-act-ok"     onclick="confirmSave()">保存する</button>
+  </div>
+</div>
+
+<!-- ===== オプションパネル（テンキー上） ===== -->
+<div class="save-panel" id="optionPanel">
+  <div class="save-panel-title">オプション</div>
+  <div class="save-kiban-row">
+    <span class="save-kiban-label">PAT</span>
+    <input class="opt-pat-input" id="optPatInput" type="text" placeholder="GitHubトークン" autocomplete="off" autocapitalize="off" spellcheck="false">
+  </div>
+  <div class="save-act-row" style="margin-bottom:8px;">
+    <button class="save-act-cancel" style="-webkit-flex:1;flex:1;" onclick="document.getElementById('optPatFile').click()">📄 テキストファイルから読込</button>
+    <input type="file" id="optPatFile" accept=".txt,text/plain" style="display:none" onchange="loadPatFromFile(this)">
+  </div>
+  <div class="save-act-row">
+    <button class="save-act-cancel" onclick="closeOptionPanel()">閉じる</button>
+    <button class="save-act-ok"     onclick="saveOptionPat()">PAT保存</button>
+  </div>
+  <div class="save-act-row" style="margin-top:8px;">
+    <button class="save-act-ok" style="-webkit-flex:1;flex:1;" onclick="forceUpdate()">Update（強制更新）</button>
+  </div>
+  <div class="save-act-row" style="margin-top:8px;">
+    <button class="save-act-cancel" style="-webkit-flex:1;flex:1;" onclick="testApiConnection()">API接続テスト</button>
+  </div>
+  <div style="margin-top:10px;">
+    <div style="font-size:11px;color:var(--text-faint);margin-bottom:4px;display:flex;justify-content:space-between;">
+      <span>通信ログ（新しい順）</span>
+      <button class="col-reset" onclick="clearDebugLog()">消去</button>
+    </div>
+    <pre id="debugLogBox" style="background:var(--bg-2);border:1px solid var(--border);border-radius:6px;padding:6px;font-size:11px;color:var(--text-sub);max-height:120px;overflow-y:auto;white-space:pre-wrap;margin:0;font-family:inherit;"></pre>
   </div>
 </div>
 
@@ -623,7 +664,7 @@ function _setDiff(dEl, numStr, lblStr, color) {
 }
 
 function measCalc(ph) {
-  var i, col, onEl, offEl, dEl, onV, offV, diff, diffStr;
+  var i, col, onEl, offEl, dEl, onV, offV, diff, diffStr, tmp;
   var gap, dir, absGap, full, whole, half, label;
   for (i = 0; i < COLS.length; i++) {
     col   = COLS[i];
@@ -634,6 +675,11 @@ function measCalc(ph) {
     onV  = onEl  ? parseFloat(onEl.value)  : NaN;
     offV = offEl ? parseFloat(offEl.value) : NaN;
     if (!isNaN(onV) && !isNaN(offV)) {
+      // 大きい値＝ON・小さい値＝OFFになるよう表示欄を入れ替える
+      if (onV < offV) {
+        tmp = onEl.value; onEl.value = offEl.value; offEl.value = tmp;
+        tmp = onV; onV = offV; offV = tmp;
+      }
       // 大きい値－小さい値＝差数（入力ミスで段が逆でも計算できるように）
       diff    = Math.round(Math.abs(onV - offV) * 1000) / 1000;
       diffStr = diff.toFixed(2);
@@ -721,6 +767,51 @@ function forceUpdate() {
   setTimeout(function() { location.reload(true); }, 1000);
 }
 
+// ===== API接続テスト（ヘッダーあり/なしで切り分け） =====
+function testApiConnection() {
+  var base = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME;
+
+  var xhrA = new XMLHttpRequest();
+  xhrA.open('GET', base + '?a=' + Date.now(), true);
+  xhrA.onreadystatechange = function() {
+    if (xhrA.readyState !== 4) return;
+    _notify('テストA(素の通信)：status ' + xhrA.status);
+  };
+  xhrA.onerror = function() { _notify('テストA(素の通信)：通信エラー'); };
+  xhrA.send();
+
+  var xhrB = new XMLHttpRequest();
+  xhrB.open('GET', base + '?b=' + Date.now(), true);
+  xhrB.setRequestHeader('Accept', 'application/vnd.github+json');
+  xhrB.onreadystatechange = function() {
+    if (xhrB.readyState !== 4) return;
+    _notify('テストB(ヘッダー付き)：status ' + xhrB.status);
+  };
+  xhrB.onerror = function() { _notify('テストB(ヘッダー付き)：通信エラー'); };
+  xhrB.send();
+
+  // テストC：GitHub以外の他ドメインへの素の通信（cross-origin自体がダメなのか、GitHub側特有の問題かを切り分け）
+  var xhrC = new XMLHttpRequest();
+  xhrC.open('GET', 'https://jsonplaceholder.typicode.com/todos/1?c=' + Date.now(), true);
+  xhrC.onreadystatechange = function() {
+    if (xhrC.readyState !== 4) return;
+    _notify('テストC(GitHub以外の他ドメイン)：status ' + xhrC.status);
+  };
+  xhrC.onerror = function() { _notify('テストC(GitHub以外の他ドメイン)：通信エラー'); };
+  xhrC.send();
+
+  // テストD：他ドメイン＋独自ヘッダー付き（preflightが絡んでも他ドメインなら通るかを確認）
+  var xhrD = new XMLHttpRequest();
+  xhrD.open('GET', 'https://jsonplaceholder.typicode.com/todos/2?d=' + Date.now(), true);
+  xhrD.setRequestHeader('Authorization', 'Bearer dummy-test-token');
+  xhrD.onreadystatechange = function() {
+    if (xhrD.readyState !== 4) return;
+    _notify('テストD(他ドメイン+ヘッダー付き)：status ' + xhrD.status);
+  };
+  xhrD.onerror = function() { _notify('テストD(他ドメイン+ヘッダー付き)：通信エラー'); };
+  xhrD.send();
+}
+
 // ===== トースト =====
 var _tt;
 function showToast(msg) {
@@ -731,10 +822,38 @@ function showToast(msg) {
   _tt = setTimeout(function(){ t.className = 'toast'; }, 2200);
 }
 
+// ===== 通信ログ（消えるトーストと違い、オプションパネルに残る） =====
+var _debugLines = [];
+function _debugLog(msg) {
+  var now = new Date();
+  var hh = ('0' + now.getHours()).slice(-2);
+  var mi = ('0' + now.getMinutes()).slice(-2);
+  var ss = ('0' + now.getSeconds()).slice(-2);
+  _debugLines.unshift(hh + ':' + mi + ':' + ss + ' ' + msg);
+  if (_debugLines.length > 20) _debugLines = _debugLines.slice(0, 20);
+  var box = document.getElementById('debugLogBox');
+  if (box) box.textContent = _debugLines.join('\n');
+}
+function clearDebugLog() {
+  _debugLines = [];
+  var box = document.getElementById('debugLogBox');
+  if (box) box.textContent = '';
+}
+function _notify(msg) {
+  showToast(msg);
+  _debugLog(msg);
+}
+
 // ===== 保存・履歴機能 =====
 var STORE_KEY = 'meas_history';
 var _histMode = false;
 var _selIdx   = -1;
+// 古いiPad(iOS9系)はconfirm()等のブロッキングダイアログをtouchend中に呼ぶと、
+// preventDefault()していても後から合成clickイベントが発火してしまうことがある。
+// その結果、削除ボタンが「touchend→click」で二重に呼ばれ、削除確認が2回出た上に
+// 2回目でYESすると（1回目の削除で配列がずれた後の）別の行が消えてしまう。
+// touchendが処理した直後は一定時間clickを無視することで二重実行を防ぐ。
+var _delTouchAt = 0;
 
 function _loadHistory() {
   try {
@@ -748,45 +867,106 @@ function _saveHistory(arr) {
 }
 
 // === GIST SYNC (XHR / iOS9互換) ===
-var MEAS_GIST_ID       = '34f07c829b92ea7141367874f8777512';
-var MEAS_HIST_GIST_RAW = 'https://gist.githubusercontent.com/H2EC9629/' + MEAS_GIST_ID + '/raw/meas_history.json';
+// 旧Gist方式は廃止（古いiPadのホーム画面アプリで他ドメイン通信がブロックされたため）
+// 同じreminder-app内のファイルを直接読み書きする方式に変更
+var MEAS_REPO_OWNER = 'h2ec9629';
+var MEAS_REPO_NAME  = 'reminder-app';
+var MEAS_REPO_PATH  = 'meas_history.json';
+var MEAS_HIST_SAME_ORIGIN_URL = 'meas_history.json'; // 同一オリジン（相対パス）
+// iPad2はapi.github.comへの直接通信がTLS/ネットワークの都合で全滅するため、
+// Cloudflare Worker中継（cloudflare_worker_relay.js）経由でGitHub APIを叩く
+var MEAS_API_BASE = 'https://morning-resonance-c98bh.h2ec9629.workers.dev';
+
+function _b64EncodeUtf8(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+function _b64DecodeUtf8(b64) {
+  return decodeURIComponent(escape(atob(b64.replace(/\n/g, ''))));
+}
+
+function _escRe(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function _getMeasCfg() {
+  try { return JSON.parse(localStorage.getItem('ojisan_mailbox_cfg_v1') || '{}'); } catch(e) { return {}; }
+}
 
 function _getMeasPat() {
-  try {
-    var cfg = JSON.parse(localStorage.getItem('ojisan_mailbox_cfg_v1') || '{}');
-    return cfg.pat || '';
-  } catch(e) { return ''; }
+  return _getMeasCfg().pat || '';
 }
 
-function _syncGist(arr) {
-  var pat = _getMeasPat();
-  if (!pat) return;
-  var body = JSON.stringify({ files: { 'meas_history.json': { content: JSON.stringify(arr, null, 2) } } });
-  var xhr = new XMLHttpRequest();
-  xhr.open('PATCH', 'https://api.github.com/gists/' + MEAS_GIST_ID, true);
-  xhr.setRequestHeader('Authorization', 'Bearer ' + pat);
-  xhr.setRequestHeader('Accept', 'application/vnd.github+json');
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.send(body);
+function _setMeasPat(pat) {
+  var cfg = _getMeasCfg();
+  cfg.pat = pat;
+  try { localStorage.setItem('ojisan_mailbox_cfg_v1', JSON.stringify(cfg)); } catch(e) {}
 }
 
-function _fetchGist(callback) {
+// 索引ファイル（meas_history.json）を「指定した配列でそのまま上書き」する。
+// 削除操作など、呼び出し側が最終形を確定済みのケース専用。
+function _pushHistoryIndex(arr) {
   var pat = _getMeasPat();
   if (!pat) return;
-  var url = MEAS_HIST_GIST_RAW + '?t=' + Date.now();
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', url, true);
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState !== 4) return;
-    if (xhr.status !== 200) return;
-    try {
-      var remote = JSON.parse(xhr.responseText);
-      if (!Array.isArray(remote)) return;
-      var local  = _loadHistory();
-      var seen   = {};
-      var merged = [];
-      var all = remote.concat(local);
-      var i, k;
+  var apiUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
+
+  // 更新には現在のファイルのshaが要るので先にGETしてから書き込む
+  var getXhr = new XMLHttpRequest();
+  getXhr.open('GET', apiUrl + '?t=' + Date.now(), true);
+  getXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  getXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  getXhr.onreadystatechange = function() {
+    if (getXhr.readyState !== 4) return;
+    var sha = null;
+    if (getXhr.status === 200) {
+      try { sha = JSON.parse(getXhr.responseText).sha; } catch(e) {}
+    }
+    var body = {
+      message: '測定ログ更新',
+      content: _b64EncodeUtf8(JSON.stringify(arr, null, 2)),
+      branch: 'main'
+    };
+    if (sha) body.sha = sha;
+    var putXhr = new XMLHttpRequest();
+    putXhr.open('PUT', apiUrl, true);
+    putXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+    putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    putXhr.setRequestHeader('Content-Type', 'application/json');
+    putXhr.send(JSON.stringify(body));
+  };
+  getXhr.send();
+}
+
+// 新規1件を保存するとき専用：保存直前にリモートの最新を取りに行ってからマージして書き込む。
+// 他端末が追加した分を上書きで消してしまう事故を防ぐための安全版。
+function _syncNewRecord(newRecord, callback) {
+  var pat = _getMeasPat();
+  if (!pat) { _notify('共有NG：PAT未設定（オプションで設定して）'); if (callback) callback(); return; }
+  var apiUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
+
+  // 他端末が同時に索引ファイルを更新すると、GET時点のshaがPUT時点で古くなり
+  // status:409（競合）になることがある。その場合は最新shaを取り直して再試行する。
+  function attempt(triesLeft) {
+    var getXhr = new XMLHttpRequest();
+    getXhr.open('GET', apiUrl + '?t=' + Date.now(), true);
+    getXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+    getXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    getXhr.onreadystatechange = function() {
+      if (getXhr.readyState !== 4) return;
+      var sha = null, remote = [];
+      if (getXhr.status === 200) {
+        try {
+          var meta = JSON.parse(getXhr.responseText);
+          sha = meta.sha;
+          remote = JSON.parse(_b64DecodeUtf8(meta.content));
+          if (!Array.isArray(remote)) remote = [];
+        } catch(e) { remote = []; }
+      }
+      // ローカルキャッシュ全体は混ぜない（他端末が削除した記録がローカルにだけ
+      // 残っていると、それを保存のたびに復活させてリモートに書き戻してしまうため）。
+      // 今取得した最新のリモートに、今回保存する新規分だけを足す。
+      var all = [newRecord].concat(remote);
+      var seen = {}, merged = [], i, k;
       for (i = 0; i < all.length; i++) {
         k = all[i].date + '|' + all[i].memo;
         if (!seen[k]) { seen[k] = true; merged.push(all[i]); }
@@ -794,8 +974,208 @@ function _fetchGist(callback) {
       merged.sort(function(a, b) { return b.date < a.date ? -1 : 1; });
       if (merged.length > 50) merged = merged.slice(0, 50);
       _saveHistory(merged);
+      _renderSidebar();
+
+      var body = {
+        message: '測定ログ更新（機番 ' + (newRecord.kiban || '') + '）',
+        content: _b64EncodeUtf8(JSON.stringify(merged, null, 2)),
+        branch: 'main'
+      };
+      if (sha) body.sha = sha;
+      var putXhr = new XMLHttpRequest();
+      putXhr.open('PUT', apiUrl, true);
+      putXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+      putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+      putXhr.setRequestHeader('Content-Type', 'application/json');
+      putXhr.onreadystatechange = function() {
+        if (putXhr.readyState !== 4) return;
+        if (putXhr.status === 200 || putXhr.status === 201) {
+          _notify('共有OK：索引ファイル更新済み');
+          if (callback) callback();
+        } else if (putXhr.status === 409 && triesLeft > 0) {
+          _notify('共有再試行中：他端末との競合を検知（残り' + triesLeft + '回）');
+          setTimeout(function() { attempt(triesLeft - 1); }, 400 + Math.random() * 400);
+        } else {
+          _notify('共有NG：索引書き込み失敗（status:' + putXhr.status + '）');
+          if (callback) callback();
+        }
+      };
+      putXhr.onerror = function() { _notify('共有NG：索引書き込み通信エラー'); if (callback) callback(); };
+      putXhr.send(JSON.stringify(body));
+    };
+    getXhr.onerror = function() { _notify('共有NG：索引取得の通信エラー'); if (callback) callback(); };
+    getXhr.send();
+  }
+
+  attempt(3);
+}
+
+// 機番ごとにフォルダ分け、ステータス別にjsonで個別保存する際のファイル名を先に決める。
+// （再測定は連番で履歴として残す。削除時に対応ファイルを特定できるよう、決めた名前は
+//   呼び出し側で履歴レコードのrecordFileとして保存しておく）
+function _resolveRecordFilename(kiban, status, callback) {
+  var pat = _getMeasPat();
+  if (!pat) { callback(status + '.json'); return; }
+  var dirUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+             + '/contents/records/' + encodeURIComponent(kiban);
+  var listXhr = new XMLHttpRequest();
+  listXhr.open('GET', dirUrl + '?t=' + Date.now(), true);
+  listXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  listXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  listXhr.onreadystatechange = function() {
+    if (listXhr.readyState !== 4) return;
+    var existing = [];
+    if (listXhr.status === 200) {
+      try {
+        var parsed = JSON.parse(listXhr.responseText);
+        if (Array.isArray(parsed)) existing = parsed;
+      } catch(e) {}
+    }
+    var maxN = 0, found = false, i, name, m;
+    var reSuffix = new RegExp('^' + _escRe(status) + '_(\\d+)\\.json$');
+    for (i = 0; i < existing.length; i++) {
+      name = existing[i].name || '';
+      if (name === status + '.json') { found = true; }
+      m = name.match(reSuffix);
+      if (m) { found = true; var n = parseInt(m[1], 10); if (n > maxN) maxN = n; }
+    }
+    var filename = found ? (status + '_' + (maxN + 1) + '.json') : (status + '.json');
+    callback(filename);
+  };
+  listXhr.onerror = function() { callback(status + '.json'); };
+  listXhr.send();
+}
+
+// 決まったファイル名で個別ファイルを書き込む。
+// 索引ファイル更新と同時に走らせるとGitHub側のコミットが競合してstatus:409になることがあるため、
+// こちらも自動で再試行する。
+function _putRecordFile(data, filename, callback) {
+  var pat = _getMeasPat();
+  if (!pat) { _notify('個別ファイル保存NG：PAT未設定'); if (callback) callback(); return; }
+  var kiban  = String(data.kiban || '未入力');
+  var status = String(data.status || '不明');
+  var path    = 'records/' + kiban + '/' + filename;
+  var putUrl  = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+              + '/contents/' + path.split('/').map(encodeURIComponent).join('/');
+
+  function attempt(triesLeft) {
+    var body = {
+      message: '測定記録保存：機番' + kiban + '・' + status,
+      content: _b64EncodeUtf8(JSON.stringify(data, null, 2)),
+      branch: 'main'
+    };
+    var putXhr = new XMLHttpRequest();
+    putXhr.open('PUT', putUrl, true);
+    putXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+    putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    putXhr.setRequestHeader('Content-Type', 'application/json');
+    putXhr.onreadystatechange = function() {
+      if (putXhr.readyState !== 4) return;
+      if (putXhr.status === 200 || putXhr.status === 201) {
+        _notify('共有OK：個別ファイル保存済み（' + filename + '）');
+        if (callback) callback();
+      } else if (putXhr.status === 409 && triesLeft > 0) {
+        _notify('共有再試行中：個別ファイルが競合（残り' + triesLeft + '回）');
+        setTimeout(function() { attempt(triesLeft - 1); }, 400 + Math.random() * 400);
+      } else {
+        _notify('共有NG：個別ファイル保存失敗（status:' + putXhr.status + '）');
+        if (callback) callback();
+      }
+    };
+    putXhr.onerror = function() { _notify('共有NG：個別ファイル通信エラー'); if (callback) callback(); };
+    putXhr.send(JSON.stringify(body));
+  }
+
+  attempt(3);
+}
+
+// 端末上でログを削除したとき、対応する個別ファイルもGitHub側から削除する。
+// recordFile未設定の古い履歴（この機能を入れる前に保存した分）は対象外。
+function _deleteRecordFile(path) {
+  var pat = _getMeasPat();
+  if (!pat) { _notify('個別ファイル削除NG：PAT未設定'); return; }
+  var url = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+          + '/contents/' + path.split('/').map(encodeURIComponent).join('/');
+
+  var getXhr = new XMLHttpRequest();
+  getXhr.open('GET', url + '?t=' + Date.now(), true);
+  getXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  getXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  getXhr.onreadystatechange = function() {
+    if (getXhr.readyState !== 4) return;
+    if (getXhr.status === 404) {
+      _notify('個別ファイル削除：GitHub側に見当たりませんでした（' + path + '）');
+      return;
+    }
+    if (getXhr.status !== 200) {
+      _notify('個別ファイル削除NG：sha取得失敗（status:' + getXhr.status + '）');
+      return;
+    }
+    var sha;
+    try { sha = JSON.parse(getXhr.responseText).sha; } catch(e) {}
+    if (!sha) { _notify('個別ファイル削除NG：sha取得できず'); return; }
+
+    var body = { message: '測定記録削除：' + path, sha: sha, branch: 'main' };
+    var delXhr = new XMLHttpRequest();
+    delXhr.open('DELETE', url, true);
+    delXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+    delXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    delXhr.setRequestHeader('Content-Type', 'application/json');
+    delXhr.onreadystatechange = function() {
+      if (delXhr.readyState !== 4) return;
+      if (delXhr.status === 200 || delXhr.status === 204) {
+        _notify('共有OK：個別ファイルも削除しました（' + path + '）');
+      } else {
+        _notify('共有NG：個別ファイル削除失敗（status:' + delXhr.status + '）');
+      }
+    };
+    delXhr.onerror = function() { _notify('共有NG：個別ファイル削除の通信エラー'); };
+    delXhr.send(JSON.stringify(body));
+  };
+  getXhr.onerror = function() { _notify('個別ファイル削除NG：sha取得の通信エラー'); };
+  getXhr.send();
+}
+
+function _fetchGist(callback) {
+  // 索引ファイルは書き込みと同じ経路（Worker中継→GitHub API）で読む。
+  // 以前は同一オリジンの相対パス（GitHub Pages経由）で読んでいたが、
+  // Pagesのビルド反映待ち・CDNキャッシュのせいで他端末が書いた更新がすぐ見えない
+  // ことがあった（PCで保存してもiPadの一覧に出てこない不具合の原因）。
+  // Worker中継は既にiPad2でも通ることを確認済みなので、書き込み側と統一する。
+  var apiUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
+  var pat = _getMeasPat();
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', apiUrl + '?t=' + Date.now(), true);
+  xhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  if (pat) xhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    if (xhr.status !== 200) {
+      _notify('索引取得失敗（status:' + xhr.status + '）');
+      return;
+    }
+    try {
+      var meta   = JSON.parse(xhr.responseText);
+      var remote = JSON.parse(_b64DecodeUtf8(meta.content));
+      if (!Array.isArray(remote)) {
+        _notify('索引取得：形式が配列じゃない');
+        return;
+      }
+      // ローカルとの合算(union)はしない：共有索引ファイル（リモート）を正として
+      // そのまま採用する。以前はローカルにある分を足していたため、他端末で
+      // 削除した記録がこの端末のローカルキャッシュにだけ残り続けて、一覧から
+      // 消えないという不具合があった。
+      remote.sort(function(a, b) { return b.date < a.date ? -1 : 1; });
+      if (remote.length > 50) remote = remote.slice(0, 50);
+      _saveHistory(remote);
+      _notify('共有OK：最新の索引を取得（件数 ' + remote.length + '）');
       if (callback) callback();
-    } catch(e) {}
+    } catch(e) {
+      _notify('索引取得：解析エラー ' + e.message);
+    }
+  };
+  xhr.onerror = function() {
+    _notify('索引取得：通信エラー（オフライン？）');
   };
   xhr.send();
 }
@@ -809,6 +1189,9 @@ var _saveStatus   = '完成時'; // 選択中の状態
 function saveMeas() {
   var ph, col, i, ci, onEl, offEl, onV, offV, diff;
   var data = { date: '', memo: '', phases: {} };
+
+  // 保存前に大小入れ替えを確定させる（OK未確定のまま保存されても正しい並びにする）
+  for (i = 0; i < PHASES.length; i++) measCalc(PHASES[i]);
 
   // 日時
   var now = new Date();
@@ -902,6 +1285,48 @@ function closeSaveDialog() {
   document.getElementById('padVal').textContent   = '—';
 }
 
+// ===== オプションパネル（PAT入力・強制更新） =====
+function toggleOptionPanel() {
+  var panel = document.getElementById('optionPanel');
+  if (panel.className.indexOf('show') >= 0) {
+    closeOptionPanel();
+  } else {
+    document.getElementById('optPatInput').value = _getMeasPat();
+    panel.className = 'save-panel show';
+  }
+}
+
+function closeOptionPanel() {
+  document.getElementById('optionPanel').className = 'save-panel';
+}
+
+function saveOptionPat() {
+  var v = document.getElementById('optPatInput').value.trim();
+  _setMeasPat(v);
+  showToast(v ? 'PATを保存しました' : 'PATを削除しました');
+  closeOptionPanel();
+}
+
+// テキストファイルからPATを読み込んでそのまま保存
+function loadPatFromFile(fileInput) {
+  var f = fileInput.files && fileInput.files[0];
+  if (!f) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var v = String(e.target.result || '').trim();
+    document.getElementById('optPatInput').value = v;
+    if (v) {
+      _setMeasPat(v);
+      showToast('PATを読み込んで保存しました');
+    } else {
+      showToast('ファイルが空です');
+    }
+  };
+  reader.onerror = function() { showToast('読み込みに失敗しました'); };
+  reader.readAsText(f);
+  fileInput.value = '';
+}
+
 function confirmSave() {
   if (!_pendingData) return;
   if (_saveRaw === '') { showToast('機番を入力してください'); return; }
@@ -913,8 +1338,29 @@ function confirmSave() {
   var arr = _loadHistory();
   arr.unshift(_pendingData);
   if (arr.length > 50) arr = arr.slice(0, 50);
-  _saveHistory(arr);
-  _syncGist(arr);
+  _saveHistory(arr);       // 即時のローカル反映（オフラインでも一覧に出るように）
+  // ※closeSaveDialog()が_pendingDataをnullにするので、先にローカル変数へ退避しておく
+  var recordToSave = _pendingData;
+
+  // 個別ファイル名を先に決めて履歴側にも記録しておく（削除時に対応ファイルを特定するため）。
+  // 索引ファイルと個別ファイルを同時に書き込むとGitHub側のコミットが競合するため、
+  // 索引ファイル更新が終わってから個別ファイル保存を行う（直列実行）。
+  _resolveRecordFilename(recordToSave.kiban, recordToSave.status, function(filename) {
+    recordToSave.recordFile = 'records/' + recordToSave.kiban + '/' + filename;
+    var arr2 = _loadHistory();
+    for (var i = 0; i < arr2.length; i++) {
+      if (arr2[i].date === recordToSave.date && arr2[i].memo === recordToSave.memo) {
+        arr2[i].recordFile = recordToSave.recordFile;
+        break;
+      }
+    }
+    _saveHistory(arr2);
+
+    _syncNewRecord(recordToSave, function() {
+      _putRecordFile(recordToSave, filename);
+    });
+  });
+
   closeSaveDialog();
   showToast('保存しました');
   _renderSidebar();
@@ -992,12 +1438,15 @@ function _renderSidebar() {
     dels[k].ontouchend = (function(idx) {
       return function(e) {
         e.preventDefault(); e.stopPropagation();
+        _delTouchAt = Date.now();
         _deleteHist(idx);
       };
     })(k);
     dels[k].onclick = (function(idx) {
       return function(e) {
         e.stopPropagation();
+        // 直前のontouchendで処理済みなら、後から来た合成clickは無視する
+        if (Date.now() - _delTouchAt < 800) return;
         _deleteHist(idx);
       };
     })(k);
@@ -1010,9 +1459,13 @@ function _renderSidebar() {
 function _deleteHist(idx) {
   if (!confirm('この記録を削除しますか？')) return;
   var arr = _loadHistory();
+  var removed = arr[idx];
   arr.splice(idx, 1);
   _saveHistory(arr);
-  _syncGist(arr);
+  _pushHistoryIndex(arr); // 削除は最終形が確定済みなので索引ファイルへそのまま上書き
+  if (removed && removed.recordFile) {
+    _deleteRecordFile(removed.recordFile); // 対応する個別ファイルもGitHub側から削除
+  }
   if (_selIdx >= arr.length) _selIdx = arr.length - 1;
   _renderSidebar();
   if (_selIdx < 0) {
@@ -1094,16 +1547,61 @@ window.onload = function() {
     })(_inputs[i]);
   }
 
-  // ×ボタン → ontouchend
+  // ×ボタン → 1.5秒長押しで削除（誤タップ防止）
   btns = document.getElementsByTagName('button');
   for (i = 0; i < btns.length; i++) {
     if (btns[i].getAttribute('data-clear')) {
-      btns[i].ontouchend = (function(id, ph) {
-        return function(e) { e.preventDefault(); clearOne(id, ph); };
-      })(btns[i].getAttribute('data-clear'), btns[i].getAttribute('data-ph'));
-      btns[i].onclick = (function(id, ph) {
-        return function() { clearOne(id, ph); };
-      })(btns[i].getAttribute('data-clear'), btns[i].getAttribute('data-ph'));
+      (function(btn) {
+        var id = btn.getAttribute('data-clear');
+        var ph = btn.getAttribute('data-ph');
+        var holdTimer = null;
+        function startHold(e) {
+          e.preventDefault();
+          if (holdTimer) clearTimeout(holdTimer);
+          holdTimer = setTimeout(function() {
+            holdTimer = null;
+            clearOne(id, ph);
+          }, 1500);
+        }
+        function cancelHold(e) {
+          if (e) e.preventDefault();
+          if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+        }
+        btn.ontouchstart  = startHold;
+        btn.ontouchend    = cancelHold;
+        btn.ontouchcancel = cancelHold;
+        btn.onmousedown   = startHold;
+        btn.onmouseup     = cancelHold;
+        btn.onmouseleave  = cancelHold;
+        btn.onclick       = function(e) { e.preventDefault(); };
+      })(btns[i]);
+    }
+    // CLRボタン → 1.5秒長押しで列クリア（誤タップ防止）
+    if (btns[i].getAttribute('data-colclear')) {
+      (function(btn) {
+        var col = btn.getAttribute('data-colclear');
+        var ph  = btn.getAttribute('data-ph');
+        var holdTimer = null;
+        function startHold(e) {
+          e.preventDefault();
+          if (holdTimer) clearTimeout(holdTimer);
+          holdTimer = setTimeout(function() {
+            holdTimer = null;
+            clearCol(ph, col);
+          }, 1500);
+        }
+        function cancelHold(e) {
+          if (e) e.preventDefault();
+          if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+        }
+        btn.ontouchstart  = startHold;
+        btn.ontouchend    = cancelHold;
+        btn.ontouchcancel = cancelHold;
+        btn.onmousedown   = startHold;
+        btn.onmouseup     = cancelHold;
+        btn.onmouseleave  = cancelHold;
+        btn.onclick       = function(e) { e.preventDefault(); };
+      })(btns[i]);
     }
   }
 
