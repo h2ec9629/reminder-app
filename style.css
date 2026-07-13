@@ -1212,6 +1212,7 @@
     transform: translateY(-100%);
     transition: transform 0.28s ease;
     pointer-events: none;
+    overflow: hidden;
   }
   .bottom-nav {
     transform: translateY(100%);
