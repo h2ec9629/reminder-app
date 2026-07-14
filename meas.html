@@ -1025,8 +1025,10 @@ function _syncNewRecord(newRecord, callback) {
       }
       // ローカルキャッシュ全体は混ぜない（他端末が削除した記録がローカルにだけ
       // 残っていると、それを保存のたびに復活させてリモートに書き戻してしまうため）。
-      // 今取得した最新のリモートに、今回保存する新規分だけを足す。
-      var all = [newRecord].concat(remote);
+      // 今取得した最新のリモートに、今回保存する新規分＋まだ未送信キューに残っている
+      // 他のオフライン保存分も一緒に足す（そうしないと複数件を順番に送るとき、
+      // 途中でローカル保存がこの1件だけに上書きされて他の分が消えてしまうため）。
+      var all = [newRecord].concat(_loadPending()).concat(remote);
       var seen = {}, merged = [], i, k;
       for (i = 0; i < all.length; i++) {
         k = all[i].date + '|' + all[i].memo;
