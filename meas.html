@@ -1439,6 +1439,7 @@ function toggleHist() {
   var np   = document.getElementsByClassName('numpad')[0];
   var btn  = document.getElementById('histBtn');
   if (_histMode) {
+    closeOptionPanel(); // オプション展開中にLOGへ移行したら閉じる
     main.style.display = 'none';
     np.style.display   = 'none';
     mv.className       = 'hist-view';
