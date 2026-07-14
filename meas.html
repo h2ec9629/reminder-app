@@ -657,6 +657,25 @@ function _refreshPadVal() {
   document.getElementById('padVal').textContent = fmt || '—';
 }
 
+// ===== 物理キーボード対応（常駐テンキーはそのまま・キー入力も同じ処理に流す） =====
+document.addEventListener('keydown', function(e) {
+  var tag = e.target.tagName;
+  // PAT入力欄など普通の編集可能なinputでは素通し（テンキーの横取りをしない）
+  if (tag === 'INPUT' && !e.target.readOnly) return;
+  if (tag === 'TEXTAREA') return;
+  var k = e.key;
+  if (k >= '0' && k <= '9') {
+    _npTap(k);
+    e.preventDefault();
+  } else if (k === 'Backspace') {
+    _npTap('BS');
+    e.preventDefault();
+  } else if (k === 'Enter') {
+    _npTap('OK');
+    e.preventDefault();
+  }
+});
+
 // ===== 判定計算（③ textContent で DOM更新）=====
 function _setDiff(dEl, numStr, lblStr, color) {
   var spans = dEl.getElementsByTagName('span');
@@ -1589,6 +1608,10 @@ window.onload = function() {
     })(_inputs[i]);
     // PC/マウス用フォールバック
     _inputs[i].onclick = (function(inp) {
+      return function() { focusInp(inp); };
+    })(_inputs[i]);
+    // 物理キーボードのTabで欄移動した場合もフォーカス欄を同期
+    _inputs[i].onfocus = (function(inp) {
       return function() { focusInp(inp); };
     })(_inputs[i]);
   }
