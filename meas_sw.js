@@ -1,5 +1,5 @@
-// 三相測定 Service Worker v1.3
-var CACHE_NAME = 'meas-v1.3';
+// 三相測定 Service Worker v1.4
+var CACHE_NAME = 'meas-v1.4';
 var ASSETS = [
   './meas.html',
   './icons/icon-192.png',
