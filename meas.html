@@ -496,7 +496,7 @@
 
   <!-- 左：サイドメニュー -->
   <div class="numpad-side">
-    <div class="numpad-app-title">v1.507 中継版　三相測定</div>
+    <div class="numpad-app-title">v1.508 中継版　三相測定</div>
     <button class="numpad-side-btn btn-save" onclick="saveMeas()">SAVE</button>
     <button class="numpad-side-btn btn-hist" id="histBtn" onclick="toggleHist()">LOG</button>
     <button class="numpad-side-btn btn-reset" onclick="resetAll()">全リセット</button>
@@ -1599,15 +1599,21 @@ function _renderSidebar() {
     dels[k].ontouchend = (function(idx) {
       return function(e) {
         e.preventDefault(); e.stopPropagation();
-        _delTouchAt = Date.now();
         _deleteHist(idx);
+        // confirm()はブロッキングで、ユーザーがYESを押すまで時間が経つ。
+        // 起点時刻を _deleteHist(=confirm) の"後"に取り直す。こうしないと、
+        // ダイアログを読んでいる時間の分だけ経過してしまい、直後に発火する
+        // 合成clickが窓（下記）を超えてすり抜け、配列がズレた後の別行を消す。
+        _delTouchAt = Date.now();
       };
     })(k);
     dels[k].onclick = (function(idx) {
       return function(e) {
         e.stopPropagation();
-        // 直前のontouchendで処理済みなら、後から来た合成clickは無視する
-        if (Date.now() - _delTouchAt < 800) return;
+        // 直前のontouchendで処理済みなら、後から来た合成clickは無視する。
+        // 合成clickは再描画後の別要素に飛ぶことがあるため、この判定は
+        // 要素単位でなく全体（_delTouchAt）で持つ必要がある。
+        if (Date.now() - _delTouchAt < 1500) return;
         _deleteHist(idx);
       };
     })(k);
