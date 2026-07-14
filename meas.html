@@ -266,6 +266,19 @@
     .hist-item-del  { float: right; background: none; border: none; color: var(--text-faint); font-size: 14px; cursor: pointer; padding: 0 2px; }
     .hist-pending   { float: right; font-size: 9px; font-weight: 700; color: #ff9800; border: 1px solid #ff9800; border-radius: 4px; padding: 1px 4px; margin-right: 18px; }
     .hist-empty     { font-size: 12px; color: var(--text-faint); padding: 16px 10px; text-align: center; }
+    .hist-item-kiban { font-size: 15px; font-weight: 700; color: var(--text); word-break: break-all; }
+
+    /* 詳細：機番内の各ステータスセクション */
+    .hist-rec { margin-bottom: 16px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 8px 4px; background: var(--surface); }
+    .hist-rec-hd {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      gap: 8px; margin-bottom: 6px;
+    }
+    .hist-rec-status { font-size: 14px; font-weight: 700; color: var(--accent); }
+    .hist-rec-pend { font-size: 9px; font-weight: 700; color: #ff9800; border: 1px solid #ff9800; border-radius: 4px; padding: 1px 4px; }
+    .hist-rec-date { font-size: 11px; color: var(--text-faint); margin-left: auto; }
+    .hist-rec-del { background: none; border: 1px solid var(--border); border-radius: 4px; color: #F87171; font-size: 14px; cursor: pointer; padding: 1px 9px; -webkit-flex-shrink: 0; flex-shrink: 0; }
 
     /* 結果エリア */
     .hist-detail {
@@ -496,7 +509,7 @@
 
   <!-- 左：サイドメニュー -->
   <div class="numpad-side">
-    <div class="numpad-app-title">v1.508 中継版　三相測定</div>
+    <div class="numpad-app-title">v1.509 中継版　三相測定</div>
     <button class="numpad-side-btn btn-save" onclick="saveMeas()">SAVE</button>
     <button class="numpad-side-btn btn-hist" id="histBtn" onclick="toggleHist()">LOG</button>
     <button class="numpad-side-btn btn-reset" onclick="resetAll()">全リセット</button>
@@ -874,7 +887,7 @@ function _notify(msg) {
 // ===== 保存・履歴機能 =====
 var STORE_KEY = 'meas_history';
 var _histMode = false;
-var _selIdx   = -1;
+var _selKiban = null;
 // 古いiPad(iOS9系)はconfirm()等のブロッキングダイアログをtouchend中に呼ぶと、
 // preventDefault()していても後から合成clickイベントが発火してしまうことがある。
 // その結果、削除ボタンが「touchend→click」で二重に呼ばれ、削除確認が2回出た上に
@@ -1529,7 +1542,7 @@ function toggleHist() {
     np.style.display   = 'none';
     mv.className       = 'hist-view';
     btn.classList.add('active');
-    _selIdx = -1;
+    _selKiban = null;
     _renderSidebar();  // まず手元の記録をすぐ表示（オフラインでもここまでは出る）
     if (navigator.onLine) {
       // 送信(flush)と索引取得(fetch)を同時に走らせると、送信完了前に返ってきた
@@ -1549,137 +1562,149 @@ function toggleHist() {
   }
 }
 
-// サイドバー描画
+// サイドバー描画（機番ごとにまとめて1行。左は機番のみ表示）
 function _renderSidebar() {
   var arr  = _loadHistory();
   var list = document.getElementById('histList');
-  var html = '', i, it;
   if (arr.length === 0) {
     list.innerHTML = '<div class="hist-empty">保存データなし</div>';
     return;
   }
+  // 機番ごとにまとめる。arrは日付降順なので初出順＝新しい機番順で並ぶ。
+  // ひとつでも未同期の記録があれば、その機番に「未同期」バッジを付ける。
+  var order = [], seen = {}, pend = {}, i, kb;
   for (i = 0; i < arr.length; i++) {
-    it = arr[i];
-    html += '<div class="hist-item' + (i === _selIdx ? ' selected' : '') + '" id="hi_' + i + '">'
-          + '<button class="hist-item-del" data-didx="' + i + '">×</button>'
-          + (it.pendingSync ? '<span class="hist-pending">未同期</span>' : '')
-          + '<div class="hist-item-date">' + _esc(it.date) + '</div>'
-          + '<div class="hist-item-memo">' + _esc(it.memo) + '</div>'
+    kb = arr[i].kiban || '未入力';
+    if (!seen[kb]) { seen[kb] = true; order.push(kb); pend[kb] = false; }
+    if (arr[i].pendingSync) pend[kb] = true;
+  }
+  var html = '';
+  for (i = 0; i < order.length; i++) {
+    kb = order[i];
+    html += '<div class="hist-item' + (kb === _selKiban ? ' selected' : '') + '">'
+          + (pend[kb] ? '<span class="hist-pending">未同期</span>' : '')
+          + '<div class="hist-item-kiban">機番 ' + _esc(kb) + '</div>'
           + '</div>';
   }
   list.innerHTML = html;
 
-  // タップ処理（ontouchend + onclick フォールバック）
+  // 機番タップ → その機番の詳細を表示（ontouchend + onclick フォールバック）
   var items = list.getElementsByClassName('hist-item');
   var k;
   for (k = 0; k < items.length; k++) {
-    items[k].ontouchend = (function(idx) {
-      return function(e) {
-        // ×ボタンタップは無視
-        if (e.target.getAttribute('data-didx') !== null) return;
-        e.preventDefault();
-        _selIdx = idx;
-        _renderSidebar();
-        _renderDetail(idx);
-      };
-    })(k);
-    items[k].onclick = (function(idx) {
-      return function(e) {
-        if (e.target.getAttribute('data-didx') !== null) return;
-        _selIdx = idx;
-        _renderSidebar();
-        _renderDetail(idx);
-      };
-    })(k);
+    (function(kban) {
+      items[k].ontouchend = function(e) { e.preventDefault(); _selKiban = kban; _renderSidebar(); _renderDetail(kban); };
+      items[k].onclick    = function()  { _selKiban = kban; _renderSidebar(); _renderDetail(kban); };
+    })(order[k]);
   }
 
-  // ×削除ボタン
-  var dels = list.getElementsByClassName('hist-item-del');
-  for (k = 0; k < dels.length; k++) {
-    dels[k].ontouchend = (function(idx) {
-      return function(e) {
-        e.preventDefault(); e.stopPropagation();
-        _deleteHist(idx);
-        // confirm()はブロッキングで、ユーザーがYESを押すまで時間が経つ。
-        // 起点時刻を _deleteHist(=confirm) の"後"に取り直す。こうしないと、
-        // ダイアログを読んでいる時間の分だけ経過してしまい、直後に発火する
-        // 合成clickが窓（下記）を超えてすり抜け、配列がズレた後の別行を消す。
-        _delTouchAt = Date.now();
-      };
-    })(k);
-    dels[k].onclick = (function(idx) {
-      return function(e) {
-        e.stopPropagation();
-        // 直前のontouchendで処理済みなら、後から来た合成clickは無視する。
-        // 合成clickは再描画後の別要素に飛ぶことがあるため、この判定は
-        // 要素単位でなく全体（_delTouchAt）で持つ必要がある。
-        if (Date.now() - _delTouchAt < 1500) return;
-        _deleteHist(idx);
-      };
-    })(k);
-  }
-
-  // 選択中があれば詳細を維持
-  if (_selIdx >= 0 && _selIdx < arr.length) _renderDetail(_selIdx);
+  // 選択中の機番があれば詳細を維持
+  if (_selKiban != null && seen[_selKiban]) _renderDetail(_selKiban);
 }
 
-function _deleteHist(idx) {
-  if (!confirm('この記録を削除しますか？')) return;
-  var arr = _loadHistory();
-  var removed = arr[idx];
-  arr.splice(idx, 1);
+// 1件分の記録を削除（詳細画面の各ステータス毎の×から呼ぶ）。
+// 記録の同定は date+memo で行う（配列インデックスは再描画でズレるため使わない）。
+function _deleteRecord(rec, kiban) {
+  if (!confirm('この記録（機番 ' + (rec.kiban || '') + '・' + (rec.status || '') + '）を削除しますか？')) return;
+  var arr = _loadHistory(), i, removed = null;
+  for (i = 0; i < arr.length; i++) {
+    if (arr[i].date === rec.date && arr[i].memo === rec.memo) { removed = arr[i]; arr.splice(i, 1); break; }
+  }
   _saveHistory(arr);
-  _pushHistoryIndex(arr); // 削除は最終形が確定済みなので索引ファイルへそのまま上書き
-  if (removed && removed.recordFile) {
-    _deleteRecordFile(removed.recordFile); // 対応する個別ファイルもGitHub側から削除
-  }
-  if (_selIdx >= arr.length) _selIdx = arr.length - 1;
+  _pushHistoryIndex(arr);            // 削除は最終形が確定済みなので索引ファイルへそのまま上書き
+  if (removed && removed.recordFile) _deleteRecordFile(removed.recordFile); // 個別ファイルもGitHub側から削除
+  _removePending(rec);               // 未送信キューに残っていれば消す（復活防止）
+
   _renderSidebar();
-  if (_selIdx < 0) {
-    document.getElementById('histDetail').innerHTML = '<div class="hist-detail-empty">←履歴を選択</div>';
+  // 同じ機番の記録がまだ残っていれば詳細を再描画、無ければ詳細を空にする
+  var still = false;
+  for (i = 0; i < arr.length; i++) {
+    if ((arr[i].kiban || '未入力') === kiban) { still = true; break; }
+  }
+  if (still) {
+    _renderDetail(kiban);
+  } else {
+    _selKiban = null;
+    document.getElementById('histDetail').innerHTML = '<div class="hist-detail-empty">←機番を選択</div>';
   }
 }
 
-// 詳細エリア描画
-function _renderDetail(idx) {
+// 詳細エリア描画：選択機番の各ステータスを縦に並べて表示
+function _renderDetail(kiban) {
   var arr = _loadHistory();
-  if (idx < 0 || idx >= arr.length) return;
-  var it = arr[idx];
+  var recs = [], i;
+  for (i = 0; i < arr.length; i++) {
+    if ((arr[i].kiban || '未入力') === kiban) recs.push(arr[i]);
+  }
+  var detail = document.getElementById('histDetail');
+  if (!recs.length) {
+    detail.innerHTML = '<div class="hist-detail-empty">←機番を選択</div>';
+    return;
+  }
   var phNames = { u:'U相', v:'V相', w:'W相' };
   var phColors= { u:'hr-ph-u', v:'hr-ph-v', w:'hr-ph-w' };
-  var html = '<div class="hist-detail-date">' + _esc(it.date) + '</div>'
-           + '<div class="hist-detail-memo">' + _esc(it.memo) + '</div>';
+  var html = '<div class="hist-detail-memo">機番 ' + _esc(kiban) + '</div>';
 
-  var ph, col, ci, row, dv, cls;
-  for (var pi = 0; pi < PHASES.length; pi++) {
-    ph = PHASES[pi];
-    html += '<div class="hr-ph-hd ' + phColors[ph] + '">' + phNames[ph] + '</div>';
-    html += '<table class="hr-tbl"><thead><tr>'
-          + '<th style="width:20%"></th><th>B</th><th>A</th><th>R</th>'
-          + '</tr></thead><tbody>';
-    var rows2 = [['','on'],['','off'],['差数','diff']];
-    for (var ri = 0; ri < rows2.length; ri++) {
-      row = rows2[ri];
-      html += '<tr><td class="lbl">' + row[0] + '</td>';
-      for (ci = 0; ci < COLS.length; ci++) {
-        col = COLS[ci];
-        dv  = it.phases[ph] && it.phases[ph][col] ? it.phases[ph][col][row[1]] : '';
-        if (row[1] === 'diff' && dv !== '') {
-          var dNum = parseFloat(dv);
-          cls = dNum >= 1.83 && dNum <= 1.97 ? 'diff-ok'
-              : dNum >= 1.80 && dNum <= 2.00 ? 'diff-warn'
-              : 'diff-ng';
-          html += '<td class="' + cls + '">' + _esc(dv) + '</td>';
-        } else {
-          html += '<td>' + _esc(dv || '—') + '</td>';
+  var r, si, ph, col, ci, row, dv, cls, pi, ri, dNum, rows2;
+  for (si = 0; si < recs.length; si++) {
+    r = recs[si];
+    html += '<div class="hist-rec">';
+    html += '<div class="hist-rec-hd">'
+          +   '<span class="hist-rec-status">' + _esc(r.status || '（状態なし）') + '</span>'
+          +   (r.pendingSync ? '<span class="hist-rec-pend">未同期</span>' : '')
+          +   '<span class="hist-rec-date">' + _esc(r.date) + '</span>'
+          +   '<button class="hist-rec-del">×</button>'
+          + '</div>';
+    for (pi = 0; pi < PHASES.length; pi++) {
+      ph = PHASES[pi];
+      html += '<div class="hr-ph-hd ' + phColors[ph] + '">' + phNames[ph] + '</div>';
+      html += '<table class="hr-tbl"><thead><tr>'
+            + '<th style="width:20%"></th><th>B</th><th>A</th><th>R</th>'
+            + '</tr></thead><tbody>';
+      rows2 = [['','on'],['','off'],['差数','diff']];
+      for (ri = 0; ri < rows2.length; ri++) {
+        row = rows2[ri];
+        html += '<tr><td class="lbl">' + row[0] + '</td>';
+        for (ci = 0; ci < COLS.length; ci++) {
+          col = COLS[ci];
+          dv  = r.phases && r.phases[ph] && r.phases[ph][col] ? r.phases[ph][col][row[1]] : '';
+          if (row[1] === 'diff' && dv !== '') {
+            dNum = parseFloat(dv);
+            cls = dNum >= 1.83 && dNum <= 1.97 ? 'diff-ok'
+                : dNum >= 1.80 && dNum <= 2.00 ? 'diff-warn'
+                : 'diff-ng';
+            html += '<td class="' + cls + '">' + _esc(dv) + '</td>';
+          } else {
+            html += '<td>' + _esc(dv || '—') + '</td>';
+          }
         }
+        html += '</tr>';
       }
-      html += '</tr>';
+      html += '</tbody></table>';
     }
-    html += '</tbody></table>';
+    html += '</div>';
   }
 
-  document.getElementById('histDetail').innerHTML = html;
+  detail.innerHTML = html;
+
+  // 各ステータスの×削除（合成clickの二重発火は _delTouchAt でガード。
+  // 起点時刻は confirm 終了後に取り直す＝ログ削除バグと同じ対策）
+  var dels = detail.getElementsByClassName('hist-rec-del');
+  var k;
+  for (k = 0; k < dels.length; k++) {
+    (function(rec) {
+      dels[k].ontouchend = function(e) {
+        e.preventDefault(); e.stopPropagation();
+        _deleteRecord(rec, kiban);
+        _delTouchAt = Date.now();
+      };
+      dels[k].onclick = function(e) {
+        e.stopPropagation();
+        if (Date.now() - _delTouchAt < 1500) return;
+        _deleteRecord(rec, kiban);
+      };
+    })(recs[k]);
+  }
 }
 
 function _esc(s) {
