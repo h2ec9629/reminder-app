@@ -264,6 +264,7 @@
     .hist-item-date { font-size: 11px; color: var(--text-sub); }
     .hist-item-memo { font-size: 12px; font-weight: 700; color: var(--text); margin-top: 2px; word-break: break-all; }
     .hist-item-del  { float: right; background: none; border: none; color: var(--text-faint); font-size: 14px; cursor: pointer; padding: 0 2px; }
+    .hist-pending   { float: right; font-size: 9px; font-weight: 700; color: #ff9800; border: 1px solid #ff9800; border-radius: 4px; padding: 1px 4px; margin-right: 18px; }
     .hist-empty     { font-size: 12px; color: var(--text-faint); padding: 16px 10px; text-align: center; }
 
     /* 結果エリア */
@@ -1001,7 +1002,7 @@ function _pushHistoryIndex(arr) {
 // 他端末が追加した分を上書きで消してしまう事故を防ぐための安全版。
 function _syncNewRecord(newRecord, callback) {
   var pat = _getMeasPat();
-  if (!pat) { _notify('共有NG：PAT未設定（オプションで設定して）'); if (callback) callback(); return; }
+  if (!pat) { _notify('共有NG：PAT未設定（オプションで設定して）'); if (callback) callback(false); return; }
   var apiUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
 
   // 他端末が同時に索引ファイルを更新すると、GET時点のshaがPUT時点で古くなり
@@ -1051,19 +1052,19 @@ function _syncNewRecord(newRecord, callback) {
         if (putXhr.readyState !== 4) return;
         if (putXhr.status === 200 || putXhr.status === 201) {
           _notify('共有OK：索引ファイル更新済み');
-          if (callback) callback();
+          if (callback) callback(true);
         } else if (putXhr.status === 409 && triesLeft > 0) {
           _notify('共有再試行中：他端末との競合を検知（残り' + triesLeft + '回）');
           setTimeout(function() { attempt(triesLeft - 1); }, 400 + Math.random() * 400);
         } else {
           _notify('共有NG：索引書き込み失敗（status:' + putXhr.status + '）');
-          if (callback) callback();
+          if (callback) callback(false);
         }
       };
-      putXhr.onerror = function() { _notify('共有NG：索引書き込み通信エラー'); if (callback) callback(); };
+      putXhr.onerror = function() { _notify('共有NG：索引書き込み通信エラー'); if (callback) callback(false); };
       putXhr.send(JSON.stringify(body));
     };
-    getXhr.onerror = function() { _notify('共有NG：索引取得の通信エラー'); if (callback) callback(); };
+    getXhr.onerror = function() { _notify('共有NG：索引取得の通信エラー'); if (callback) callback(false); };
     getXhr.send();
   }
 
@@ -1111,7 +1112,7 @@ function _resolveRecordFilename(kiban, status, callback) {
 // こちらも自動で再試行する。
 function _putRecordFile(data, filename, callback) {
   var pat = _getMeasPat();
-  if (!pat) { _notify('個別ファイル保存NG：PAT未設定'); if (callback) callback(); return; }
+  if (!pat) { _notify('個別ファイル保存NG：PAT未設定'); if (callback) callback(false); return; }
   var kiban  = String(data.kiban || '未入力');
   var status = String(data.status || '不明');
   var path    = 'records/' + kiban + '/' + filename;
@@ -1133,20 +1134,98 @@ function _putRecordFile(data, filename, callback) {
       if (putXhr.readyState !== 4) return;
       if (putXhr.status === 200 || putXhr.status === 201) {
         _notify('共有OK：個別ファイル保存済み（' + filename + '）');
-        if (callback) callback();
+        if (callback) callback(true);
       } else if (putXhr.status === 409 && triesLeft > 0) {
         _notify('共有再試行中：個別ファイルが競合（残り' + triesLeft + '回）');
         setTimeout(function() { attempt(triesLeft - 1); }, 400 + Math.random() * 400);
       } else {
         _notify('共有NG：個別ファイル保存失敗（status:' + putXhr.status + '）');
-        if (callback) callback();
+        if (callback) callback(false);
       }
     };
-    putXhr.onerror = function() { _notify('共有NG：個別ファイル通信エラー'); if (callback) callback(); };
+    putXhr.onerror = function() { _notify('共有NG：個別ファイル通信エラー'); if (callback) callback(false); };
     putXhr.send(JSON.stringify(body));
   }
 
   attempt(3);
+}
+
+// ===== オフライン対応：GitHub共有の未送信分をキューで管理 =====
+// 索引更新＋個別ファイル保存の2つをまとめて1件分実行し、両方成功したときだけ「同期済み」にする
+var PENDING_KEY = 'meas_pending_sync';
+
+function _loadPending() {
+  try {
+    var raw = localStorage.getItem(PENDING_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function _savePending(arr) {
+  try { localStorage.setItem(PENDING_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+// 同じ記録（date+memoで同定）が既にキューにあれば上書き、無ければ追加
+function _queuePendingSync(record) {
+  var arr = _loadPending(), i;
+  for (i = 0; i < arr.length; i++) {
+    if (arr[i].date === record.date && arr[i].memo === record.memo) { arr[i] = record; _savePending(arr); return; }
+  }
+  arr.push(record);
+  _savePending(arr);
+}
+
+function _removePending(record) {
+  var arr = _loadPending(), i;
+  for (i = 0; i < arr.length; i++) {
+    if (arr[i].date === record.date && arr[i].memo === record.memo) { arr.splice(i, 1); break; }
+  }
+  _savePending(arr);
+}
+
+// ローカル履歴側のpendingSyncフラグとrecordFileを更新
+function _markSynced(record) {
+  var arr = _loadHistory(), i;
+  for (i = 0; i < arr.length; i++) {
+    if (arr[i].date === record.date && arr[i].memo === record.memo) {
+      arr[i].pendingSync = false;
+      arr[i].recordFile  = record.recordFile;
+      break;
+    }
+  }
+  _saveHistory(arr);
+}
+
+// 1件分：索引ファイル更新→個別ファイル保存　の順で実行し、両方成功したかをcallback(ok)で返す
+function _syncOneRecord(record, callback) {
+  _resolveRecordFilename(record.kiban, record.status, function(filename) {
+    record.recordFile = 'records/' + record.kiban + '/' + filename;
+    _syncNewRecord(record, function(indexOk) {
+      _putRecordFile(record, filename, function(fileOk) {
+        var ok = !!(indexOk && fileOk);
+        if (ok) _markSynced(record);
+        if (callback) callback(ok);
+      });
+    });
+  });
+}
+
+// オンライン復帰時などにキューの未送信分をまとめて送る（1件ずつ順番に）
+function _flushPendingSync() {
+  if (!navigator.onLine) return;
+  if (!_getMeasPat()) return;
+  var queue = _loadPending();
+  if (!queue.length) return;
+  _notify('未同期分(' + queue.length + '件)を送信中...');
+  function next(list) {
+    if (!list.length) { _renderSidebar(); return; }
+    var rec = list.shift();
+    _syncOneRecord(rec, function(ok) {
+      if (ok) _removePending(rec);
+      next(list);
+    });
+  }
+  next(queue.slice());
 }
 
 // 端末上でログを削除したとき、対応する個別ファイルもGitHub側から削除する。
@@ -1394,6 +1473,7 @@ function confirmSave() {
   _pendingData.memo   = '機番 ' + _saveRaw + '　' + _saveStatus;
   _pendingData.kiban  = _saveRaw;
   _pendingData.status = _saveStatus;
+  _pendingData.pendingSync = true; // GitHub共有が終わるまで「未同期」表示にする
 
   var arr = _loadHistory();
   arr.unshift(_pendingData);
@@ -1407,24 +1487,16 @@ function confirmSave() {
              + recordToSave.date.replace(/[\/: ]/g, '') + '.json';
   _downloadJson(dlName, recordToSave);
 
-  // 個別ファイル名を先に決めて履歴側にも記録しておく（削除時に対応ファイルを特定するため）。
-  // 索引ファイルと個別ファイルを同時に書き込むとGitHub側のコミットが競合するため、
-  // 索引ファイル更新が終わってから個別ファイル保存を行う（直列実行）。
-  _resolveRecordFilename(recordToSave.kiban, recordToSave.status, function(filename) {
-    recordToSave.recordFile = 'records/' + recordToSave.kiban + '/' + filename;
-    var arr2 = _loadHistory();
-    for (var i = 0; i < arr2.length; i++) {
-      if (arr2[i].date === recordToSave.date && arr2[i].memo === recordToSave.memo) {
-        arr2[i].recordFile = recordToSave.recordFile;
-        break;
-      }
-    }
-    _saveHistory(arr2);
-
-    _syncNewRecord(recordToSave, function() {
-      _putRecordFile(recordToSave, filename);
+  // GitHub共有はオンライン時だけ試す。オフライン／PAT未設定ならキューに積んでおいて
+  // オンライン復帰時に自動で送る（_flushPendingSync）。
+  if (navigator.onLine && _getMeasPat()) {
+    _syncOneRecord(recordToSave, function(ok) {
+      if (!ok) { _queuePendingSync(recordToSave); _renderSidebar(); }
     });
-  });
+  } else {
+    _queuePendingSync(recordToSave);
+    _notify(navigator.onLine ? '共有NG：PAT未設定（あとで同期するにはPATを設定して）' : 'オフライン保存：オンライン復帰時に自動で共有します');
+  }
 
   closeSaveDialog();
   showToast('保存しました');
@@ -1445,8 +1517,13 @@ function toggleHist() {
     mv.className       = 'hist-view';
     btn.classList.add('active');
     _selIdx = -1;
-    _renderSidebar();
-    _fetchGist(function() { _renderSidebar(); });
+    _renderSidebar();  // まず手元の記録をすぐ表示（オフラインでもここまでは出る）
+    if (navigator.onLine) {
+      _flushPendingSync();
+      _fetchGist(function() { _renderSidebar(); });
+    } else {
+      _notify('オフライン：手元の記録を表示中です');
+    }
   } else {
     mv.className       = 'hist-view hidden';
     main.style.display = '';
@@ -1468,6 +1545,7 @@ function _renderSidebar() {
     it = arr[i];
     html += '<div class="hist-item' + (i === _selIdx ? ' selected' : '') + '" id="hi_' + i + '">'
           + '<button class="hist-item-del" data-didx="' + i + '">×</button>'
+          + (it.pendingSync ? '<span class="hist-pending">未同期</span>' : '')
           + '<div class="hist-item-date">' + _esc(it.date) + '</div>'
           + '<div class="hist-item-memo">' + _esc(it.memo) + '</div>'
           + '</div>';
@@ -1589,6 +1667,13 @@ function _esc(s) {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('meas_sw.js').catch(function() {});
 }
+
+// ===== オンライン復帰時に未同期分を自動送信 =====
+window.addEventListener('online', function() {
+  _notify('オンラインになったです');
+  _flushPendingSync();
+});
+if (navigator.onLine) { _flushPendingSync(); } // 起動時点で繋がっていれば溜まってる分を送る
 
 // ===== 初期化 =====
 window.onload = function() {
