@@ -496,7 +496,7 @@
 
   <!-- 左：サイドメニュー -->
   <div class="numpad-side">
-    <div class="numpad-app-title">v1.506 中継版　三相測定</div>
+    <div class="numpad-app-title">v1.507 中継版　三相測定</div>
     <button class="numpad-side-btn btn-save" onclick="saveMeas()">SAVE</button>
     <button class="numpad-side-btn btn-hist" id="histBtn" onclick="toggleHist()">LOG</button>
     <button class="numpad-side-btn btn-reset" onclick="resetAll()">全リセット</button>
@@ -1213,14 +1213,14 @@ function _syncOneRecord(record, callback) {
 }
 
 // オンライン復帰時などにキューの未送信分をまとめて送る（1件ずつ順番に）
-function _flushPendingSync() {
-  if (!navigator.onLine) return;
-  if (!_getMeasPat()) return;
+function _flushPendingSync(onDone) {
+  if (!navigator.onLine) { if (onDone) onDone(); return; }
+  if (!_getMeasPat()) { if (onDone) onDone(); return; }
   var queue = _loadPending();
-  if (!queue.length) return;
+  if (!queue.length) { if (onDone) onDone(); return; }
   _notify('未同期分(' + queue.length + '件)を送信中...');
   function next(list) {
-    if (!list.length) { _renderSidebar(); return; }
+    if (!list.length) { _renderSidebar(); if (onDone) onDone(); return; }
     var rec = list.shift();
     _syncOneRecord(rec, function(ok) {
       if (ok) _removePending(rec);
@@ -1302,14 +1302,25 @@ function _fetchGist(callback) {
         _notify('索引取得：形式が配列じゃない');
         return;
       }
-      // ローカルとの合算(union)はしない：共有索引ファイル（リモート）を正として
-      // そのまま採用する。以前はローカルにある分を足していたため、他端末で
-      // 削除した記録がこの端末のローカルキャッシュにだけ残り続けて、一覧から
-      // 消えないという不具合があった。
-      remote.sort(function(a, b) { return b.date < a.date ? -1 : 1; });
-      if (remote.length > 50) remote = remote.slice(0, 50);
-      _saveHistory(remote);
-      _notify('共有OK：最新の索引を取得（件数 ' + remote.length + '）');
+      // 基本は共有索引ファイル（リモート）を正として採用する。以前はローカル全体を
+      // 足していたため、他端末で削除した記録がこの端末のキャッシュにだけ残り続けて
+      // 一覧から消えない不具合があった。ただしローカル全体ではなく「まだ送信し切れて
+      // いない未送信キューの分」だけは例外として前に足す。これをやらないと、オフライン
+      // 保存直後にLOGを開いたとき、送信(_flushPendingSync)がまだ終わっていない隙間で
+      // リモートにまだ無いオフライン保存分が一覧から消えてしまう（消失バグの本体）。
+      // 未送信キューはこの端末が自分で保存してまだ確定送信できていない分だけなので、
+      // 他端末で削除された記録を復活させる心配はない。
+      var pending = _loadPending();
+      var all = pending.concat(remote);
+      var seen = {}, merged = [], j, kk;
+      for (j = 0; j < all.length; j++) {
+        kk = all[j].date + '|' + all[j].memo;
+        if (!seen[kk]) { seen[kk] = true; merged.push(all[j]); }
+      }
+      merged.sort(function(a, b) { return b.date < a.date ? -1 : 1; });
+      if (merged.length > 50) merged = merged.slice(0, 50);
+      _saveHistory(merged);
+      _notify('共有OK：最新の索引を取得（件数 ' + merged.length + '）');
       if (callback) callback();
     } catch(e) {
       _notify('索引取得：解析エラー ' + e.message);
@@ -1521,8 +1532,12 @@ function toggleHist() {
     _selIdx = -1;
     _renderSidebar();  // まず手元の記録をすぐ表示（オフラインでもここまでは出る）
     if (navigator.onLine) {
-      _flushPendingSync();
-      _fetchGist(function() { _renderSidebar(); });
+      // 送信(flush)と索引取得(fetch)を同時に走らせると、送信完了前に返ってきた
+      // fetchがリモート索引でローカルを上書きし、オフライン保存分が一覧から消える。
+      // 送信を先に完了させてから取得する（＋fetch側でも未送信キューを足す二段構え）。
+      _flushPendingSync(function() {
+        _fetchGist(function() { _renderSidebar(); });
+      });
     } else {
       _notify('オフライン：手元の記録を表示中です');
     }
