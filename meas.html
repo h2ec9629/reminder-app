@@ -98,6 +98,16 @@
       -webkit-appearance: none; appearance: none; outline: none;
     }
     .meas-in.active-inp { border-color: var(--accent) !important; background: #FFFFFF !important; color: #000000 !important; }
+    .meas-prev {
+      -webkit-flex-shrink: 0; flex-shrink: 0;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      -webkit-justify-content: flex-end; justify-content: flex-end;
+      min-width: 38px; padding: 0 4px;
+      font-size: 12px; color: #7FB3FF;
+      background: var(--bg-2); border-right: 1px solid var(--border);
+    }
+    .meas-prev:empty { display: none; }
 
     /* ===== DIFF CELL ===== */
     .meas-diff { font-weight: 700; font-size: 14px; line-height: 1.1; vertical-align: middle; padding: 3px; }
@@ -401,14 +411,14 @@
       </tr></thead>
       <tbody>
         <tr>
-          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mu_on_b" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_b" data-ph="u">×</button></div></td>
-          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mu_on_a" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_a" data-ph="u">×</button></div></td>
-          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mu_on_r" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_r" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mu_on_b"></span><input class="meas-in" id="mu_on_b" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_b" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mu_on_a"></span><input class="meas-in" id="mu_on_a" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_a" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mu_on_r"></span><input class="meas-in" id="mu_on_r" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_r" data-ph="u">×</button></div></td>
         </tr>
         <tr>
-          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mu_off_b" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_b" data-ph="u">×</button></div></td>
-          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mu_off_a" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_a" data-ph="u">×</button></div></td>
-          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mu_off_r" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_r" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mu_off_b"></span><input class="meas-in" id="mu_off_b" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_b" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mu_off_a"></span><input class="meas-in" id="mu_off_a" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_a" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mu_off_r"></span><input class="meas-in" id="mu_off_r" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_r" data-ph="u">×</button></div></td>
         </tr>
         <tr>
           <td class="meas-diff judge-first" id="mu_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
@@ -430,14 +440,14 @@
       </tr></thead>
       <tbody>
         <tr>
-          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mv_on_b" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_b" data-ph="v">×</button></div></td>
-          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mv_on_a" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_a" data-ph="v">×</button></div></td>
-          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mv_on_r" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_r" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mv_on_b"></span><input class="meas-in" id="mv_on_b" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_b" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mv_on_a"></span><input class="meas-in" id="mv_on_a" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_a" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mv_on_r"></span><input class="meas-in" id="mv_on_r" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_r" data-ph="v">×</button></div></td>
         </tr>
         <tr>
-          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mv_off_b" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_b" data-ph="v">×</button></div></td>
-          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mv_off_a" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_a" data-ph="v">×</button></div></td>
-          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mv_off_r" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_r" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mv_off_b"></span><input class="meas-in" id="mv_off_b" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_b" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mv_off_a"></span><input class="meas-in" id="mv_off_a" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_a" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mv_off_r"></span><input class="meas-in" id="mv_off_r" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_r" data-ph="v">×</button></div></td>
         </tr>
         <tr>
           <td class="meas-diff judge-first" id="mv_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
@@ -459,14 +469,14 @@
       </tr></thead>
       <tbody>
         <tr>
-          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mw_on_b" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_b" data-ph="w">×</button></div></td>
-          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mw_on_a" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_a" data-ph="w">×</button></div></td>
-          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mw_on_r" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_r" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mw_on_b"></span><input class="meas-in" id="mw_on_b" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_b" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mw_on_a"></span><input class="meas-in" id="mw_on_a" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_a" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mw_on_r"></span><input class="meas-in" id="mw_on_r" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_r" data-ph="w">×</button></div></td>
         </tr>
         <tr>
-          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mw_off_b" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_b" data-ph="w">×</button></div></td>
-          <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mw_off_a" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_a" data-ph="w">×</button></div></td>
-          <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mw_off_r" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_r" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mw_off_b"></span><input class="meas-in" id="mw_off_b" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_b" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mw_off_a"></span><input class="meas-in" id="mw_off_a" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_a" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mw_off_r"></span><input class="meas-in" id="mw_off_r" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_r" data-ph="w">×</button></div></td>
         </tr>
         <tr>
           <td class="meas-diff judge-first" id="mw_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
@@ -1369,6 +1379,7 @@ var _setupDone    = false;   // 機番・ステータス確定済み（測定解
 function openSetup() {
   _setupDone = false;
   _setupMode = true;
+  _clearPrevValues();
   _saveRaw   = '';
   _saveStatus= '完成時';
   _refreshSetupStatus();
@@ -1414,6 +1425,7 @@ function confirmSetup() {
   document.getElementById('padLabel').textContent = '欄をタップして入力';
   document.getElementById('padVal').textContent   = '—';
   _updateKibanBadge();
+  loadPrevValues(_saveRaw, _saveStatus);
   showToast('機番 ' + _saveRaw + '・' + _saveStatus + ' で測定開始');
 }
 
@@ -1421,6 +1433,99 @@ function _updateKibanBadge() {
   var el = document.getElementById('activeKibanBadge');
   if (!el) return;
   el.textContent = _setupDone ? ('機番 ' + _saveRaw + ' / ' + _saveStatus) : '機番未設定';
+}
+
+// ===== 前回値（前段ステータス）の参照表示 =====
+var MEAS_STATUS_CHAIN = ['完成時', '出荷前', 'エイジング途中', 'エイジング後'];
+
+function _prevSpanIds() {
+  var out = [], ph = ['u','v','w'], row = ['on','off'], col = ['b','a','r'], i, j, k;
+  for (i = 0; i < ph.length; i++)
+    for (j = 0; j < row.length; j++)
+      for (k = 0; k < col.length; k++)
+        out.push('p_m' + ph[i] + '_' + row[j] + '_' + col[k]);
+  return out;
+}
+
+function _clearPrevValues() {
+  var ids = _prevSpanIds(), i, el;
+  for (i = 0; i < ids.length; i++) { el = document.getElementById(ids[i]); if (el) el.textContent = ''; }
+}
+
+// 機番内で、現ステータスの1つ前から近い順にたどり、存在する最新（枝番最大）の記録を前回値として表示
+function loadPrevValues(kiban, status) {
+  _clearPrevValues();
+  var pat = _getMeasPat();
+  if (!pat || !navigator.onLine) return;            // 参照できないときは黙って何も出さない
+  var idx = MEAS_STATUS_CHAIN.indexOf(status);
+  if (idx <= 0) return;                             // 完成時など前段が無いものは対象外
+
+  var dirUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+             + '/contents/records/' + encodeURIComponent(kiban);
+  var listXhr = new XMLHttpRequest();
+  listXhr.open('GET', dirUrl + '?t=' + Date.now(), true);
+  listXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  listXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  listXhr.onreadystatechange = function() {
+    if (listXhr.readyState !== 4) return;
+    if (listXhr.status !== 200) return;             // 404（記録なし）等は前回値なし
+    var files = [];
+    try { var p = JSON.parse(listXhr.responseText); if (Array.isArray(p)) files = p; } catch(e) { return; }
+    var names = {}, i;
+    for (i = 0; i < files.length; i++) { names[files[i].name] = true; }
+
+    // 近い前段から順に、その中で枝番が最大のファイルを選ぶ
+    var j, cand, chosen = null, f, re, m, nn, best, bestN;
+    for (j = idx - 1; j >= 0; j--) {
+      cand = MEAS_STATUS_CHAIN[j];
+      re = new RegExp('^' + _escRe(cand) + '_(\\d+)\\.json$');
+      best = null; bestN = -1;
+      for (f in names) {
+        nn = null;
+        if (f === cand + '.json') { nn = 0; }        // 枝番なし＝最古(0)
+        else { m = f.match(re); if (m) { nn = parseInt(m[1], 10); } }
+        if (nn !== null && nn > bestN) { bestN = nn; best = f; }
+      }
+      if (best) { chosen = { status: cand, file: best }; break; }
+    }
+    if (!chosen) return;                            // 前段が1つも無ければ前回値なし
+    _fetchAndFillPrev(kiban, chosen.file, chosen.status);
+  };
+  listXhr.onerror = function() {};
+  listXhr.send();
+}
+
+function _fetchAndFillPrev(kiban, file, refStatus) {
+  var pat = _getMeasPat();
+  var url = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+          + '/contents/records/' + encodeURIComponent(kiban) + '/' + encodeURIComponent(file);
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url + '?t=' + Date.now(), true);
+  xhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  xhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    if (xhr.status !== 200) return;
+    var rec;
+    try { var meta = JSON.parse(xhr.responseText); rec = JSON.parse(_b64DecodeUtf8(meta.content)); } catch(e) { return; }
+    _fillPrev(rec, refStatus);
+  };
+  xhr.onerror = function() {};
+  xhr.send();
+}
+
+function _fillPrev(rec, refStatus) {
+  if (!rec || !rec.phases) return;
+  var ph = ['u','v','w'], row = ['on','off'], col = ['b','a','r'], i, j, k, cell, v, el;
+  for (i = 0; i < ph.length; i++)
+    for (j = 0; j < row.length; j++)
+      for (k = 0; k < col.length; k++) {
+        cell = rec.phases[ph[i]] && rec.phases[ph[i]][col[k]];
+        v = cell ? (row[j] === 'on' ? cell.on : cell.off) : '';
+        el = document.getElementById('p_m' + ph[i] + '_' + row[j] + '_' + col[k]);
+        if (el) el.textContent = (v == null ? '' : v);
+      }
+  showToast('前回値：' + refStatus + ' を表示');
 }
 
 function saveMeas() {
