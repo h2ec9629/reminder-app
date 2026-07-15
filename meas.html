@@ -1425,7 +1425,7 @@ function confirmSetup() {
   document.getElementById('padLabel').textContent = '欄をタップして入力';
   document.getElementById('padVal').textContent   = '—';
   _updateKibanBadge();
-  loadPrevValues(_saveRaw, _saveStatus);
+  loadPrevValues(_saveRaw);
   showToast('機番 ' + _saveRaw + '・' + _saveStatus + ' で測定開始');
 }
 
@@ -1436,8 +1436,6 @@ function _updateKibanBadge() {
 }
 
 // ===== 前回値（前段ステータス）の参照表示 =====
-var MEAS_STATUS_CHAIN = ['完成時', '出荷前', 'エイジング途中', 'エイジング後'];
-
 function _prevSpanIds() {
   var out = [], ph = ['u','v','w'], row = ['on','off'], col = ['b','a','r'], i, j, k;
   for (i = 0; i < ph.length; i++)
@@ -1452,13 +1450,11 @@ function _clearPrevValues() {
   for (i = 0; i < ids.length; i++) { el = document.getElementById(ids[i]); if (el) el.textContent = ''; }
 }
 
-// 機番内で、現ステータスの1つ前から近い順にたどり、存在する最新（枝番最大）の記録を前回値として表示
-function loadPrevValues(kiban, status) {
+// 機番フォルダ内の全記録から、日時(date)が最も新しい1件を前回値として表示（ステータス問わず常に最新）
+function loadPrevValues(kiban) {
   _clearPrevValues();
   var pat = _getMeasPat();
   if (!pat || !navigator.onLine) return;            // 参照できないときは黙って何も出さない
-  var idx = MEAS_STATUS_CHAIN.indexOf(status);
-  if (idx <= 0) return;                             // 完成時など前段が無いものは対象外
 
   var dirUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
              + '/contents/records/' + encodeURIComponent(kiban);
@@ -1471,47 +1467,44 @@ function loadPrevValues(kiban, status) {
     if (listXhr.status !== 200) return;             // 404（記録なし）等は前回値なし
     var files = [];
     try { var p = JSON.parse(listXhr.responseText); if (Array.isArray(p)) files = p; } catch(e) { return; }
-    var names = {}, i;
-    for (i = 0; i < files.length; i++) { names[files[i].name] = true; }
-
-    // 近い前段から順に、その中で枝番が最大のファイルを選ぶ
-    var j, cand, chosen = null, f, re, m, nn, best, bestN;
-    for (j = idx - 1; j >= 0; j--) {
-      cand = MEAS_STATUS_CHAIN[j];
-      re = new RegExp('^' + _escRe(cand) + '_(\\d+)\\.json$');
-      best = null; bestN = -1;
-      for (f in names) {
-        nn = null;
-        if (f === cand + '.json') { nn = 0; }        // 枝番なし＝最古(0)
-        else { m = f.match(re); if (m) { nn = parseInt(m[1], 10); } }
-        if (nn !== null && nn > bestN) { bestN = nn; best = f; }
-      }
-      if (best) { chosen = { status: cand, file: best }; break; }
+    var jsons = [], i;
+    for (i = 0; i < files.length; i++) {
+      if (files[i].name && /\.json$/.test(files[i].name)) jsons.push(files[i].name);
     }
-    if (!chosen) return;                            // 前段が1つも無ければ前回値なし
-    _fetchAndFillPrev(kiban, chosen.file, chosen.status);
+    if (!jsons.length) return;                       // 記録が無ければ前回値なし
+
+    // 全記録を取得し、date（"YYYY/MM/DD HH:MM" 固定桁なので文字列比較で時系列）が最大の1件を選ぶ
+    var remaining = jsons.length, newest = null;
+    function done() {
+      if (remaining !== 0) return;
+      if (newest) _fillPrev(newest.rec, (newest.rec.status || '') + '　' + newest.date);
+    }
+    for (i = 0; i < jsons.length; i++) {
+      (function(fname) {
+        var url = dirUrl + '/' + encodeURIComponent(fname);
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url + '?t=' + Date.now(), true);
+        xhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+        xhr.setRequestHeader('Accept', 'application/vnd.github+json');
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState !== 4) return;
+          if (xhr.status === 200) {
+            try {
+              var meta = JSON.parse(xhr.responseText);
+              var rec  = JSON.parse(_b64DecodeUtf8(meta.content));
+              var d    = String(rec.date || '');
+              if (!newest || d > newest.date) { newest = { date: d, rec: rec }; }
+            } catch(e) {}
+          }
+          remaining--; done();
+        };
+        xhr.onerror = function() { remaining--; done(); };
+        xhr.send();
+      })(jsons[i]);
+    }
   };
   listXhr.onerror = function() {};
   listXhr.send();
-}
-
-function _fetchAndFillPrev(kiban, file, refStatus) {
-  var pat = _getMeasPat();
-  var url = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
-          + '/contents/records/' + encodeURIComponent(kiban) + '/' + encodeURIComponent(file);
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', url + '?t=' + Date.now(), true);
-  xhr.setRequestHeader('Authorization', 'Bearer ' + pat);
-  xhr.setRequestHeader('Accept', 'application/vnd.github+json');
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState !== 4) return;
-    if (xhr.status !== 200) return;
-    var rec;
-    try { var meta = JSON.parse(xhr.responseText); rec = JSON.parse(_b64DecodeUtf8(meta.content)); } catch(e) { return; }
-    _fillPrev(rec, refStatus);
-  };
-  xhr.onerror = function() {};
-  xhr.send();
 }
 
 function _fillPrev(rec, refStatus) {
