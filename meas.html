@@ -118,7 +118,14 @@
       -webkit-flex-wrap: wrap; flex-wrap: wrap;
       -webkit-align-items: baseline; align-items: baseline;
     }
-    .mh-cur  { font-size: 14px; font-weight: 700; color: var(--accent); }
+    .mh-cur  {
+      font-family: inherit; font-size: 14px; font-weight: 700;
+      color: var(--accent); background: var(--surface-2);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 3px 10px; cursor: pointer;
+    }
+    .mh-cur::after { content: ' ✎'; font-weight: 400; color: var(--text-sub); }
+    .mh-cur:active { background: var(--surface); }
     .mh-prev { font-size: 13px; color: #7FB3FF; }
     .mh-prev::before { content: '｜'; margin: 0 8px; color: var(--text-faint); font-weight: 400; }
 
@@ -414,7 +421,7 @@
 <main class="main">
 
   <div class="meas-header" id="measHeader">
-    <div class="mh-cur"  id="mhCur">機番未設定</div>
+    <button class="mh-cur" id="mhCur" type="button" onclick="reopenSetup()">機番未設定</button>
     <div class="mh-prev" id="mhPrev">前回値: —</div>
   </div>
 
@@ -1401,6 +1408,11 @@ function _edaLabel(file, status) {
   var m = file.match(/_(\d+)\.json$/);
   return m ? ('枝番' + m[1]) : '';
 }
+function _stripMaru(v) { return String(v == null ? '' : v).replace(/^〇+/, ''); }
+function _prevSpanVal(ph, row, col) {
+  var el = document.getElementById('p_m' + ph + '_' + row + '_' + col);
+  return el ? (el.textContent || '') : '';
+}
 
 // ===== 起動時セットアップ（機番・ステータス先入力） =====
 function openSetup() {
@@ -1416,6 +1428,19 @@ function openSetup() {
   document.getElementById('padLabel').textContent = '機番を入力';
   document.getElementById('padVal').textContent   = '—';
   document.getElementById('setupPanel').className = 'save-panel show';
+}
+
+// ヘッダーの機番ボタンから：現在の機番・ステータスを引き継いで再選択できる形で開く
+function reopenSetup() {
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  var curK = _saveRaw, curS = _saveStatus, wasDone = _setupDone;
+  openSetup();
+  if (wasDone) {
+    _saveRaw    = curK;
+    _saveStatus = curS || '完成時';
+    _refreshSetupKiban();
+    _refreshSetupStatus();
+  }
 }
 
 function _refreshSetupKiban() {
@@ -1583,10 +1608,17 @@ function saveMeas() {
       offEl = document.getElementById('m' + ph + '_off_' + col);
       onV   = onEl  ? onEl.value  : '';
       offV  = offEl ? offEl.value : '';
+      // 空欄は前回値を引き継ぎ、未変動の印として先頭に〇を付ける
+      var onPrev  = _prevSpanVal(ph, 'on',  col);
+      var offPrev = _prevSpanVal(ph, 'off', col);
+      if (onV  === '' && onPrev  !== '') onV  = '〇' + _stripMaru(onPrev);
+      if (offV === '' && offPrev !== '') offV = '〇' + _stripMaru(offPrev);
       diff  = '';
-      if (onV !== '' && offV !== '') {
-        // 大きい値－小さい値＝差数（入力ミスで段が逆でも計算できるように）
-        diff = (Math.round(Math.abs(parseFloat(onV) - parseFloat(offV)) * 1000) / 1000).toFixed(2);
+      var onN  = parseFloat(_stripMaru(onV));
+      var offN = parseFloat(_stripMaru(offV));
+      if (onV !== '' && offV !== '' && !isNaN(onN) && !isNaN(offN)) {
+        // 大きい値－小さい値＝差数（〇の前回値も数値化して計算）
+        diff = (Math.round(Math.abs(onN - offN) * 1000) / 1000).toFixed(2);
         hasAny = true;
       }
       data.phases[ph][col] = { on: onV, off: offV, diff: diff };
