@@ -510,6 +510,7 @@
   <!-- 左：サイドメニュー -->
   <div class="numpad-side">
     <div class="numpad-app-title">v1.509 中継版　三相測定</div>
+    <div id="activeKibanBadge" style="font-size:12px;font-weight:700;color:var(--accent);margin:2px 0 6px;line-height:1.3;">機番未設定</div>
     <button class="numpad-side-btn btn-save" onclick="saveMeas()">SAVE</button>
     <button class="numpad-side-btn btn-hist" id="histBtn" onclick="toggleHist()">LOG</button>
     <button class="numpad-side-btn btn-reset" onclick="resetAll()">全リセット</button>
@@ -556,6 +557,24 @@
   <div class="save-act-row">
     <button class="save-act-cancel" onclick="closeSaveDialog()">キャンセル</button>
     <button class="save-act-ok"     onclick="confirmSave()">保存する</button>
+  </div>
+</div>
+
+<!-- ===== 起動時セットアップパネル（機番・ステータス先入力） ===== -->
+<div class="save-panel" id="setupPanel">
+  <div class="save-panel-title">機番・ステータスを入力 → 測定開始</div>
+  <div class="save-kiban-row">
+    <span class="save-kiban-label">機番</span>
+    <span class="save-kiban-val" id="setupKibanVal">—</span>
+  </div>
+  <div class="save-status-row" id="setupStatusRow">
+    <button class="save-status-btn sel" data-status="完成時">完成時</button>
+    <button class="save-status-btn"     data-status="出荷前">出荷前</button>
+    <button class="save-status-btn"     data-status="エイジング途中">AG中</button>
+    <button class="save-status-btn"     data-status="エイジング後">AG後</button>
+  </div>
+  <div class="save-act-row">
+    <button class="save-act-ok" style="-webkit-flex:1;flex:1;" onclick="confirmSetup()">測定開始</button>
   </div>
 </div>
 
@@ -607,6 +626,7 @@ var _padNeg    = false;
 var _inputs    = [];  // ① 起動時にキャッシュ
 
 function focusInp(inp) {
+  if (!_setupDone) return; // 機番・ステータス未確定のうちは測定欄をロック
   if (_padTarget) {
     _padTarget.className = _padTarget.className.replace(' active-inp','').replace('active-inp','');
     measCalc(_padPh);
@@ -628,6 +648,8 @@ function focusInp(inp) {
 
 // ===== テンキー入力 =====
 function _npTap(key) {
+  // 起動時セットアップ中は機番入力に横取り
+  if (_setupMode) { _setupPadKey(key); return; }
   // 保存モード中は機番入力に横取り
   if (_saveMode) { _savePadKey(key); return; }
   if (!_padTarget) return;
@@ -1350,6 +1372,66 @@ var _pendingData  = null;
 var _saveMode     = false;   // テンキーを機番入力に横取り中
 var _saveRaw      = '';      // 機番の生文字列
 var _saveStatus   = '完成時'; // 選択中の状態
+var _setupMode    = false;   // 起動時セットアップでテンキー横取り中
+var _setupDone    = false;   // 機番・ステータス確定済み（測定解禁）
+
+// ===== 起動時セットアップ（機番・ステータス先入力） =====
+function openSetup() {
+  _setupDone = false;
+  _setupMode = true;
+  _saveRaw   = '';
+  _saveStatus= '完成時';
+  _refreshSetupStatus();
+  document.getElementById('setupKibanVal').textContent = '—';
+  document.getElementById('padLabel').textContent = '機番を入力';
+  document.getElementById('padVal').textContent   = '—';
+  document.getElementById('setupPanel').className = 'save-panel show';
+}
+
+function _refreshSetupKiban() {
+  var v = _saveRaw || '—';
+  document.getElementById('setupKibanVal').textContent = v;
+  document.getElementById('padVal').textContent        = v;
+}
+
+function _refreshSetupStatus() {
+  var btns = document.getElementById('setupStatusRow').getElementsByTagName('button');
+  var k;
+  for (k = 0; k < btns.length; k++) {
+    btns[k].className = (btns[k].getAttribute('data-status') === _saveStatus)
+      ? 'save-status-btn sel' : 'save-status-btn';
+  }
+}
+
+function _setupPadKey(key) {
+  if (key === 'BS') {
+    if (_saveRaw.length > 0) _saveRaw = _saveRaw.slice(0, -1);
+  } else if (key === 'OK') {
+    confirmSetup();
+    return;
+  } else {
+    if (_saveRaw.length < 8) _saveRaw += key;
+  }
+  _refreshSetupKiban();
+}
+
+function confirmSetup() {
+  if (_saveRaw === '') { showToast('機番を入力してください'); return; }
+  if (!_saveStatus)    { showToast('ステータスを選んでください'); return; }
+  _setupMode = false;
+  _setupDone = true;
+  document.getElementById('setupPanel').className = 'save-panel';
+  document.getElementById('padLabel').textContent = '欄をタップして入力';
+  document.getElementById('padVal').textContent   = '—';
+  _updateKibanBadge();
+  showToast('機番 ' + _saveRaw + '・' + _saveStatus + ' で測定開始');
+}
+
+function _updateKibanBadge() {
+  var el = document.getElementById('activeKibanBadge');
+  if (!el) return;
+  el.textContent = _setupDone ? ('機番 ' + _saveRaw + ' / ' + _saveStatus) : '機番未設定';
+}
 
 function saveMeas() {
   var ph, col, i, ci, onEl, offEl, onV, offV, diff;
@@ -1389,10 +1471,10 @@ function saveMeas() {
   }
 
   if (!hasAny) { showToast('入力がありません'); return; }
+  if (!_setupDone) { showToast('先に機番・ステータスを入力してください'); return; }
 
   _pendingData = data;
-  _saveRaw     = '';
-  _saveStatus  = '完成時';
+  // 機番・ステータスは起動時セットアップの値を引き継ぐ（この場で選び直しも可）
   _saveMode    = true;
 
   // 測定欄のハイライトを外す
@@ -1402,12 +1484,11 @@ function saveMeas() {
   }
 
   // val-bar のラベルを書き換え
-  document.getElementById('padLabel').textContent = '機番を入力';
-  document.getElementById('padVal').textContent   = '—';
+  document.getElementById('padLabel').textContent = '機番（変更可）';
 
-  // パネル表示・状態ボタン初期化
+  // パネル表示・現在の機番／状態を反映（起動時に入れた値を初期表示）
   _refreshSaveStatus();
-  document.getElementById('saveKibanVal').textContent = '—';
+  _refreshSaveKiban();
   document.getElementById('savePanel').className = 'save-panel show';
 }
 
@@ -1524,6 +1605,7 @@ function confirmSave() {
     _notify(navigator.onLine ? '共有NG：PAT未設定（あとで同期するにはPATを設定して）' : 'オフライン保存：オンライン復帰時に自動で共有します');
   }
 
+  _updateKibanBadge();
   closeSaveDialog();
   showToast('保存しました');
   _renderSidebar();
@@ -1840,6 +1922,27 @@ window.onload = function() {
       _refreshSaveStatus();
     }
   };
+
+  // 起動時セットアップの状態選択ボタン（委譲）
+  var strow = document.getElementById('setupStatusRow');
+  strow.ontouchend = function(e) {
+    var b = e.target;
+    if (b.tagName === 'BUTTON') {
+      e.preventDefault();
+      _saveStatus = b.getAttribute('data-status');
+      _refreshSetupStatus();
+    }
+  };
+  strow.onclick = function(e) {
+    var b = e.target;
+    if (b.tagName === 'BUTTON') {
+      _saveStatus = b.getAttribute('data-status');
+      _refreshSetupStatus();
+    }
+  };
+
+  // 起動時：機番・ステータス入力を必須で表示
+  openSetup();
 };
 </script>
 </body>
