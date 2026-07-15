@@ -114,9 +114,13 @@
       position: -webkit-sticky; position: sticky; top: 0; z-index: 50;
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 10px; padding: 7px 10px; margin-bottom: 10px;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-flex-wrap: wrap; flex-wrap: wrap;
+      -webkit-align-items: baseline; align-items: baseline;
     }
-    .mh-cur  { font-size: 15px; font-weight: 700; color: var(--accent); }
-    .mh-prev { font-size: 12px; color: #7FB3FF; margin-top: 3px; line-height: 1.35; }
+    .mh-cur  { font-size: 14px; font-weight: 700; color: var(--accent); }
+    .mh-prev { font-size: 13px; color: #7FB3FF; }
+    .mh-prev::before { content: '｜'; margin: 0 8px; color: var(--text-faint); font-weight: 400; }
 
     /* ===== DIFF CELL ===== */
     .meas-diff { font-weight: 700; font-size: 14px; line-height: 1.1; vertical-align: middle; padding: 3px; }
