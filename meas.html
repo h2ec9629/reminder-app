@@ -104,10 +104,19 @@
       -webkit-align-items: center; align-items: center;
       -webkit-justify-content: flex-end; justify-content: flex-end;
       min-width: 38px; padding: 0 4px;
-      font-size: 12px; color: #7FB3FF;
+      font-size: 16px; color: #7FB3FF;
       background: var(--bg-2); border-right: 1px solid var(--border);
     }
     .meas-prev:empty { display: none; }
+
+    /* ===== 測定ヘッダー ===== */
+    .meas-header {
+      position: -webkit-sticky; position: sticky; top: 0; z-index: 50;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 7px 10px; margin-bottom: 10px;
+    }
+    .mh-cur  { font-size: 15px; font-weight: 700; color: var(--accent); }
+    .mh-prev { font-size: 12px; color: #7FB3FF; margin-top: 3px; line-height: 1.35; }
 
     /* ===== DIFF CELL ===== */
     .meas-diff { font-weight: 700; font-size: 14px; line-height: 1.1; vertical-align: middle; padding: 3px; }
@@ -399,6 +408,11 @@
 <header class="header"></header>
 
 <main class="main">
+
+  <div class="meas-header" id="measHeader">
+    <div class="mh-cur"  id="mhCur">機番未設定</div>
+    <div class="mh-prev" id="mhPrev">前回値: —</div>
+  </div>
 
   <!-- U相 -->
   <div class="phase-block">
@@ -1375,11 +1389,22 @@ var _saveStatus   = '完成時'; // 選択中の状態
 var _setupMode    = false;   // 起動時セットアップでテンキー横取り中
 var _setupDone    = false;   // 機番・ステータス確定済み（測定解禁）
 
+// ===== 測定ヘッダー更新 =====
+function _setMhCur(t)  { var el = document.getElementById('mhCur');  if (el) el.textContent = t; }
+function _setMhPrev(t) { var el = document.getElementById('mhPrev'); if (el) el.textContent = t; }
+function _edaLabel(file, status) {
+  if (file === status + '.json') return '枝番なし';
+  var m = file.match(/_(\d+)\.json$/);
+  return m ? ('枝番' + m[1]) : '';
+}
+
 // ===== 起動時セットアップ（機番・ステータス先入力） =====
 function openSetup() {
   _setupDone = false;
   _setupMode = true;
   _clearPrevValues();
+  _setMhCur('機番未設定');
+  _setMhPrev('前回値: —');
   _saveRaw   = '';
   _saveStatus= '完成時';
   _refreshSetupStatus();
@@ -1425,6 +1450,8 @@ function confirmSetup() {
   document.getElementById('padLabel').textContent = '欄をタップして入力';
   document.getElementById('padVal').textContent   = '—';
   _updateKibanBadge();
+  _setMhCur('機番 ' + _saveRaw + '　／　' + _saveStatus + '　測定中');
+  _setMhPrev('前回値: 読込中…');
   loadPrevValues(_saveRaw);
   showToast('機番 ' + _saveRaw + '・' + _saveStatus + ' で測定開始');
 }
@@ -1454,7 +1481,7 @@ function _clearPrevValues() {
 function loadPrevValues(kiban) {
   _clearPrevValues();
   var pat = _getMeasPat();
-  if (!pat || !navigator.onLine) return;            // 参照できないときは黙って何も出さない
+  if (!pat || !navigator.onLine) { _setMhPrev('前回値: 取得不可（オフライン／PAT未設定）'); return; }
 
   var dirUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
              + '/contents/records/' + encodeURIComponent(kiban);
@@ -1464,20 +1491,21 @@ function loadPrevValues(kiban) {
   listXhr.setRequestHeader('Accept', 'application/vnd.github+json');
   listXhr.onreadystatechange = function() {
     if (listXhr.readyState !== 4) return;
-    if (listXhr.status !== 200) return;             // 404（記録なし）等は前回値なし
+    if (listXhr.status !== 200) { _setMhPrev('前回値: 記録なし'); return; }  // 404等
     var files = [];
     try { var p = JSON.parse(listXhr.responseText); if (Array.isArray(p)) files = p; } catch(e) { return; }
     var jsons = [], i;
     for (i = 0; i < files.length; i++) {
       if (files[i].name && /\.json$/.test(files[i].name)) jsons.push(files[i].name);
     }
-    if (!jsons.length) return;                       // 記録が無ければ前回値なし
+    if (!jsons.length) { _setMhPrev('前回値: 記録なし'); return; }
 
     // 全記録を取得し、date（"YYYY/MM/DD HH:MM" 固定桁なので文字列比較で時系列）が最大の1件を選ぶ
     var remaining = jsons.length, newest = null;
     function done() {
       if (remaining !== 0) return;
-      if (newest) _fillPrev(newest.rec, (newest.rec.status || '') + '　' + newest.date);
+      if (newest) { _fillPrev(newest.rec, newest.file); }
+      else { _setMhPrev('前回値: 該当なし'); }
     }
     for (i = 0; i < jsons.length; i++) {
       (function(fname) {
@@ -1493,7 +1521,7 @@ function loadPrevValues(kiban) {
               var meta = JSON.parse(xhr.responseText);
               var rec  = JSON.parse(_b64DecodeUtf8(meta.content));
               var d    = String(rec.date || '');
-              if (!newest || d > newest.date) { newest = { date: d, rec: rec }; }
+              if (!newest || d > newest.date) { newest = { date: d, rec: rec, file: fname }; }
             } catch(e) {}
           }
           remaining--; done();
@@ -1507,7 +1535,7 @@ function loadPrevValues(kiban) {
   listXhr.send();
 }
 
-function _fillPrev(rec, refStatus) {
+function _fillPrev(rec, file) {
   if (!rec || !rec.phases) return;
   var ph = ['u','v','w'], row = ['on','off'], col = ['b','a','r'], i, j, k, cell, v, el;
   for (i = 0; i < ph.length; i++)
@@ -1518,7 +1546,10 @@ function _fillPrev(rec, refStatus) {
         el = document.getElementById('p_m' + ph[i] + '_' + row[j] + '_' + col[k]);
         if (el) el.textContent = (v == null ? '' : v);
       }
-  showToast('前回値：' + refStatus + ' を表示');
+  var st  = rec.status || '';
+  var eda = _edaLabel(file || '', st);
+  _setMhPrev('前回値: ' + st + (eda ? '（' + eda + '）' : '') + '　' + (rec.date || ''));
+  showToast('前回値：' + st + (eda ? ' ' + eda : '') + ' を表示');
 }
 
 function saveMeas() {
