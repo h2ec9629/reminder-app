@@ -1800,6 +1800,7 @@ function toggleHist() {
   var btn  = document.getElementById('histBtn');
   if (_histMode) {
     closeOptionPanel(); // オプション展開中にLOGへ移行したら閉じる
+    document.getElementById('setupPanel').className = 'save-panel'; // セットアップの窓は一旦隠す
     main.style.display = 'none';
     np.style.display   = 'none';
     mv.className       = 'hist-view';
@@ -1821,6 +1822,7 @@ function toggleHist() {
     main.style.display = '';
     np.style.display   = '';
     btn.classList.remove('active');
+    if (_setupMode) document.getElementById('setupPanel').className = 'save-panel show'; // 未確定なら戻す
   }
 }
 
