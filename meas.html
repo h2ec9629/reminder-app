@@ -103,6 +103,8 @@
     .meas-diff { font-weight: 700; font-size: 14px; line-height: 1.1; vertical-align: middle; padding: 3px; }
     .d-num { display: block; }
     .d-lbl { display: block; font-size: 13px; font-weight: 600; }
+    .meas-diff.judge-first { position: relative; }
+    .meas-diff.judge-first::before { content: "判定"; position: absolute; left: 3px; top: 3px; font-size: 10px; font-weight: 600; color: var(--text-sub); }
 
     /* ===== COL HEADER ===== */
     .col-hd-wrap {
@@ -393,27 +395,23 @@
     <div class="phase-hd th-u">U相</div>
     <table class="meas-tbl">
       <thead><tr>
-        <th style="width:14%"></th>
         <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" data-colclear="b" data-ph="u">CLR</button></div></th>
         <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" data-colclear="a" data-ph="u">CLR</button></div></th>
         <th><div class="col-hd-wrap"><span class="th-u">R</span><button class="col-reset" data-colclear="r" data-ph="u">CLR</button></div></th>
       </tr></thead>
       <tbody>
         <tr>
-          <td class="col-lbl"></td>
           <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mu_on_b" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_b" data-ph="u">×</button></div></td>
           <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mu_on_a" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_a" data-ph="u">×</button></div></td>
           <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mu_on_r" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_r" data-ph="u">×</button></div></td>
         </tr>
         <tr>
-          <td class="col-lbl"></td>
           <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mu_off_b" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_b" data-ph="u">×</button></div></td>
           <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mu_off_a" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_a" data-ph="u">×</button></div></td>
           <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mu_off_r" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_r" data-ph="u">×</button></div></td>
         </tr>
         <tr>
-          <td class="col-lbl">判定</td>
-          <td class="meas-diff" id="mu_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff judge-first" id="mu_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
           <td class="meas-diff" id="mu_d_a"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
           <td class="meas-diff" id="mu_d_r"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
         </tr>
@@ -426,27 +424,23 @@
     <div class="phase-hd th-v">V相</div>
     <table class="meas-tbl">
       <thead><tr>
-        <th style="width:14%"></th>
         <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" data-colclear="b" data-ph="v">CLR</button></div></th>
         <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" data-colclear="a" data-ph="v">CLR</button></div></th>
         <th><div class="col-hd-wrap"><span class="th-v">R</span><button class="col-reset" data-colclear="r" data-ph="v">CLR</button></div></th>
       </tr></thead>
       <tbody>
         <tr>
-          <td class="col-lbl"></td>
           <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mv_on_b" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_b" data-ph="v">×</button></div></td>
           <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mv_on_a" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_a" data-ph="v">×</button></div></td>
           <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mv_on_r" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_r" data-ph="v">×</button></div></td>
         </tr>
         <tr>
-          <td class="col-lbl"></td>
           <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mv_off_b" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_b" data-ph="v">×</button></div></td>
           <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mv_off_a" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_a" data-ph="v">×</button></div></td>
           <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mv_off_r" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_r" data-ph="v">×</button></div></td>
         </tr>
         <tr>
-          <td class="col-lbl">判定</td>
-          <td class="meas-diff" id="mv_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff judge-first" id="mv_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
           <td class="meas-diff" id="mv_d_a"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
           <td class="meas-diff" id="mv_d_r"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
         </tr>
@@ -459,27 +453,23 @@
     <div class="phase-hd th-w">W相</div>
     <table class="meas-tbl">
       <thead><tr>
-        <th style="width:14%"></th>
         <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" data-colclear="b" data-ph="w">CLR</button></div></th>
         <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" data-colclear="a" data-ph="w">CLR</button></div></th>
         <th><div class="col-hd-wrap"><span class="th-w">R</span><button class="col-reset" data-colclear="r" data-ph="w">CLR</button></div></th>
       </tr></thead>
       <tbody>
         <tr>
-          <td class="col-lbl"></td>
           <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mw_on_b" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_b" data-ph="w">×</button></div></td>
           <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mw_on_a" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_a" data-ph="w">×</button></div></td>
           <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mw_on_r" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_r" data-ph="w">×</button></div></td>
         </tr>
         <tr>
-          <td class="col-lbl"></td>
           <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mw_off_b" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_b" data-ph="w">×</button></div></td>
           <td><div class="meas-td-wrap mc-g"><input class="meas-in" id="mw_off_a" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_a" data-ph="w">×</button></div></td>
           <td><div class="meas-td-wrap mc-r"><input class="meas-in" id="mw_off_r" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_r" data-ph="w">×</button></div></td>
         </tr>
         <tr>
-          <td class="col-lbl">判定</td>
-          <td class="meas-diff" id="mw_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff judge-first" id="mw_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
           <td class="meas-diff" id="mw_d_a"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
           <td class="meas-diff" id="mw_d_r"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
         </tr>
