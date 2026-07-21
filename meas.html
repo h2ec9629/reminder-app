@@ -1778,7 +1778,8 @@ function confirmSave() {
   // オンライン復帰時に自動で送る（_flushPendingSync）。
   if (navigator.onLine && _getMeasPat()) {
     _syncOneRecord(recordToSave, function(ok) {
-      if (!ok) { _queuePendingSync(recordToSave); _renderSidebar(); }
+      if (!ok) { _queuePendingSync(recordToSave); }
+      _renderSidebar(); // 成功時も再描画して「未同期」表示を消す
     });
   } else {
     _queuePendingSync(recordToSave);
