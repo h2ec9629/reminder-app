@@ -899,6 +899,14 @@
       font-size: 10px; color: var(--text-faint);
       text-align: right; margin-top: 10px;
     }
+    /* ===== VDECK TAB（別アプリをiframeで内蔵） ===== */
+    #tab-vdeck { margin: -14px -12px; }
+    .vdeck-frame {
+      display: block; width: 100%; border: 0;
+      height: calc(100dvh - var(--header-h) - var(--nav-h));
+      background: #141312;
+    }
+
     /* ===== CALC TAB ===== */
     .calc-container { display: flex; flex-direction: row; height: 100%; }
     .calc-pg-wrap { overflow: hidden; margin: 0 -12px; position: relative;

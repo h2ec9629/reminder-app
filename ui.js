@@ -82,9 +82,16 @@ function switchTab(name,btn) {
   if(name==='calendar') renderCalendar();
   if(name==='gantt')    renderGantt();
   if(name==='calc')     calcDisplay();
+  if(name==='vdeck')    loadVdeckFrame();
 
 
   window.scrollTo(0,0);
+}
+
+// === VDECK（動画プレイヤーをiframeで内蔵。初回タブオープン時のみ読み込む） ===
+function loadVdeckFrame(){
+  const f=document.getElementById('vdeckFrame');
+  if(f && !f.src && f.dataset.src) f.src=f.dataset.src;
 }
 
 // === SCHEDULE ===

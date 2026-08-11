@@ -423,6 +423,11 @@
     </div>
   </div>
 
+  <!-- VDECK（動画プレイヤー・別アプリをiframeで内蔵） -->
+  <div id="tab-vdeck" class="tab-content">
+    <iframe id="vdeckFrame" class="vdeck-frame" src="" data-src="VDEK-main/index.html" title="VDECK" loading="lazy"></iframe>
+  </div>
+
 </main>
 
 <!-- ========== BOTTOM NAV ========== -->
@@ -528,6 +533,15 @@
         <circle cx="11" cy="18" r="2.2" fill="#1A1614" stroke="currentColor" stroke-width="1.8"/>
       </svg>
       <span>設定</span>
+    </button>
+
+    <!-- 列5: VDECK -->
+    <button class="nav-btn" id="nav-vdeck" onclick="switchTab('vdeck',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="5" width="14" height="14" rx="2"/>
+        <path d="M16 10l6-4v12l-6-4z"/>
+      </svg>
+      <span>VDECK</span>
     </button>
 
   </div>

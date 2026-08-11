@@ -1,5 +1,5 @@
-// おじさんリマインダー Service Worker v3.7
-const CACHE_NAME = 'ojisan-reminder-v3.7';
+// おじさんリマインダー Service Worker v3.8
+const CACHE_NAME = 'ojisan-reminder-v3.8';
 const ASSETS = [
   './index.html',
   './style.css',
@@ -16,7 +16,8 @@ const ASSETS = [
   './meas_sw.js',
   './manifest.json',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './VDEK-main/index.html'
 ];
 
 // インストール時にキャッシュ
