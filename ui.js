@@ -73,7 +73,7 @@ const escH=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,
 // === NAV ===
 function switchTab(name,btn) {
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn, .nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   btn.classList.add('active');
   if(name==='home')     renderHome();
@@ -92,6 +92,18 @@ function switchTab(name,btn) {
 function loadVdeckFrame(){
   const f=document.getElementById('vdeckFrame');
   if(f && !f.src && f.dataset.src) f.src=f.dataset.src;
+}
+
+// === 右下丸ボタン→オーバーレイメニュー（縦リスト） ===
+function toggleNavMenu(){
+  const open=document.getElementById('navMenu').classList.toggle('open');
+  document.getElementById('navOverlay').classList.toggle('open',open);
+  document.getElementById('menuFab').classList.toggle('open',open);
+}
+function closeNavMenu(){
+  document.getElementById('navMenu').classList.remove('open');
+  document.getElementById('navOverlay').classList.remove('open');
+  document.getElementById('menuFab').classList.remove('open');
 }
 
 // === SCHEDULE ===
@@ -232,15 +244,8 @@ function closeEdit() {
 
 // === RIMA TOGGLE ===
 function _applyRimaState(open) {
-  const area = document.getElementById('rimaNavArea');
-  const grid = document.querySelector('.nav-grid');
-  if (open) {
-    area.classList.add('rima-open');
-    grid.classList.remove('all-cols');
-  } else {
-    area.classList.remove('rima-open');
-    grid.classList.add('all-cols');
-  }
+  const el = document.getElementById('rimaWrap');
+  if (el) el.style.display = open ? '' : 'none';
 }
 function toggleRima() {
   const open = document.getElementById('showMascot').checked;
