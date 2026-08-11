@@ -26,6 +26,7 @@ async function forceUpdate() {
   syncFromGist();
   updateNotifStatus();
   updateMailboxStatus();
+  checkPatStatus();
   initRimaToggle();
   renderHome();
   switchTab('home', document.getElementById('nav-home'));
