@@ -195,9 +195,15 @@
       background: var(--accent); color: var(--bg);
       border: none; display: flex; align-items: center; justify-content: center;
       box-shadow: 0 3px 14px rgba(0,0,0,.4);
+      transition: background .18s ease, color .18s ease, border-color .18s ease;
     }
     .menu-fab svg { width: 24px; height: 24px; transition: transform .2s ease; }
     .menu-fab.open svg { transform: rotate(90deg); }
+    .menu-fab.open {
+      background: var(--surface); color: var(--accent);
+      border: 1px solid var(--border);
+      box-shadow: 0 6px 24px rgba(0,0,0,.45);
+    }
 
     .nav-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,.5);
@@ -208,24 +214,24 @@
     .nav-menu {
       position: fixed; z-index: 255;
       right: max(env(safe-area-inset-right, 0px), 12px);
-      bottom: calc(max(env(safe-area-inset-bottom, 0px), 8px) + 78px);
-      width: 176px; background: var(--surface); border: 1px solid var(--border);
-      border-radius: 14px; padding: 6px; box-shadow: 0 6px 24px rgba(0,0,0,.45);
-      display: flex; flex-direction: column; gap: 1px;
+      bottom: calc(max(env(safe-area-inset-bottom, 0px), 8px) + 12px + 56px);
+      width: 216px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px 16px 4px 16px; padding: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.45);
+      display: flex; flex-direction: column; gap: 3px;
       opacity: 0; transform: translateY(8px) scale(.97); pointer-events: none;
       transition: opacity .18s ease, transform .18s ease;
     }
     .nav-menu.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
     .nav-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 10px; border-radius: 9px; border: none; background: none;
-      color: var(--text-sub); font-size: 13px; font-weight: 600; font-family: inherit;
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 14px; border-radius: 10px; border: none; background: none;
+      color: var(--text-sub); font-size: 15px; font-weight: 600; font-family: inherit;
       cursor: pointer; text-align: left; position: relative;
     }
-    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .nav-item svg { width: 22px; height: 22px; flex-shrink: 0; }
     .nav-item.active { color: var(--accent); background: var(--accent-dim); }
     .nav-item .nav-dot {
-      position: static; margin-left: auto; width: 6px; height: 6px; border: none;
+      position: static; margin-left: auto; width: 7px; height: 7px; border: none;
     }
 
     /* ===== SECTION HEADER ===== */
