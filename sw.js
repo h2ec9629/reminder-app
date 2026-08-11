@@ -1,5 +1,5 @@
-// おじさんリマインダー Service Worker v3.10
-const CACHE_NAME = 'ojisan-reminder-v3.10';
+// おじさんリマインダー Service Worker v3.11
+const CACHE_NAME = 'ojisan-reminder-v3.11';
 const ASSETS = [
   './index.html',
   './style.css',
