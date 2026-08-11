@@ -66,6 +66,13 @@
       display: none;
     }
     .urgent-badge.show { display: block; }
+    .pat-status {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      margin-left: 6px; border: none; padding: 0; cursor: pointer;
+      background: var(--text-faint);
+    }
+    .pat-status.ok  { background: var(--success); }
+    .pat-status.ng  { background: var(--danger); }
 
     /* ===== MAIN ===== */
     .main {
