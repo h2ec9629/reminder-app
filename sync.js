@@ -58,6 +58,40 @@ function updateMailboxStatus() {
   }
 }
 
+async function checkPatStatus() {
+  const dot = document.getElementById('patStatus');
+  if (!dot) return;
+  const cfg = getMailboxCfg();
+  if (!cfg.gistId || !cfg.pat) {
+    dot.className = 'pat-status';
+    dot.dataset.msg = '投函箱PAT: 未設定です（設定タブから登録してください）';
+    return;
+  }
+  try {
+    const res = await fetch('https://api.github.com/gists/' + cfg.gistId, {
+      headers: { 'Authorization': 'Bearer ' + cfg.pat, 'Accept': 'application/vnd.github+json' }
+    });
+    if (res.ok) {
+      dot.className = 'pat-status ok';
+      dot.dataset.msg = '投函箱PAT: 有効です';
+    } else if (res.status === 401 || res.status === 403) {
+      dot.className = 'pat-status ng';
+      dot.dataset.msg = '投函箱PAT: 失効/無効です。設定タブから再登録してください';
+    } else {
+      dot.className = 'pat-status ng';
+      dot.dataset.msg = '投函箱PAT: 確認できませんでした（status ' + res.status + '）';
+    }
+  } catch (e) {
+    dot.className = 'pat-status';
+    dot.dataset.msg = '投函箱PAT: 通信できませんでした（オフライン中かも）';
+  }
+}
+function showPatStatusDetail() {
+  const dot = document.getElementById('patStatus');
+  showToast(dot?.dataset.msg || '状態不明です');
+  switchTab('settings', document.getElementById('nav-settings'));
+}
+
 async function pushToMailbox(reminder) {
   const cfg = getMailboxCfg();
   if (!cfg.gistId || !cfg.pat) return;
