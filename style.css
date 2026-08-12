@@ -22,6 +22,7 @@
       --purple:      #7255A8;
       --purple-dim:  #1E1530;
       --nav-h:       0px; /* 旧.bottom-nav廃止済み。ボタンはオーバーレイで被って良い方針のため余白ゼロ、iOSセーフエリア分だけ別途確保 */
+      --fab-clear:   76px; /* 電卓・Vdeckなど操作系ページ専用：menu-fab(56px+12pxオフセット+余白8px)を避ける高さ */
       --header-h:    28px;
     }
 
@@ -975,14 +976,14 @@
     #tab-vdeck { margin: -14px -12px; }
     .vdeck-frame {
       display: block; width: 100%; border: 0;
-      height: calc(100dvh - var(--header-h) - var(--nav-h));
+      height: calc(100dvh - var(--header-h) - var(--fab-clear) - max(env(safe-area-inset-bottom, 0px), 8px));
       background: #141312;
     }
 
     /* ===== CALC TAB ===== */
     .calc-container { display: flex; flex-direction: row; height: 100%; }
     .calc-pg-wrap { overflow: hidden; margin: 0 -12px; position: relative;
-      height: calc(100dvh - var(--header-h) - var(--nav-h) - 44px); }
+      height: calc(100dvh - var(--header-h) - var(--fab-clear) - max(env(safe-area-inset-bottom, 0px), 8px) - 44px); }
     .calc-pg { position: absolute; top:0; left:0; width:100%; height:100%;
       transition: transform .28s ease, opacity .28s ease; }
     .calc-pg.pg-right { transform: translateX(100%); opacity:0; pointer-events:none; }
@@ -1285,8 +1286,9 @@
 /* ===== LANDSCAPE (スマホ横向き) ===== */
 @media (orientation: landscape) and (max-height: 500px) {
   :root {
-    --nav-h:    0px;
-    --header-h: 0px;
+    --nav-h:      0px;
+    --header-h:   0px;
+    --fab-clear:  0px; /* 横向きはボタン自体を隠す(pointer-events:none)ので余白も不要 */
   }
   .header {
     transform: translateY(-100%);
