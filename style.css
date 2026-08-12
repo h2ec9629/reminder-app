@@ -21,7 +21,7 @@
       --danger-dim:  #2A1010;
       --purple:      #7255A8;
       --purple-dim:  #1E1530;
-      --nav-h:       84px;
+      --nav-h:       68px; /* 旧.bottom-nav廃止済み。今はmenu-fab(56px+12pxオフセット)分の余白のみ確保 */
       --header-h:    28px;
     }
 
@@ -815,7 +815,7 @@
       background: var(--surface);
       border-radius: 12px;
       border: 1px solid var(--border);
-      max-height: calc(100dvh - var(--header-h) - var(--nav-h) - 40px);
+      height: calc(100dvh - var(--header-h) - var(--nav-h) - 40px);
     }
 
     /* ===== SAFE AREA ===== */
