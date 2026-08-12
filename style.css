@@ -21,7 +21,7 @@
       --danger-dim:  #2A1010;
       --purple:      #7255A8;
       --purple-dim:  #1E1530;
-      --nav-h:       68px; /* 旧.bottom-nav廃止済み。今はmenu-fab(56px+12pxオフセット)分の余白のみ確保 */
+      --nav-h:       0px; /* 旧.bottom-nav廃止済み。ボタンはオーバーレイで被って良い方針のため余白ゼロ、iOSセーフエリア分だけ別途確保 */
       --header-h:    28px;
     }
 
