@@ -1,5 +1,5 @@
-// おじさんリマインダー Service Worker v3.14
-const CACHE_NAME = 'ojisan-reminder-v3.14';
+// おじさんリマインダー Service Worker v3.15
+const CACHE_NAME = 'ojisan-reminder-v3.15';
 const ASSETS = [
   './index.html',
   './style.css',
@@ -62,8 +62,9 @@ self.addEventListener('fetch', event => {
     );
   } else {
     // ネットワーク優先・オフライン時はキャッシュにフォールバック
+    // cache:'no-store'でブラウザのHTTPキャッシュも素通りさせ、push直後の反映遅れを防ぐ
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, { cache: 'no-store' })
         .then(function(response) {
           var clone = response.clone();
           caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, clone); });
@@ -82,4 +83,11 @@ self.addEventListener('fetch', event => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   event.waitUntil(
-    clients.matchAll({ type: 'window' }).then(
+    clients.matchAll({ type: 'window' }).then(clientList => {
+      for (const client of clientList) {
+        if ('focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow('./index.html');
+    })
+  );
+});
