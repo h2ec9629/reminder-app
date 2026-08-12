@@ -485,9 +485,9 @@ function calcPgSwitch(dir) {
     const dx=e.changedTouches[0].clientX-sx;
     const dy=e.changedTouches[0].clientY-sy;
     const dt=Date.now()-st;
-    // 誤操作対策：ある程度の距離＋横方向が縦の1.8倍以上＋0.6秒以内の
-    // はっきりしたフリックだけ切替を発火させる（タップのズレや縦スクロールでは反応しない）
-    if(Math.abs(dx)>64 && Math.abs(dx)>Math.abs(dy)*1.8 && dt<600){
+    // 誤操作対策（厳しめ）：しっかりした距離＋横方向が縦の3倍以上＋0.4秒以内の
+    // はっきり速いフリックだけ切替を発火させる（タップのズレや縦スクロールでは反応しない）
+    if(Math.abs(dx)>96 && Math.abs(dx)>Math.abs(dy)*3 && dt<400){
       calcPgSwitch(dx<0?1:-1);
     }
   },{passive:true});
