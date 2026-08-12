@@ -1006,7 +1006,7 @@ $("#tBar").onclick=e=>{
   vid.currentTime=s+(en-s)*p;
 };
 
-const AN_ORDER=["sparks","video","rima","stage"];
+const AN_ORDER=["sparks","video","reminder"];
 let anMode="sparks";
 let bgVideoURL=null;
 function hasBgVideo(){return !!$("#bgVid").src;}
@@ -1025,7 +1025,7 @@ function applyAnMode(){
   $("#dotsBoxSide").classList.toggle("on",!isVideo);
   $("#videoBoxNow").classList.toggle("on",isVideo);
   $("#videoBoxSide").classList.toggle("on",isVideo);
-  const nextLabel={sparks:"動画",video:"リマちゃん",rima:"ステージ",stage:"ドット"}[anMode];
+  const nextLabel={sparks:"動画",video:"リマインダー",reminder:"ドット"}[anMode];
   const label="⇄ "+nextLabel;
   $("#anSwitch").textContent=label;
   $("#anSwitch2").textContent=label;
@@ -1034,6 +1034,7 @@ function applyAnMode(){
   }else{
     $("#bgVid").pause();$("#bgVid2").pause();
   }
+  if(anMode==="reminder")loadReminders();
 }
 function cycleAnMode(){
   anMode=nextAnMode(anMode);
@@ -1167,10 +1168,8 @@ function drawFakeAnalyzer(cv,brightness){
   const offHex=cs.getPropertyValue("--ink3").trim()||"#2a2724";
   const claudeRgb=hexToRgb(claudeHex),offRgb=hexToRgb(offHex);
 
-  if(anMode==="rima"){
-    drawRimaScene(g,wCss,hCss);
-  }else if(anMode==="stage"){
-    drawStageScene(g,wCss,hCss);
+  if(anMode==="reminder"){
+    drawReminderScene(g,wCss,hCss);
   }else{
     for(let row=0;row<AN_ROWS;row++){
       for(let col=0;col<AN_COLS;col++){
@@ -1184,205 +1183,97 @@ function drawFakeAnalyzer(cv,brightness){
     }
   }
 }
-const RIMA_STAR_SEED=Array.from({length:14},(_,i)=>({
-  x:((i*53+7)%97)/97, y:((i*31+11)%53)/53, ph:i*1.3,
-}));
-function drawRimaScene(g,wCss,hCss){
-  const PXW=46;
-  const PXH=Math.max(1,Math.round(PXW*hCss/wCss));
-  const pw=wCss/PXW, ph=hCss/PXH;
-  const px=(x,y,w,h)=>g.fillRect(Math.round(x)*pw,Math.round(y)*ph,Math.ceil((w||1)*pw),Math.ceil((h||1)*ph));
+// ===== REMINDER MODE（おじさんリマインダーアプリと同一originのlocalStorageを直読み） =====
+const REM_KEY="ojisan_reminders_v1";
+const REM_FONT_SYS='-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif';
+const REM_FONT_MONO='ui-monospace,"SF Mono",Menlo,monospace';
+let _remList=[],_remReadAt=0;
+function remDaysUntil(s){
+  if(!s)return null;
+  const d=new Date(s);if(isNaN(d))return null;d.setHours(0,0,0,0);
+  const t=new Date();t.setHours(0,0,0,0);
+  return Math.round((d-t)/86400000);
+}
+function loadReminders(){
+  let list=[];
+  try{list=JSON.parse(localStorage.getItem(REM_KEY)||"[]");}catch(_){}
+  list=(Array.isArray(list)?list:[]).filter(r=>r&&r.title&&!r.completed);
+  list.forEach(r=>{r._days=remDaysUntil(r.deadline);});
+  list.sort((a,b)=>{
+    const av=a._days==null?Infinity:a._days, bv=b._days==null?Infinity:b._days;
+    return av-bv;
+  });
+  _remList=list;_remReadAt=Date.now();
+}
+loadReminders();
+setInterval(loadReminders,30000);
 
+function drawReminderScene(g,wCss,hCss){
   const cs=getComputedStyle(document.body);
   const ink=cs.getPropertyValue("--ink").trim()||"#141312";
+  const fg=cs.getPropertyValue("--fg").trim()||"#efe9e0";
   const dim=cs.getPropertyValue("--dim").trim()||"#948c82";
-  const line=cs.getPropertyValue("--line").trim()||"#3a3633";
-  const claude=cs.getPropertyValue("--claude-orange").trim()||"#da7756";
   const amber=cs.getPropertyValue("--amber").trim()||"#e8a33d";
-  const cream="#efe6d8";
+  const cut=cs.getPropertyValue("--cut").trim()||"#d9584a";
+  const line=cs.getPropertyValue("--line").trim()||"#3a3633";
 
   g.fillStyle=ink;g.fillRect(0,0,wCss,hCss);
 
-  g.fillStyle=dim;
-  RIMA_STAR_SEED.forEach(s=>{
-    const tw=(Math.sin(anT*2+s.ph)+1)/2;
-    if(tw<0.45)return;
-    px(s.x*PXW,s.y*PXH*0.5,1,1);
-  });
-
-  const bx=PXW*0.5, by=PXH*0.2, br=4;
-  const spin=Math.floor(anT*3);
-  for(let y=-br;y<=br;y++)for(let x=-br;x<=br;x++){
-    if(x*x+y*y>br*br)continue;
-    const on=((Math.round(bx+x)+Math.round(by+y)+spin)%2===0);
-    g.fillStyle=on?"#e8e2d6":"#8a8578";
-    px(bx+x,by+y,1,1);
-  }
-  g.fillStyle=line;px(bx,0,1,by-br);
-
-  const flick=(Math.sin(anT*5)+1)/2;
-  if(flick>0.6){
-    g.fillStyle=amber;
-    px(bx-10,by+3,2,1);px(bx+9,by+4,2,1);
-  }
-
-  const boothY=PXH*0.72, boothH=PXH*0.16, boothX=PXW*0.22, boothW=PXW*0.56;
-  g.fillStyle=line;px(boothX,boothY,boothW,boothH);
-  g.fillStyle="#100f0e";px(boothX+2,boothY+2,boothW-4,boothH-5);
-  g.fillStyle="#1c1a18";px(boothX+4,boothY+3,6,4);px(boothX+boothW-10,boothY+3,6,4);
-  g.fillStyle=claude;px(boothX+6,boothY+4,2,2);px(boothX+boothW-8,boothY+4,2,2);
-
-  // 4拍子のリズムで下に弾むイメージ（1拍目だけ強めに弾む）
-  const BEAT_LEN=0.55;
-  const beatPos=(anT/BEAT_LEN)%4;
-  const beatIdx=Math.floor(beatPos);
-  const bt=beatPos-beatIdx;
-  const beatAccent=beatIdx===0?1:0.55;
-  const bounce=Math.pow(Math.sin(Math.PI*bt),0.6)*beatAccent;
-
-  const headR=5.2*pw;
-  const headCx=(PXW*0.5)*pw, headCy=(PXH*0.52)*ph + bounce*headR*0.4;
-  drawRimaHead(g,headCx,headCy,headR,false,true);
-}
-function drawRimaHead(g,cx,cy,headR,mirror,showHeadphones){
-  const cs=getComputedStyle(document.body);
-  const ink=cs.getPropertyValue("--ink").trim()||"#141312";
-  const claude=cs.getPropertyValue("--claude-orange").trim()||"#da7756";
-  const cream="#efe6d8";
-  const circle=(x,y,r)=>{g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill();};
-  const headCx=cx,headCy=cy;
-
-  g.save();
-  if(mirror){g.translate(cx,cy);g.scale(-1,1);g.translate(-cx,-cy);}
-
-  if(rimaFaceImg){
-    const d=headR*2.3;
-    g.drawImage(rimaFaceImg,headCx-d/2,headCy-d/2,d,d);
-  }else{
-    g.fillStyle=cream;circle(headCx,headCy,headR);
-    g.strokeStyle="#2a2015";g.lineWidth=Math.max(1,headR*0.12);g.lineCap="round";
-    g.beginPath();g.arc(headCx-headR*0.42,headCy-headR*0.05,headR*0.22,Math.PI*0.15,Math.PI*0.85);g.stroke();
-    g.beginPath();g.arc(headCx+headR*0.42,headCy-headR*0.05,headR*0.22,Math.PI*0.15,Math.PI*0.85);g.stroke();
-    g.beginPath();g.arc(headCx,headCy+headR*0.28,headR*0.32,Math.PI*0.12,Math.PI*0.88);g.stroke();
-  }
-
-  if(showHeadphones){
-  // ヘッドホン（16bit風：ドットを細かく・バンドを二重にして視認性を上げる）
-  const hpUnit=Math.max(1,headR*0.09);
-  const hpBandR1=headR*1.16, hpBandR2=headR*1.02;
-  const hpSteps=18;
-  const hpAngStart=Math.PI*1.05, hpAngEnd=Math.PI*1.95;
-  g.fillStyle=claude;
-  for(let i=0;i<hpSteps;i++){
-    const a=hpAngStart+(hpAngEnd-hpAngStart)*(i/(hpSteps-1));
-    const cosA=Math.cos(a),sinA=Math.sin(a);
-    [hpBandR1,hpBandR2].forEach(r=>{
-      const hx=headCx+cosA*r, hy=headCy+sinA*r;
-      g.fillRect(Math.round(hx-hpUnit/2),Math.round(hy-hpUnit/2),Math.ceil(hpUnit),Math.ceil(hpUnit));
-    });
-  }
-  const hpEarOuter=headR*0.58, hpEarInner=headR*0.34;
-  [-1,1].forEach(side=>{
-    const ex=headCx+side*headR*0.98, ey=headCy-headR*0.05;
-    g.fillStyle=claude;
-    g.fillRect(ex-hpEarOuter/2,ey-hpEarOuter/2,hpEarOuter,hpEarOuter);
-    g.fillStyle=ink;
-    g.fillRect(ex-hpEarInner/2,ey-hpEarInner/2,hpEarInner,hpEarInner);
-  });
-  }
-  g.restore();
-}
-function drawStageScene(g,wCss,hCss){
-  // 8bit風の横スクロールアクションステージ。リマちゃんは画面固定、
-  // 背景・地面・障害物が左へ流れることで「右へ進行している」動きを表す。
-  // マリオそのものの絵は著作物なので使わず、レンガブロック／土管といった
-  // ジャンルの一般的な意匠だけをアプリのテーマカラーで再構成している。
   const unit=Math.max(2,wCss/60);
-  const cs=getComputedStyle(document.body);
-  const ink=cs.getPropertyValue("--ink").trim()||"#141312";
-  const ink3=cs.getPropertyValue("--ink3").trim()||"#2a2724";
-  const line=cs.getPropertyValue("--line").trim()||"#3a3633";
-  const claude=cs.getPropertyValue("--claude-orange").trim()||"#da7756";
-  const amber=cs.getPropertyValue("--amber").trim()||"#e8a33d";
-  const cream="#efe6d8";
+  const padX=unit*4;
+  let y=unit*7;
 
-  g.fillStyle=ink;g.fillRect(0,0,wCss,hCss);
+  g.textBaseline="alphabetic";
+  g.font="700 "+Math.round(unit*3.2)+"px "+REM_FONT_MONO;
+  g.fillStyle=amber;
+  g.fillText("📌 リマインダー",padX,y);
+  y+=unit*2;
+  g.strokeStyle=line;g.lineWidth=Math.max(1,unit*0.25);
+  g.beginPath();g.moveTo(padX,y);g.lineTo(wCss-padX,y);g.stroke();
+  y+=unit*4.5;
 
-  // 行動サイクル：走る→ジャンプ→ダッシュ→走る…をループ
-  const CYCLE=4.4;
-  const cyclePos=anT%CYCLE;
-  let action="run",actionT=0;
-  if(cyclePos<2.2){action="run";actionT=cyclePos/2.2;}
-  else if(cyclePos<2.7){action="jump";actionT=(cyclePos-2.2)/0.5;}
-  else if(cyclePos<3.6){action="dash";actionT=(cyclePos-2.7)/0.9;}
-  else{action="run";actionT=(cyclePos-3.6)/0.8;}
-  const speedMul=action==="dash"?1.9:1;
-
-  // 遠景の雲（進行方向＝右なので、背景は左へゆっくり流れる）
-  const farSpeed=unit*1.6*speedMul, farPeriod=unit*14;
-  const farOff=(anT*farSpeed)%farPeriod;
-  g.fillStyle=ink3;
-  for(let wx=-farPeriod;wx<wCss+farPeriod;wx+=farPeriod){
-    const x=wx-farOff;
-    g.fillRect(x,hCss*0.3,unit*7,unit*2.4);
-    g.fillRect(x+unit*2,hCss*0.26,unit*3,unit*1.6);
+  if(_remList.length===0){
+    g.font=Math.round(unit*2.8)+"px "+REM_FONT_SYS;
+    g.fillStyle=dim;
+    g.fillText("リマインドはありません",padX,y+unit*2);
+    return;
   }
 
-  // 地面（レンガ調の目地パターン）
-  const groundY=hCss*0.8;
-  g.fillStyle=line;g.fillRect(0,groundY,wCss,hCss-groundY);
-  const brickSize=unit*3;
-  const groundSpeed=unit*7*speedMul;
-  const groundOff=(anT*groundSpeed)%brickSize;
-  g.strokeStyle=ink3;g.lineWidth=Math.max(1,unit*0.3);
-  for(let wx=-brickSize;wx<wCss+brickSize;wx+=brickSize){
-    const x=wx-groundOff;
-    g.strokeRect(x,groundY+unit*0.6,brickSize,brickSize*0.6);
+  const rowH=unit*6.2;
+  const maxRows=Math.max(1,Math.floor((hCss-y-unit*3)/rowH));
+  const items=_remList.slice(0,maxRows);
+
+  items.forEach(r=>{
+    const d=r._days,adv=r.advance_days||3;
+    let color=fg,label="―";
+    if(d==null){color=dim;label="―";}
+    else if(d<0){color=cut;label=Math.abs(d)+"日超過";}
+    else if(d===0){color=cut;label="本日";}
+    else if(d<=Math.min(adv,2)){color=cut;label=d+"日後";}
+    else if(d<=7){color=amber;label=d+"日後";}
+    else{color=fg;label=d+"日後";}
+
+    g.font="600 "+Math.round(unit*2.9)+"px "+REM_FONT_SYS;
+    g.fillStyle=fg;
+    const maxTitleW=wCss-padX*2-unit*13;
+    let title=r.title;
+    while(g.measureText(title).width>maxTitleW&&title.length>1){title=title.slice(0,-1);}
+    if(title!==r.title)title+="…";
+    g.fillText(title,padX,y+rowH*0.62);
+
+    g.font="700 "+Math.round(unit*2.6)+"px "+REM_FONT_MONO;
+    g.fillStyle=color;
+    const lw=g.measureText(label).width;
+    g.fillText(label,wCss-padX-lw,y+rowH*0.62);
+
+    y+=rowH;
+  });
+
+  if(_remList.length>items.length){
+    g.font=Math.round(unit*2.2)+"px "+REM_FONT_MONO;
+    g.fillStyle=dim;
+    g.fillText("+"+(_remList.length-items.length)+"件",padX,y+unit*1.5);
   }
-
-  // 障害物：浮遊レンガブロックと土管（ジャンルの一般的な意匠。左へ流れてくる）
-  const obSpeed=unit*7*speedMul, obPeriod=unit*17;
-  const obOff=(anT*obSpeed)%obPeriod;
-  for(let wx=-obPeriod;wx<wCss+obPeriod;wx+=obPeriod){
-    const x=wx-obOff;
-    g.fillStyle=claude;
-    g.fillRect(x,groundY-unit*9,unit*4,unit*3);
-    g.strokeStyle=ink;g.lineWidth=Math.max(1,unit*0.25);
-    g.strokeRect(x,groundY-unit*9,unit*4,unit*3);
-    g.beginPath();g.moveTo(x+unit*2,groundY-unit*9);g.lineTo(x+unit*2,groundY-unit*6);g.stroke();
-
-    const px2=x+unit*9;
-    g.fillStyle=amber;
-    g.fillRect(px2,groundY-unit*6,unit*4,unit*6);
-    g.fillRect(px2-unit*0.5,groundY-unit*7,unit*5,unit*1.4);
-  }
-
-  // リマちゃん：画面固定、右へ進むが顔は反転したまま。胴体・脚は描かず、
-  // 画像そのものが弾む／跳ぶ／傾くことでアクションを表現する
-  const RUN_LEN=action==="dash"?0.14:0.22;
-  const stepPos=(anT/RUN_LEN)%2;
-  const st=stepPos-Math.floor(stepPos);
-
-  const headR=unit*6.4;
-  const cx=wCss*0.3;
-  let hop=0,lean=0;
-  if(action==="jump"){
-    hop=Math.sin(Math.PI*Math.min(1,actionT))*unit*11;
-  }else{
-    hop=Math.abs(Math.sin(Math.PI*st))*unit*3;
-  }
-  if(action==="dash")lean=unit*2;
-  const cy=groundY-headR*1.5-hop;
-
-  if(action==="dash"){
-    g.strokeStyle=amber;g.lineWidth=Math.max(1,unit*0.5);
-    for(let i=0;i<3;i++){
-      const ly=cy+headR*0.3+i*unit*2;
-      g.beginPath();g.moveTo(cx-headR*1.6-lean,ly);g.lineTo(cx-headR*0.6-lean,ly);g.stroke();
-    }
-  }
-
-  drawRimaHead(g,cx+lean,cy,headR,true,false);
 }
 function hexToRgb(hex){
   hex=hex.replace("#","");
