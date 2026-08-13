@@ -189,14 +189,15 @@ function renderGantt() {
   } else {
     _baseReq = _d2hKeys[0]; // base_dateが無ければエクセルの最左稼働日
   }
-  // base_dateが稼働日(d2hのキー)でなければ、その日以前の直近の稼働日にスナップ。
-  // → x=0が必ずグリッド線に乗るので、今日ラベルと翌稼働日ラベルが重ならない。
+  // base_dateが稼働日(d2hのキー)でなければ、その日以降の直近の稼働日にスナップ。
+  // → 連休・お盆休み中は「休み明け最初の稼働日」から表示を始める（過去に戻さない）。
+  // → x=0は必ずグリッド線に乗るので、今日ラベルと翌稼働日ラベルが重ならない。
   if (d2h[_baseReq] !== undefined) {
     TODAY_ISO = _baseReq;
   } else {
     let _snap = null;
-    for (const k of _d2hKeys) { if (k <= _baseReq) _snap = k; }
-    TODAY_ISO = _snap || _d2hKeys[0];
+    for (const k of _d2hKeys) { if (k >= _baseReq) { _snap = k; break; } }
+    TODAY_ISO = _snap || _d2hKeys[_d2hKeys.length - 1];
   }
   const TODAY_H = (function() {
     if (d2h[TODAY_ISO] !== undefined) return d2h[TODAY_ISO];
