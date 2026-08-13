@@ -276,13 +276,16 @@ function renderGantt() {
   function d2px(iso) {
     if (!iso) return null;
     if (d2h[iso] !== undefined) return h2px(d2h[iso]) - todayOffset;
+    // d2hに無い日付（＝休日）は按分計算せず直前の稼働日にスナップする。
+    // VFAP側は休日の列自体が存在しない（=休日ぶんの間隔が無い）ので、
+    // ここで按分すると休日ぶんの隙間が復活してチャートが浮いて見えてしまう。
+    // 直前の稼働日に吸収させることでVFAPの見た目（休日非表示）に揃える。
     const keys = Object.keys(d2h).sort();
     let prev = null, next = null;
     for (const k of keys) { if (k <= iso) prev = k; else if (!next) next = k; }
-    if (!prev) return -todayOffset;
-    if (!next)  return h2px(d2h[keys[keys.length-1]]) - todayOffset;
-    const frac = (new Date(iso)-new Date(prev))/(new Date(next)-new Date(prev));
-    return Math.round((d2h[prev]+frac*(d2h[next]-d2h[prev]))*SC) - todayOffset;
+    if (prev) return h2px(d2h[prev]) - todayOffset;
+    if (next) return h2px(d2h[next]) - todayOffset;
+    return -todayOffset;
   }
 
   const maxH   = Math.max(...D.map(r=>r.ab), TODAY_H+24);
