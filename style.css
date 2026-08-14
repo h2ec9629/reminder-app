@@ -1283,6 +1283,56 @@
       font-weight: 600; flex-shrink: 0; min-width: 44px;
     }
 
+/* ===== TOP RING SCREEN（起動時トップページ・リングメニュー） ===== */
+    .top-ring-screen {
+      position: fixed; inset: 0; z-index: 500;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      padding: max(env(safe-area-inset-top, 0px), 16px) max(env(safe-area-inset-right, 0px), 16px)
+               max(env(safe-area-inset-bottom, 0px), 16px) max(env(safe-area-inset-left, 0px), 16px);
+      opacity: 1; transition: opacity .22s ease, visibility .22s ease;
+    }
+    .top-ring-screen.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+    .ring-wrap {
+      position: relative;
+      width: min(84vw, 82dvh, 360px);
+      aspect-ratio: 1 / 1;
+    }
+    .ring-center {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      width: 36%; aspect-ratio: 1 / 1; border-radius: 50%;
+      background: var(--accent-dim); border: 2px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 0 6px var(--bg-2);
+    }
+    .ring-logo {
+      font-size: clamp(18px, 6vw, 26px); font-weight: 800;
+      color: var(--accent); letter-spacing: 0.5px;
+    }
+    .ring-item {
+      position: absolute; transform: translate(-50%,-50%);
+      width: 23%; aspect-ratio: 1 / 1; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text-sub); font-family: inherit;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      cursor: pointer; transition: background .15s, border-color .15s, color .15s, transform .1s;
+    }
+    .ring-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .ring-item span { font-size: 10px; font-weight: 700; white-space: nowrap; }
+    .ring-item:active {
+      background: var(--accent-dim); border-color: var(--accent); color: var(--accent);
+      transform: translate(-50%,-50%) scale(0.92);
+    }
+    /* 8個を時計の12時位置から時計回りに45度おきに配置（半径38%） */
+    .ring-item:nth-child(2) { top: 12%; left: 50%; }
+    .ring-item:nth-child(3) { top: 23%; left: 77%; }
+    .ring-item:nth-child(4) { top: 50%; left: 88%; }
+    .ring-item:nth-child(5) { top: 77%; left: 77%; }
+    .ring-item:nth-child(6) { top: 88%; left: 50%; }
+    .ring-item:nth-child(7) { top: 77%; left: 23%; }
+    .ring-item:nth-child(8) { top: 50%; left: 12%; }
+    .ring-item:nth-child(9) { top: 23%; left: 23%; }
+
 /* ===== LANDSCAPE (スマホ横向き) ===== */
 @media (orientation: landscape) and (max-height: 500px) {
   :root {

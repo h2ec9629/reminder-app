@@ -94,6 +94,13 @@ function loadVdeckFrame(){
   if(f && !f.src && f.dataset.src) f.src=f.dataset.src;
 }
 
+// === TOP RING SCREEN（起動時トップページ・リングメニュー） ===
+function ringGo(name) {
+  const navBtn = document.getElementById('nav-' + name) || document.createElement('button');
+  switchTab(name, navBtn);
+  document.getElementById('topRingScreen').classList.add('hide');
+}
+
 // === 右下丸ボタン→オーバーレイメニュー（縦リスト） ===
 function toggleNavMenu(){
   const open=document.getElementById('navMenu').classList.toggle('open');
