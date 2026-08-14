@@ -33,4 +33,5 @@ async function forceUpdate() {
   document.getElementById('deadlineInput').value = todayStr();
   if(Notification.permission==='granted') triggerNotifications();
   startRimaRotation();
+  initRingWheel();
 })();

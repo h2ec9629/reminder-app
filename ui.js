@@ -94,11 +94,104 @@ function loadVdeckFrame(){
   if(f && !f.src && f.dataset.src) f.src=f.dataset.src;
 }
 
-// === TOP RING SCREEN（起動時トップページ・リングメニュー） ===
+// === TOP RING SCREEN（起動時トップページ・回転リングメニュー） ===
 function ringGo(name) {
   const navBtn = document.getElementById('nav-' + name) || document.createElement('button');
   switchTab(name, navBtn);
   document.getElementById('topRingScreen').classList.add('hide');
+}
+
+// --- リングの回転（常時ゆっくり反時計回り＋フリックで自由に回せる）---
+let _ringAngle     = 0;   // 現在の回転角（deg）
+let _ringVel       = 0;   // 角速度（deg/ms）※フリック直後の慣性用
+let _ringDragging  = false;
+let _ringLastAngle = 0;   // 直前フレームのポインタ角度
+let _ringLastT     = 0;   // requestAnimationFrame用の前回時刻
+let _ringPrevMoveT = 0;   // pointermove用の前回時刻（速度計算）
+let _ringMoved     = 0;   // ドラッグ総移動量（タップ判定用）
+let _ringDownT     = 0;
+
+const RING_IDLE_SPEED = -0.003; // 待機中の自動回転速度（deg/ms）＝マイナスで反時計回り（左回転）
+const RING_FRICTION   = 0.98;   // 慣性の減衰率（16ms相当あたり）。1に近いほど長く回り続ける
+
+function _ringApply() {
+  const wrap = document.getElementById('ringWrap');
+  if (wrap) wrap.style.setProperty('--wheel-angle', _ringAngle + 'deg');
+}
+
+function _ringPointAngle(clientX, clientY) {
+  const wrap = document.getElementById('ringWrap');
+  const r = wrap.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  return Math.atan2(clientY - cy, clientX - cx) * 180 / Math.PI;
+}
+
+function _ringLoop(t) {
+  if (!_ringLastT) _ringLastT = t;
+  const dt = Math.min(t - _ringLastT, 48); // タブ切替復帰などの大ジャンプ対策
+  _ringLastT = t;
+
+  if (!_ringDragging) {
+    if (Math.abs(_ringVel) > 0.002) {
+      // フリック直後：慣性で回り続けながら減速
+      _ringAngle += _ringVel * dt;
+      _ringVel   *= Math.pow(RING_FRICTION, dt / 16);
+    } else {
+      // 通常時：ずっとゆっくり左回転
+      _ringVel = 0;
+      _ringAngle += RING_IDLE_SPEED * dt;
+    }
+    _ringApply();
+  }
+  requestAnimationFrame(_ringLoop);
+}
+
+function initRingWheel() {
+  const wrap = document.getElementById('ringWrap');
+  if (!wrap) return;
+
+  wrap.addEventListener('pointerdown', e => {
+    _ringDragging  = true;
+    _ringVel       = 0;
+    _ringMoved     = 0;
+    _ringPrevMoveT = 0;
+    _ringDownT     = performance.now();
+    _ringLastAngle = _ringPointAngle(e.clientX, e.clientY);
+    if (wrap.setPointerCapture) wrap.setPointerCapture(e.pointerId);
+  });
+
+  wrap.addEventListener('pointermove', e => {
+    if (!_ringDragging) return;
+    const now = performance.now();
+    const ang = _ringPointAngle(e.clientX, e.clientY);
+    let delta = ang - _ringLastAngle;
+    if (delta > 180)  delta -= 360; // -180〜180度に正規化（0度またぎ対策）
+    if (delta < -180) delta += 360;
+    _ringAngle += delta;
+    _ringMoved += Math.abs(delta);
+    const dt = Math.max(now - (_ringPrevMoveT || now), 1);
+    _ringVel = delta / dt; // deg/ms。指を離した瞬間の慣性に使う
+    _ringPrevMoveT = now;
+    _ringLastAngle = ang;
+    _ringApply();
+  });
+
+  const endDrag = e => {
+    if (!_ringDragging) return;
+    _ringDragging = false;
+    const heldMs = performance.now() - _ringDownT;
+    // ほぼ動かさず短時間で離した＝タップ扱い。回転はドラッグ操作として吸収してタップ判定と分離する
+    if (_ringMoved < 6 && heldMs < 350) {
+      const el  = document.elementFromPoint(e.clientX, e.clientY);
+      const btn = el && el.closest && el.closest('.ring-item');
+      if (btn && btn.dataset.tab) ringGo(btn.dataset.tab);
+    }
+    // ドラッグだった場合は_ringVel（直前の指の速さ）を引き継いでそのまま慣性で回り続ける
+  };
+  wrap.addEventListener('pointerup', endDrag);
+  wrap.addEventListener('pointercancel', endDrag);
+
+  requestAnimationFrame(_ringLoop);
 }
 
 // === 右下丸ボタン→オーバーレイメニュー（縦リスト） ===
