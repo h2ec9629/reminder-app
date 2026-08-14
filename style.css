@@ -314,6 +314,7 @@
     }
     .badge-excel    { background: #1A3025; color: #4ADE80; }
     .badge-obsidian { background: #1E1630; color: #A78BFA; }
+    .badge-vfap     { background: #142A30; color: #38C9DE; }
     .badge-claude   { background: var(--accent-dim); color: #FB9070; }
     .badge-manual   { background: var(--surface-2); color: var(--text-sub); }
 
@@ -1287,13 +1288,25 @@
     .top-ring-screen {
       position: fixed; inset: 0; z-index: 500;
       background: var(--bg);
-      display: flex; align-items: center; justify-content: center;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(10px, 4vh, 28px);
       padding: max(env(safe-area-inset-top, 0px), 16px) max(env(safe-area-inset-right, 0px), 16px)
                max(env(safe-area-inset-bottom, 0px), 16px) max(env(safe-area-inset-left, 0px), 16px);
       opacity: 1; transition: opacity .22s ease, visibility .22s ease;
       touch-action: none; /* フリック操作を横取りするのでページのスクロール等は殺す */
     }
     .top-ring-screen.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+    .ring-clock {
+      text-align: center; flex-shrink: 0;
+    }
+    .ring-clock-time {
+      font-size: clamp(30px, 9vw, 44px); font-weight: 800;
+      color: var(--text); letter-spacing: 1px; font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .ring-clock-date {
+      font-size: clamp(12px, 3.4vw, 15px); font-weight: 600;
+      color: var(--text-sub); margin-top: 4px; letter-spacing: 0.5px;
+    }
     .ring-wrap {
       position: relative;
       width: min(84vw, 82dvh, 360px);

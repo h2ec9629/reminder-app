@@ -45,7 +45,7 @@ function sec(label,items) {
 function cardHTML(r) {
   const n=daysUntil(r.deadline);
   const uc=r.completed?'done':urgClass(n,r.advance_days||3);
-  const catLabel={excel:'Excel',obsidian:'Obsidian',claude:'Claude',manual:'手動'}[r.category]||'手動';
+  const catLabel={excel:'Excel',obsidian:'Obsidian',vfap:'VFAP',claude:'Claude',manual:'手動'}[r.category]||'手動';
   const notesHtml=r.notes?`<div class="rnotes">${escH(r.notes)}</div>`:'';
   const editBtn=!r.completed
     ?`<button class="rcard-edit-btn" onclick="openEdit('${r.id}')">✎</button>`
@@ -192,6 +192,21 @@ function initRingWheel() {
   wrap.addEventListener('pointercancel', endDrag);
 
   requestAnimationFrame(_ringLoop);
+}
+
+// --- リング上部の日付・時刻表示（1秒ごとに更新するリアルタイム時計） ---
+function _ringClockTick() {
+  const timeEl = document.getElementById('ringClockTime');
+  const dateEl = document.getElementById('ringClockDate');
+  if (!timeEl || !dateEl) return;
+  const d  = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  timeEl.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  dateEl.textContent = `${d.getMonth()+1}/${d.getDate()}(${'日月火水木金土'[d.getDay()]})`;
+}
+function initRingClock() {
+  _ringClockTick();
+  setInterval(_ringClockTick, 1000);
 }
 
 // === 右下丸ボタン→オーバーレイメニュー（縦リスト） ===

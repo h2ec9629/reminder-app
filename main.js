@@ -34,4 +34,5 @@ async function forceUpdate() {
   if(Notification.permission==='granted') triggerNotifications();
   startRimaRotation();
   initRingWheel();
+  initRingClock();
 })();
