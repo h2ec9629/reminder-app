@@ -200,7 +200,7 @@ async function syncFromGist(manual=false) {
       if (keys.has(k))  return; // すでにある
       if (grave.has(k)) return; // 削除済み → 復活させない
       addReminder({ title:item.title, deadline:item.deadline||null,
-                    category:'obsidian', advance_days:item.advance_days||3, notes:item.notes||'' });
+                    category:item.category||'obsidian', advance_days:item.advance_days||3, notes:item.notes||'' });
       keys.add(k); added++;
     });
     if (added > 0) { renderHome(); showToast(`Obsidianから${added}件を取込みました`); }

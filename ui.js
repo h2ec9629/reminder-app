@@ -95,10 +95,33 @@ function loadVdeckFrame(){
 }
 
 // === TOP RING SCREEN（起動時トップページ・回転リングメニュー） ===
+// タップされた項目に応じてタブは即切り替え（オーバーレイの裏で待機）、
+// 見た目は①項目が中心へ吸い込まれる→②中央円が縮小しながら下部オーバーレイボタンの位置へ移動→
+// ③画面全体をフェードアウトして裏の本物の.menu-fabに切り替わる、の3段階で演出する。
+let _ringClosing = false; // 演出中の連打防止フラグ
 function ringGo(name) {
+  if (_ringClosing) return;
+  _ringClosing = true;
+
   const navBtn = document.getElementById('nav-' + name) || document.createElement('button');
   switchTab(name, navBtn);
-  document.getElementById('topRingScreen').classList.add('hide');
+
+  const screen = document.getElementById('topRingScreen');
+  screen.classList.add('ring-closing'); // ①8個の項目を中心へ吸い込む
+
+  setTimeout(() => {
+    screen.classList.add('ring-collapse'); // ②中央円を縮小させつつ下部中央（menu-fab位置）へ移動
+  }, 300);
+
+  setTimeout(() => {
+    screen.classList.add('hide'); // ③フェードアウトして裏の本物のmenu-fabへバトンタッチ
+  }, 300 + 320);
+
+  setTimeout(() => {
+    // 次に開いた時のためにリセット（アプリ再読み込みで再表示される仕様だが念のため）
+    screen.classList.remove('ring-closing', 'ring-collapse');
+    _ringClosing = false;
+  }, 300 + 320 + 240);
 }
 
 // --- リングの回転（常時ゆっくり反時計回り＋フリックで自由に回せる）---
@@ -131,7 +154,8 @@ function _ringLoop(t) {
   const dt = Math.min(t - _ringLastT, 48); // タブ切替復帰などの大ジャンプ対策
   _ringLastT = t;
 
-  if (!_ringDragging) {
+  if (!_ringDragging && !_ringClosing) {
+    // 吸い込み演出(ring-closing)が始まったら回転を止め、その場の角度で項目が中心へ収束するようにする
     if (Math.abs(_ringVel) > 0.002) {
       // フリック直後：慣性で回り続けながら減速
       _ringAngle += _ringVel * dt;
@@ -196,13 +220,15 @@ function initRingWheel() {
 
 // --- リング上部の日付・時刻表示（1秒ごとに更新するリアルタイム時計） ---
 function _ringClockTick() {
-  const timeEl = document.getElementById('ringClockTime');
-  const dateEl = document.getElementById('ringClockDate');
-  if (!timeEl || !dateEl) return;
+  const monthEl = document.getElementById('ringClockMonth');
+  const timeEl  = document.getElementById('ringClockTime');
+  const dateEl  = document.getElementById('ringClockDate');
+  if (!monthEl || !timeEl || !dateEl) return;
   const d  = new Date();
   const pad = n => String(n).padStart(2, '0');
-  timeEl.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-  dateEl.textContent = `${d.getMonth()+1}/${d.getDate()}(${'日月火水木金土'[d.getDay()]})`;
+  monthEl.textContent = pad(d.getMonth()+1);
+  dateEl.textContent  = `${pad(d.getDate())}(${['SUN','MON','TUE','WED','THU','FRI','SAT'][d.getDay()]})`;
+  timeEl.textContent  = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 function initRingClock() {
   _ringClockTick();
