@@ -1370,29 +1370,47 @@
     }
 
     /* ===== リング項目タップ時の吸い込み→中央円が下部オーバーレイボタンへ変化する演出 =====
-       ui.js:ringGo()が段階的にクラスを付与する。
-       ①ring-closing：8個のring-itemが中心の縁へ吸い込まれるように縮小・移動して消える
-       ②ring-collapse：中央円(.ring-center)が縮小しながら画面下部中央（.menu-fabの位置）へ移動する
+       ui.js:ringGo()が段階的にクラスを付与する。transitionではなく@keyframesの
+       animationにして、単純なイージングでは出せない「プルンと伸びて縮む」弾性を持たせている。
+       ①ring-closing：8個のring-itemが中心の縁へ吸い込まれるように、一度伸びて縮む弾性運動で消える
+       ②ring-collapse：中央円(.ring-center)が画面下部中央（.menu-fabの位置）へ、行き過ぎてから
+                        少し戻るバネのような着地で移動・縮小する
        ③hide（既存）：画面全体がフェードアウトし、裏にある本物の.menu-fab（同じ下部中央に配置済み）に切り替わる */
+    @keyframes ringItemSuckIn {
+      0%   { transform: translate(-50%,-50%) rotate(calc(var(--i) * 45deg)) translateY(-165%) scale(1);    opacity: 1;  }
+      55%  { transform: translate(-50%,-50%) rotate(calc(var(--i) * 45deg)) translateY(-14%)   scale(1.3); opacity: 1;  } /* 一度大きく伸びながら中心近くまで飛ぶ（プルン） */
+      78%  { transform: translate(-50%,-50%) rotate(calc(var(--i) * 45deg)) translateY(6%)     scale(0.55); opacity: .6; } /* 中心を少し行き過ぎて縮む（バネの戻り） */
+      100% { transform: translate(-50%,-50%) rotate(calc(var(--i) * 45deg)) translateY(0%)     scale(0.1); opacity: 0;  }
+    }
     .top-ring-screen.ring-closing .ring-item {
-      transition: transform .3s cubic-bezier(.4,0,.2,1), opacity .3s ease;
-      transform: translate(-50%,-50%) rotate(calc(var(--i) * 45deg)) translateY(0) scale(0.1);
-      opacity: 0;
+      animation: ringItemSuckIn .42s cubic-bezier(.36,.07,.19,.97) forwards;
       pointer-events: none;
     }
-    .top-ring-screen.ring-closing .ring-center {
-      /* 遅延はJS(ringGo)側のsetTimeout(300ms)で①の完了を待ってから②のクラスを付けているので、
-         こちら側のtransitionには追加のdelayを持たせない（二重に遅延すると演出がズレる） */
-      transition: transform .32s cubic-bezier(.4,0,.2,1);
+    @keyframes ringCenterCollapse {
+      0%   { transform: translate(-50%,-50%) translateY(0) scale(1); }
+      55%  {
+        /* 目標位置の1.12倍まで一度行き過ぎる（オーバーシュート） */
+        transform: translate(-50%,-50%)
+          translateY(calc((50vh - (max(env(safe-area-inset-bottom, 0px), 8px) + 12px) - 28px) * 1.12))
+          scale(0.34);
+      }
+      78%  {
+        /* 0.92倍まで戻る（バネの揺り戻し） */
+        transform: translate(-50%,-50%)
+          translateY(calc((50vh - (max(env(safe-area-inset-bottom, 0px), 8px) + 12px) - 28px) * 0.92))
+          scale(0.48);
+      }
+      100% {
+        /* ring-centerの中心は常に画面の縦横中央(50vw,50vh)にあるため、
+           .menu-fab（下部中央・半径28px）の中心位置までの差分だけtranslateYで下げ、
+           .menu-fabと同じ56px相当の見た目になるよう縮小する */
+        transform: translate(-50%,-50%)
+          translateY(calc(50vh - (max(env(safe-area-inset-bottom, 0px), 8px) + 12px) - 28px))
+          scale(0.42);
+      }
     }
     .top-ring-screen.ring-collapse .ring-center {
-      /* ring-centerの中心は常に画面の縦横中央(50vw,50vh)にあるため、
-         .menu-fab（下部中央・半径28px）の中心位置までの差分だけtranslateYで下げ、
-         .menu-fabと同じ56px相当の見た目になるよう縮小する */
-      transform:
-        translate(-50%,-50%)
-        translateY(calc(50vh - (max(env(safe-area-inset-bottom, 0px), 8px) + 12px) - 28px))
-        scale(0.42);
+      animation: ringCenterCollapse .46s cubic-bezier(.36,.07,.19,.97) forwards;
     }
 
 /* ===== LANDSCAPE (スマホ横向き) ===== */

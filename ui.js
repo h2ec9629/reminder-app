@@ -107,21 +107,21 @@ function ringGo(name) {
   switchTab(name, navBtn);
 
   const screen = document.getElementById('topRingScreen');
-  screen.classList.add('ring-closing'); // ①8個の項目を中心へ吸い込む
+  screen.classList.add('ring-closing'); // ①8個の項目が伸びて縮む弾性運動で中心へ吸い込まれる（.42s）
 
   setTimeout(() => {
-    screen.classList.add('ring-collapse'); // ②中央円を縮小させつつ下部中央（menu-fab位置）へ移動
-  }, 300);
+    screen.classList.add('ring-collapse'); // ②中央円がバネのように行き過ぎてから下部中央（menu-fab位置）へ着地（.46s）
+  }, 420);
 
   setTimeout(() => {
     screen.classList.add('hide'); // ③フェードアウトして裏の本物のmenu-fabへバトンタッチ
-  }, 300 + 320);
+  }, 420 + 460);
 
   setTimeout(() => {
     // 次に開いた時のためにリセット（アプリ再読み込みで再表示される仕様だが念のため）
     screen.classList.remove('ring-closing', 'ring-collapse');
     _ringClosing = false;
-  }, 300 + 320 + 240);
+  }, 420 + 460 + 240);
 }
 
 // --- リングの回転（常時ゆっくり反時計回り＋フリックで自由に回せる）---
