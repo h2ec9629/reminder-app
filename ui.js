@@ -355,22 +355,28 @@ function renderSchedule() {
       acItems.forEach(item => {
         // ag=材料名、hako=梱包箱名、qty=支給数（配送ページと同じ「箱は週内で初出日だけ表示」
         // 仕様のため、hakoが付かない行もある＝その材料の箱は別の日にまとめて表示済み）。
-        // 2026-08-15〜：梱包箱は専用の青タグ（.sch-tag-hako）で表示。ag(材料名)が無い行
-        // （手動追加箱や、実体が別日にある箱の週内代表表示）はメイン行を出さずタグだけにする。
-        const mainLabel = item.ag || '';
-        let hakoTag = '';
+        // 2026-08-15〜：引取(黄)・納品(緑)と同じ形式で、梱包箱行にも専用タグ「梱包」(青)を
+        // 新設。タグ自体は固定文言「梱包」、箱名・支給数はsch-row-mainとsch-row-sub側に出す
+        // （旧版は箱名をタグの中に詰め込んでいて引取/納品と見た目が揃っていなかった為の修正）。
+        if (item.ag) {
+          html += `<div class="sch-row">
+            <span class="sch-tag sch-tag-ac">引取</span>
+            <div class="sch-row-body">
+              <div class="sch-row-main">${escH(item.ag)}</div>
+            </div>
+          </div>`;
+        }
         if (item.hako) {
           const hasQty = item.qty !== null && item.qty !== undefined && item.qty !== '';
-          const tagText = item.hako + (hasQty ? ` × ${item.qty}` : '');
-          hakoTag = `<span class="sch-tag sch-tag-hako">${escH(tagText)}</span>`;
+          const sub = hasQty ? `支給数 × ${item.qty}` : '';
+          html += `<div class="sch-row">
+            <span class="sch-tag sch-tag-hako">梱包</span>
+            <div class="sch-row-body">
+              <div class="sch-row-main">${escH(item.hako)}</div>
+              ${sub ? `<div class="sch-row-sub">${escH(sub)}</div>` : ''}
+            </div>
+          </div>`;
         }
-        html += `<div class="sch-row">
-          <span class="sch-tag sch-tag-ac">引取</span>
-          <div class="sch-row-body">
-            ${mainLabel ? `<div class="sch-row-main">${escH(mainLabel)}</div>` : ''}
-            ${hakoTag ? `<div class="sch-row-sub">${hakoTag}</div>` : ''}
-          </div>
-        </div>`;
       });
       adItems.forEach(item => {
         const sub = [item.s, item.u].filter(Boolean).join(' · ');
