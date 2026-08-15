@@ -29,7 +29,22 @@ async function forceUpdate() {
   checkPatStatus();
   initRimaToggle();
   renderHome();
-  switchTab('home', document.getElementById('nav-home'));
+
+  // VDECK再生中断バグへの対策：iOSのメモリ解放等で同一セッション内にページが
+  // 勝手に作り直された場合、起動のたびに出るリングメニューを出さず、直前に
+  // 見ていたタブへ黙って復帰する。sessionStorageは「タブを完全に閉じて開き直す」
+  // と空になる仕様なので、これで「本当の新規起動」と「途中でのリロード」を区別する。
+  let _lastTab = null;
+  try{ _lastTab = sessionStorage.getItem('ojisan_last_tab_v1'); }catch(e){}
+
+  if (_lastTab && _lastTab !== 'home' && document.getElementById('nav-' + _lastTab)) {
+    const ringScreen = document.getElementById('topRingScreen');
+    if (ringScreen) ringScreen.classList.add('hide');
+    switchTab(_lastTab, document.getElementById('nav-' + _lastTab));
+  } else {
+    switchTab('home', document.getElementById('nav-home'));
+  }
+
   document.getElementById('deadlineInput').value = todayStr();
   if(Notification.permission==='granted') triggerNotifications();
   startRimaRotation();

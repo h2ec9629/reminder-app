@@ -76,6 +76,7 @@ function switchTab(name,btn) {
   document.querySelectorAll('.nav-btn, .nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   btn.classList.add('active');
+  try{ sessionStorage.setItem('ojisan_last_tab_v1', name); }catch(e){}
   if(name==='home')     renderHome();
   if(name==='settings') updateNotifStatus();
   if(name==='schedule') renderSchedule();

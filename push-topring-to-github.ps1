@@ -1,8 +1,8 @@
 # =======================================================
 # push-topring-to-github.ps1
-# Push index.html, style.css, ui.js, main.js, sync.js, sw.js to H2EC9629/reminder-app (main)
-# via GitHub Contents API. No git command used. English messages only
-# (avoids console mojibake on Windows PowerShell 5.1 default codepage).
+# Push index.html, style.css, ui.js, main.js, sync.js, sw.js, VDEK-main/index.html
+# to H2EC9629/reminder-app (main) via GitHub Contents API. No git command used.
+# English messages only (avoids console mojibake on Windows PowerShell 5.1 default codepage).
 # =======================================================
 
 $RepoOwner = "H2EC9629"
@@ -11,7 +11,7 @@ $Branch    = "main"
 $LocalDir  = "C:\Users\mmtm9\Desktop\dev\reminder-app-main"
 $PatFile   = "C:\Users\mmtm9\OneDrive\app\_local\github_pat.txt"
 
-$Files = @("index.html", "style.css", "ui.js", "main.js", "sync.js", "sw.js")
+$Files = @("index.html", "style.css", "ui.js", "main.js", "sync.js", "sw.js", "VDEK-main/index.html")
 
 function Fail($msg) {
     Write-Host ""
@@ -54,7 +54,7 @@ try {
         Write-Host "  Size: $($bytes.Length) bytes"
 
         $body = @{
-            message = "$FilePath: VFAP reminder badge support"
+            message = "$FilePath: ring menu redesign + VDECK wake lock + reload quiet-restore fix"
             content = $base64Content
             sha     = $sha
             branch  = $Branch
