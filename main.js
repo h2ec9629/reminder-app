@@ -38,16 +38,20 @@ async function forceUpdate() {
   try{ _lastTab = sessionStorage.getItem('ojisan_last_tab_v1'); }catch(e){}
 
   if (_lastTab && _lastTab !== 'home' && document.getElementById('nav-' + _lastTab)) {
+    // 同一セッション内でのリロード＝リングは今回出さないので、回転アニメ/時計の
+    // タイマー類もそもそも起動しない（起動してから止めるのではなく、最初から
+    // 起動しない方が確実かつ無駄がない。2026-08-15、二重ループ負荷対策の一環）。
+    _ringLoopStopped = true;
     const ringScreen = document.getElementById('topRingScreen');
     if (ringScreen) ringScreen.classList.add('hide');
     switchTab(_lastTab, document.getElementById('nav-' + _lastTab));
   } else {
     switchTab('home', document.getElementById('nav-home'));
+    initRingWheel();
+    initRingClock();
   }
 
   document.getElementById('deadlineInput').value = todayStr();
   if(Notification.permission==='granted') triggerNotifications();
   startRimaRotation();
-  initRingWheel();
-  initRingClock();
 })();

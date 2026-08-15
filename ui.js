@@ -122,6 +122,14 @@ function ringGo(name) {
     // 次に開いた時のためにリセット（アプリ再読み込みで再表示される仕様だが念のため）
     screen.classList.remove('ring-closing', 'ring-collapse');
     _ringClosing = false;
+
+    // リング画面には「戻る」導線が無く二度と表示されない仕様なので、ここで
+    // 回転アニメ(requestAnimationFrameループ)と時計更新(setInterval)を完全停止する。
+    // 止めないとVDECK等を見ている間もバックで永遠に回り続け、CPU/電池負荷が常に
+    // 二重になっていた（2026-08-15、VDECK再生中断バグの調査で発覚・対策）。
+    // ※将来「リングに戻る」導線を追加する場合はここでの停止と合わせて再開処理も必要。
+    _ringLoopStopped = true;
+    if (_ringClockTimer) { clearInterval(_ringClockTimer); _ringClockTimer = null; }
   }, 420 + 460 + 240);
 }
 
@@ -134,6 +142,8 @@ let _ringLastT     = 0;   // requestAnimationFrame用の前回時刻
 let _ringPrevMoveT = 0;   // pointermove用の前回時刻（速度計算）
 let _ringMoved     = 0;   // ドラッグ総移動量（タップ判定用）
 let _ringDownT     = 0;
+let _ringLoopStopped = false; // trueになったら_ringLoopのrequestAnimationFrame再スケジュールを止める
+let _ringClockTimer  = null;  // 時計更新setIntervalのID（リング画面を離れたらclearInterval）
 
 const RING_IDLE_SPEED = -0.003; // 待機中の自動回転速度（deg/ms）＝マイナスで反時計回り（左回転）
 const RING_FRICTION   = 0.98;   // 慣性の減衰率（16ms相当あたり）。1に近いほど長く回り続ける
@@ -168,7 +178,10 @@ function _ringLoop(t) {
     }
     _ringApply();
   }
-  requestAnimationFrame(_ringLoop);
+  // リング画面を離れて二度と戻らない仕様のため、_ringLoopStoppedが立ったら
+  // ここで再スケジュールを打ち切って完全停止する（VDECK等を見ている間もバックで
+  // 回り続けてCPU/電池を無駄に食っていた問題への対策。2026-08-15）
+  if (!_ringLoopStopped) requestAnimationFrame(_ringLoop);
 }
 
 function initRingWheel() {
@@ -233,7 +246,7 @@ function _ringClockTick() {
 }
 function initRingClock() {
   _ringClockTick();
-  setInterval(_ringClockTick, 1000);
+  _ringClockTimer = setInterval(_ringClockTick, 1000);
 }
 
 // === 右下丸ボタン→オーバーレイメニュー（縦リスト） ===

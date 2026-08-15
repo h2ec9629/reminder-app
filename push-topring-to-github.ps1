@@ -54,7 +54,7 @@ try {
         Write-Host "  Size: $($bytes.Length) bytes"
 
         $body = @{
-            message = "$FilePath: ring menu redesign + VDECK wake lock + reload quiet-restore fix"
+            message = "$FilePath: ring menu redesign + VDECK wake lock + reload quiet-restore + stop ring RAF/interval loop after dismiss"
             content = $base64Content
             sha     = $sha
             branch  = $Branch
