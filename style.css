@@ -973,6 +973,11 @@
     }
     .sch-tag-ac { background: var(--warning-dim); color: #FBB040; }
     .sch-tag-ad { background: var(--success-dim); color: #4ADE80; }
+    /* 梱包箱タグ（2026-08-15追加：配送ページの箱名・支給数を専用タグで表示、青） */
+    .sch-tag-hako {
+      display: inline-block; margin-top: 0;
+      background: #12283F; color: #4FA8FF;
+    }
     .sch-row-body { flex: 1; }
     .sch-row-main {
       font-size: 13px; font-weight: 600;
