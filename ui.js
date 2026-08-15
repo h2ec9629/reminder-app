@@ -267,7 +267,13 @@ let _schSyncedAt    = null;
 let _ganttData      = null;
 let _syncAttempted  = false;
 
-// ▼日程タブ＝日付ごとのカードリスト（引取/納品）。データは excel_schedule.ac_side/ad_side（VBA:Module2が生成）。
+// ▼日程タブ＝日付ごとのカードリスト（引取/納品）。データは excel_schedule.ac_side/ad_side
+//   （nittei_to_gist.pyが生成）。2026-08-15〜：配送ページ(VFAP haiso.html)の表示をそのまま
+//   再現する方式に変更されたのに合わせ、表示窓も「今週(月〜金)のみ」に変更（以前は基準日から
+//   14日分のローリング表示だった）。ac_side自体もPython側で既に今週ぶんに絞って生成されて
+//   いるが、Gistのタイムラグ等の保険として、ここでも同じ「今週」の範囲でクライアント側フィルタ
+//   をかける。引取(ac)のitemには材料名(ag)に加えて梱包箱名(hako)・支給数(qty)が付くようになった
+//   （付かない＝配送ページ側で今週まだその箱の初出扱いになっていない「隠れ」行）。
 //   完了フィルタは無し＝来た納品行は全部出す。完了で消す挙動はこの関数には無い。
 //   ※横棒の「ガントタブ」は別ファイル calendar.js:renderGantt()。同じGistの別データを使う。混同注意。
 function renderSchedule() {
@@ -286,25 +292,33 @@ function renderSchedule() {
                      && /^\d{4}-\d{2}-\d{2}$/.test(_ganttData.base_date))
                     ? _ganttData.base_date
                     : todayStr();
-  const limitDate  = new Date(anchorStr + 'T00:00:00'); limitDate.setDate(limitDate.getDate() + 14);
-  const limitStr   = `${limitDate.getFullYear()}-${String(limitDate.getMonth()+1).padStart(2,'0')}-${String(limitDate.getDate()).padStart(2,'0')}`;
+
+  // 配送ページと同じ「今週（月〜金）」窓。日曜だけ-6、それ以外は1-dayでその週の月曜へ。
+  const anchorD = new Date(anchorStr + 'T00:00:00');
+  const wday    = anchorD.getDay();
+  const monD    = new Date(anchorD);
+  monD.setDate(monD.getDate() + (wday === 0 ? -6 : 1 - wday));
+  const friD    = new Date(monD); friD.setDate(friD.getDate() + 4);
+  const toIso   = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const mondayStr = toIso(monD);
+  const fridayStr = toIso(friD);
 
   // 日付でグルーピング
   const dateMap = {};
   ac.forEach(item => {
-    if (item.date < anchorStr || item.date > limitStr) return;
+    if (item.date < mondayStr || item.date > fridayStr) return;
     if (!dateMap[item.date]) dateMap[item.date] = { ac: [], ad: [] };
     dateMap[item.date].ac.push(item);
   });
   ad.forEach(item => {
-    if (item.date < anchorStr || item.date > limitStr) return;
+    if (item.date < mondayStr || item.date > fridayStr) return;
     if (!dateMap[item.date]) dateMap[item.date] = { ac: [], ad: [] };
     dateMap[item.date].ad.push(item);
   });
   const dates = Object.keys(dateMap).sort();
 
   if (dates.length === 0) {
-    grid.innerHTML = '<div class="sch-empty-msg">14日以内の日程はありません</div>';
+    grid.innerHTML = '<div class="sch-empty-msg">今週の日程はありません</div>';
   } else {
     let html = '';
     dates.forEach(date => {
@@ -320,10 +334,20 @@ function renderSchedule() {
           ${fmtDateStr(date)}
         </div>`;
       acItems.forEach(item => {
+        // ag=材料名、hako=梱包箱名、qty=支給数（配送ページと同じ「箱は週内で初出日だけ表示」
+        // 仕様のため、hakoが付かない行もある＝その材料の箱は別の日にまとめて表示済み）
+        const mainLabel = item.ag || item.hako || '';
+        let sub = '';
+        if (item.hako) {
+          const hasQty = item.qty !== null && item.qty !== undefined && item.qty !== '';
+          const qtyPart = hasQty ? `${item.ag ? ' × ' : '× '}${item.qty}` : '';
+          sub = item.ag ? (item.hako + qtyPart) : qtyPart;
+        }
         html += `<div class="sch-row">
           <span class="sch-tag sch-tag-ac">引取</span>
           <div class="sch-row-body">
-            <div class="sch-row-main">${escH(item.ag)}</div>
+            <div class="sch-row-main">${escH(mainLabel)}</div>
+            ${sub ? `<div class="sch-row-sub">${escH(sub)}</div>` : ''}
           </div>
         </div>`;
       });
