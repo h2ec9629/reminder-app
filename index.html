@@ -201,7 +201,12 @@
 
   <!-- SCHEDULE -->
   <div id="tab-schedule" class="tab-content">
-    <div class="sch-title-bar">14日以内の引取・配送日程</div>
+    <div class="sch-title-bar">引取・配送日程</div>
+    <div class="sch-week-nav">
+      <button type="button" class="sch-week-btn" id="schPrevBtn" onclick="schPrevWeek()">◀ 前週</button>
+      <span class="sch-week-label" id="schWeekLabel">今週</span>
+      <button type="button" class="sch-week-btn" id="schNextBtn" onclick="schNextWeek()">来週 ▶</button>
+    </div>
     <div id="scheduleGrid"></div>
     <div id="schSynced" class="sch-synced"></div>
   </div>

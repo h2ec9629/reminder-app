@@ -79,7 +79,7 @@ function switchTab(name,btn) {
   try{ sessionStorage.setItem('ojisan_last_tab_v1', name); }catch(e){}
   if(name==='home')     renderHome();
   if(name==='settings') updateNotifStatus();
-  if(name==='schedule') renderSchedule();
+  if(name==='schedule') { _schWeekOffset = 0; renderSchedule(); }
   if(name==='calendar') renderCalendar();
   if(name==='gantt')    renderGantt();
   if(name==='calc')     calcDisplay();
@@ -266,25 +266,28 @@ let _excelSchedule  = null;
 let _schSyncedAt    = null;
 let _ganttData      = null;
 let _syncAttempted  = false;
+let _schWeekOffset  = 0; // 0=今週, 1=来週。配送ページ(VFAP haiso.html)の週切替を再現したもの。
+                         // Gistにはnittei_to_gist.pyが今週・来週の2週分しか送ってこないので、
+                         // 切替できる範囲もこの2つだけ（switchTabで毎回0にリセットされる）。
 
-// ▼日程タブ＝日付ごとのカードリスト（引取/納品）。データは excel_schedule.ac_side/ad_side
-//   （nittei_to_gist.pyが生成）。2026-08-15〜：配送ページ(VFAP haiso.html)の表示をそのまま
-//   再現する方式に変更されたのに合わせ、表示窓も「今週(月〜金)のみ」に変更（以前は基準日から
-//   14日分のローリング表示だった）。ac_side自体もPython側で既に今週ぶんに絞って生成されて
-//   いるが、Gistのタイムラグ等の保険として、ここでも同じ「今週」の範囲でクライアント側フィルタ
-//   をかける。引取(ac)のitemには材料名(ag)に加えて梱包箱名(hako)・支給数(qty)が付くようになった
+// ▼日程タブ＝日付ごとのカードリスト（引取/納品）。データは excel_schedule.weeks[週の月曜ISO日付]
+//   .ac_side/ad_side（nittei_to_gist.pyが生成）。2026-08-15〜：配送ページ(VFAP haiso.html)の表示を
+//   そのまま再現する方式に変更されたのに合わせ、表示窓も「週(月〜金)単位」に変更（以前は基準日から
+//   14日分のローリング表示だった）。さらに同日、配送ページと同じ週切替（今週/来週の2週分）にも対応。
+//   引取(ac)のitemには材料名(ag)に加えて梱包箱名(hako)・支給数(qty)が付くようになった
 //   （付かない＝配送ページ側で今週まだその箱の初出扱いになっていない「隠れ」行）。
 //   完了フィルタは無し＝来た納品行は全部出す。完了で消す挙動はこの関数には無い。
 //   ※横棒の「ガントタブ」は別ファイル calendar.js:renderGantt()。同じGistの別データを使う。混同注意。
 function renderSchedule() {
-  const grid  = document.getElementById('scheduleGrid');
-  const syncd = document.getElementById('schSynced');
+  const grid    = document.getElementById('scheduleGrid');
+  const syncd   = document.getElementById('schSynced');
+  const label   = document.getElementById('schWeekLabel');
+  const prevBtn = document.getElementById('schPrevBtn');
+  const nextBtn = document.getElementById('schNextBtn');
   if (!_excelSchedule) {
     grid.innerHTML = '<div class="sch-empty-msg">同期中...</div>';
     return;
   }
-  const ac = _excelSchedule.ac_side || [];
-  const ad = _excelSchedule.ad_side || [];
 
   // 起点（基準日）：エクセルのbase_date（デイライン）をミラーする。
   // PCの今日(new Date)には依存しない＝日を跨いでもエクセルがpushするまで窓は動かない。
@@ -293,17 +296,33 @@ function renderSchedule() {
                     ? _ganttData.base_date
                     : todayStr();
 
-  // 配送ページと同じ「今週（月〜金）」窓。日曜だけ-6、それ以外は1-dayでその週の月曜へ。
+  // 配送ページと同じ「週（月〜金）」窓。日曜だけ-6、それ以外は1-dayでその週の月曜へ。
+  const toIso   = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const anchorD = new Date(anchorStr + 'T00:00:00');
   const wday    = anchorD.getDay();
-  const monD    = new Date(anchorD);
-  monD.setDate(monD.getDate() + (wday === 0 ? -6 : 1 - wday));
-  const friD    = new Date(monD); friD.setDate(friD.getDate() + 4);
-  const toIso   = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  const mondayStr = toIso(monD);
-  const fridayStr = toIso(friD);
+  const thisMonD = new Date(anchorD);
+  thisMonD.setDate(thisMonD.getDate() + (wday === 0 ? -6 : 1 - wday));
 
-  // 日付でグルーピング
+  const selMonD = new Date(thisMonD); selMonD.setDate(selMonD.getDate() + _schWeekOffset * 7);
+  const selFriD = new Date(selMonD);  selFriD.setDate(selFriD.getDate() + 4);
+  const mondayStr = toIso(selMonD);
+  const fridayStr = toIso(selFriD);
+
+  // Python側はexcel_schedule.weeks[週の月曜ISO日付]に週ごとのac_side/ad_sideを入れて送ってくる。
+  // 万一古い形式（weeksが無くac_side/ad_sideが直下にある版）のGistが来ても今週分として拾えるよう
+  // フォールバックしておく。
+  const weeks = _excelSchedule.weeks;
+  const weekData = weeks ? (weeks[mondayStr] || { ac_side: [], ad_side: [] })
+                         : { ac_side: _excelSchedule.ac_side || [], ad_side: _excelSchedule.ad_side || [] };
+  const ac = weekData.ac_side || [];
+  const ad = weekData.ad_side || [];
+
+  const weekLabelText = _schWeekOffset === 0 ? '今週' : '来週';
+  if (label)   label.textContent = weekLabelText;
+  if (prevBtn) prevBtn.disabled  = (_schWeekOffset <= 0);
+  if (nextBtn) nextBtn.disabled  = (_schWeekOffset >= 1);
+
+  // 日付でグルーピング（Python側で既に選択週ぶんに絞られているが、保険で範囲チェックもしておく）
   const dateMap = {};
   ac.forEach(item => {
     if (item.date < mondayStr || item.date > fridayStr) return;
@@ -318,7 +337,7 @@ function renderSchedule() {
   const dates = Object.keys(dateMap).sort();
 
   if (dates.length === 0) {
-    grid.innerHTML = '<div class="sch-empty-msg">今週の日程はありません</div>';
+    grid.innerHTML = `<div class="sch-empty-msg">${weekLabelText}の日程はありません</div>`;
   } else {
     let html = '';
     dates.forEach(date => {
@@ -370,6 +389,18 @@ function renderSchedule() {
     const d = new Date(_schSyncedAt);
     syncd.textContent = `最終同期: ${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
   }
+}
+
+// 配送タブの週切替（今週/来週の2週のみ。Gist側もこの2週分しか持っていない）
+function schPrevWeek() {
+  if (_schWeekOffset <= 0) return;
+  _schWeekOffset--;
+  renderSchedule();
+}
+function schNextWeek() {
+  if (_schWeekOffset >= 1) return;
+  _schWeekOffset++;
+  renderSchedule();
 }
 
 function fmtDateStr(s) {
