@@ -1366,7 +1366,7 @@
       position: absolute; inset: 0;
       transform: rotate(var(--wheel-angle));
     }
-    /* 各項目はring-spinの回転に乗って円周上を巡る（位置はi*45度で固定・半径は実測38%相当） */
+    /* 各項目はring-spinの回転に乗って円周上を巡る（位置はi*45度で固定・半径は実測38%相当。8項目=360/8=45度間隔） */
     .ring-item {
       position: absolute; top: 50%; left: 50%;
       width: 23%; aspect-ratio: 1 / 1;

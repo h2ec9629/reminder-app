@@ -14,8 +14,9 @@ function renderHome() {
   // urgent badge
   const uc=overdue.length+today.length+in3.length;
   const badge=document.getElementById('urgentBadge');
-  if(uc>0){ badge.textContent=`${uc}件`; badge.classList.add('show'); document.getElementById('homeDot').classList.add('show'); }
-  else    { badge.classList.remove('show'); document.getElementById('homeDot').classList.remove('show'); }
+  const homeDot=document.getElementById('homeDot'); // 2026-08-16：リングの予定アイコンに移設。念のためnullガード
+  if(uc>0){ badge.textContent=`${uc}件`; badge.classList.add('show'); if(homeDot) homeDot.classList.add('show'); }
+  else    { badge.classList.remove('show'); if(homeDot) homeDot.classList.remove('show'); }
 
   // notif banner
   document.getElementById('notifBanner').style.display =
@@ -96,6 +97,8 @@ function loadVdeckFrame(){
 }
 
 // === TOP RING SCREEN（起動時トップページ・回転リングメニュー） ===
+// 2026-08-16：起動時だけでなく、どのタブからでも三本線ボタン(menuFab)をタップすると
+// このリングをオーバーレイ表示できるようにした（旧・縦リストのハンバーガーメニューは廃止）。
 // タップされた項目に応じてタブは即切り替え（オーバーレイの裏で待機）、
 // 見た目は①項目が中心へ吸い込まれる→②中央円が縮小しながら下部オーバーレイボタンの位置へ移動→
 // ③画面全体をフェードアウトして裏の本物の.menu-fabに切り替わる、の3段階で演出する。
@@ -104,8 +107,13 @@ function ringGo(name) {
   if (_ringClosing) return;
   _ringClosing = true;
 
-  const navBtn = document.getElementById('nav-' + name) || document.createElement('button');
-  switchTab(name, navBtn);
+  if (name === 'game') {
+    // GAMEはタブ切替ではなくオーバーレイ表示（switchTabにtab-gameは存在しないため専用分岐）
+    openGameMode();
+  } else {
+    const navBtn = document.getElementById('nav-' + name) || document.createElement('button');
+    switchTab(name, navBtn);
+  }
 
   const screen = document.getElementById('topRingScreen');
   screen.classList.add('ring-closing'); // ①8個の項目が伸びて縮む弾性運動で中心へ吸い込まれる（.42s）
@@ -119,18 +127,45 @@ function ringGo(name) {
   }, 420 + 460);
 
   setTimeout(() => {
-    // 次に開いた時のためにリセット（アプリ再読み込みで再表示される仕様だが念のため）
+    // 次に開いた時のためにリセット
     screen.classList.remove('ring-closing', 'ring-collapse');
     _ringClosing = false;
 
-    // リング画面には「戻る」導線が無く二度と表示されない仕様なので、ここで
-    // 回転アニメ(requestAnimationFrameループ)と時計更新(setInterval)を完全停止する。
-    // 止めないとVDECK等を見ている間もバックで永遠に回り続け、CPU/電池負荷が常に
-    // 二重になっていた（2026-08-15、VDECK再生中断バグの調査で発覚・対策）。
-    // ※将来「リングに戻る」導線を追加する場合はここでの停止と合わせて再開処理も必要。
+    // リングを閉じたら回転アニメ(requestAnimationFrameループ)と時計更新(setInterval)を完全停止する。
+    // 止めないとリングが見えない間もバックで永遠に回り続け、CPU/電池負荷が無駄にかかり続ける
+    // （2026-08-15、VDECK再生中断バグの調査で発覚・対策。2026-08-16、三本線での再オープンに
+    // 対応するため、停止だけでなくopenRingOverlay()側で再開する作りに拡張した）。
     _ringLoopStopped = true;
     if (_ringClockTimer) { clearInterval(_ringClockTimer); _ringClockTimer = null; }
   }, 420 + 460 + 240);
+}
+
+// --- 三本線ボタンでのリング開閉（2026-08-16追加） ---
+// リング表示中は本物の.menu-fab(id=menuFab)がリング画面(z-index:500)の下に隠れて押せなくなるため、
+// リング画面自身に重ねて置いた#ringCloseFab（見た目は同じボタン）から閉じる。
+function toggleRingOverlay() {
+  const screen = document.getElementById('topRingScreen');
+  if (screen.classList.contains('hide')) {
+    openRingOverlay();
+  } else {
+    closeRingOverlay();
+  }
+}
+function openRingOverlay() {
+  const screen = document.getElementById('topRingScreen');
+  screen.classList.remove('hide', 'ring-closing', 'ring-collapse');
+  _ringClosing = false;
+  _ringStartLoop();
+  if (_ringClockTimer) clearInterval(_ringClockTimer);
+  initRingClock();
+}
+function closeRingOverlay() {
+  const screen = document.getElementById('topRingScreen');
+  screen.classList.remove('ring-closing', 'ring-collapse');
+  screen.classList.add('hide');
+  _ringClosing = false;
+  _ringLoopStopped = true;
+  if (_ringClockTimer) { clearInterval(_ringClockTimer); _ringClockTimer = null; }
 }
 
 // --- リングの回転（常時ゆっくり反時計回り＋フリックで自由に回せる）---
@@ -178,10 +213,17 @@ function _ringLoop(t) {
     }
     _ringApply();
   }
-  // リング画面を離れて二度と戻らない仕様のため、_ringLoopStoppedが立ったら
-  // ここで再スケジュールを打ち切って完全停止する（VDECK等を見ている間もバックで
-  // 回り続けてCPU/電池を無駄に食っていた問題への対策。2026-08-15）
+  // _ringLoopStoppedが立ったらここで再スケジュールを打ち切って完全停止する（VDECK等を
+  // 見ている間もバックで回り続けてCPU/電池を無駄に食っていた問題への対策。2026-08-15）。
+  // 再開は_ringStartLoop()側（openRingOverlay()・起動時の初回表示から呼ばれる）が担当する。
   if (!_ringLoopStopped) requestAnimationFrame(_ringLoop);
+}
+
+// リングの自動回転ループを（再）開始する。dtの大ジャンプを防ぐため_ringLastTもリセットする。
+function _ringStartLoop() {
+  _ringLoopStopped = false;
+  _ringLastT = 0;
+  requestAnimationFrame(_ringLoop);
 }
 
 function initRingWheel() {
@@ -229,7 +271,8 @@ function initRingWheel() {
   wrap.addEventListener('pointerup', endDrag);
   wrap.addEventListener('pointercancel', endDrag);
 
-  requestAnimationFrame(_ringLoop);
+  // ループの開始/再開は_ringStartLoop()側（main.jsの起動処理・openRingOverlay()）が担当する。
+  // ここではポインタ操作の待受登録のみ行う（三本線からの再オープンにも対応するため常に一度だけ呼ぶ）。
 }
 
 // --- リング上部の日付・時刻表示（1秒ごとに更新するリアルタイム時計） ---
@@ -249,17 +292,8 @@ function initRingClock() {
   _ringClockTimer = setInterval(_ringClockTick, 1000);
 }
 
-// === 右下丸ボタン→オーバーレイメニュー（縦リスト） ===
-function toggleNavMenu(){
-  const open=document.getElementById('navMenu').classList.toggle('open');
-  document.getElementById('navOverlay').classList.toggle('open',open);
-  document.getElementById('menuFab').classList.toggle('open',open);
-}
-function closeNavMenu(){
-  document.getElementById('navMenu').classList.remove('open');
-  document.getElementById('navOverlay').classList.remove('open');
-  document.getElementById('menuFab').classList.remove('open');
-}
+// 2026-08-16：旧・縦リストのハンバーガーメニュー(toggleNavMenu/closeNavMenu)は廃止。
+// 三本線ボタンは上部の toggleRingOverlay()/openRingOverlay()/closeRingOverlay() に統一した。
 
 // === SCHEDULE ===
 let _excelSchedule  = null;
@@ -359,10 +393,15 @@ function renderSchedule() {
         // 新設。タグ自体は固定文言「梱包」、箱名・支給数はsch-row-mainとsch-row-sub側に出す
         // （旧版は箱名をタグの中に詰め込んでいて引取/納品と見た目が揃っていなかった為の修正）。
         if (item.ag) {
+          // mqty=材料自体の数量表示（配送ページの「品名（材料）」列の隣にある「数量」列の
+          // 再現。梱包箱側のqty＝「支給数」とは別物。大半は固定文言「要数」、ショーケース系は
+          // 急数の数字、灯具カバー系はその日の合算を100単位切り上げした数字。2026-08-16追加）
+          const mqtySub = item.mqty ? `数量 ${item.mqty}` : '';
           html += `<div class="sch-row">
             <span class="sch-tag sch-tag-ac">引取</span>
             <div class="sch-row-body">
               <div class="sch-row-main">${escH(item.ag)}</div>
+              ${mqtySub ? `<div class="sch-row-sub">${escH(mqtySub)}</div>` : ''}
             </div>
           </div>`;
         }
@@ -529,7 +568,7 @@ document.getElementById('addForm').addEventListener('submit', async e=>{
   e.target.reset();
   document.getElementById('deadlineInput').value=todayStr();
   showToast('追加しました');
-  setTimeout(()=>document.getElementById('nav-home').click(),400);
+  setTimeout(()=>switchTab('home', document.getElementById('nav-home') || document.createElement('button')),400);
   pushToMailbox(reminder); // 投函箱に非同期送信（失敗してもローカル保存は済み）
 });
 

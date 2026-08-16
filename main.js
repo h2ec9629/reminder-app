@@ -34,20 +34,26 @@ async function forceUpdate() {
   // 勝手に作り直された場合、起動のたびに出るリングメニューを出さず、直前に
   // 見ていたタブへ黙って復帰する。sessionStorageは「タブを完全に閉じて開き直す」
   // と空になる仕様なので、これで「本当の新規起動」と「途中でのリロード」を区別する。
+  // 2026-08-16：旧ハンバーガーメニュー廃止で nav-<name> のidが無くなったため、
+  // _lastTabの妥当性チェックは実在するtab-<name>ペインの有無で判定するよう変更。
   let _lastTab = null;
   try{ _lastTab = sessionStorage.getItem('ojisan_last_tab_v1'); }catch(e){}
 
-  if (_lastTab && _lastTab !== 'home' && document.getElementById('nav-' + _lastTab)) {
+  // 三本線タップでのリング再オープンにも対応するため、ポインタ操作の待受登録は
+  // 起動パスに関わらず常に一度だけ行う（ループの開始/停止は下のif/elseで個別に制御）。
+  initRingWheel();
+
+  if (_lastTab && _lastTab !== 'home' && document.getElementById('tab-' + _lastTab)) {
     // 同一セッション内でのリロード＝リングは今回出さないので、回転アニメ/時計の
     // タイマー類もそもそも起動しない（起動してから止めるのではなく、最初から
     // 起動しない方が確実かつ無駄がない。2026-08-15、二重ループ負荷対策の一環）。
     _ringLoopStopped = true;
     const ringScreen = document.getElementById('topRingScreen');
     if (ringScreen) ringScreen.classList.add('hide');
-    switchTab(_lastTab, document.getElementById('nav-' + _lastTab));
+    switchTab(_lastTab, document.getElementById('nav-' + _lastTab) || document.createElement('button'));
   } else {
-    switchTab('home', document.getElementById('nav-home'));
-    initRingWheel();
+    switchTab('home', document.getElementById('nav-home') || document.createElement('button'));
+    _ringStartLoop();
     initRingClock();
   }
 
