@@ -1433,6 +1433,30 @@
       animation: ringCenterCollapse .46s cubic-bezier(.36,.07,.19,.97) forwards;
     }
 
+    /* ===== 三本線タップでリングを開く時の演出（2026-08-16追加） =====
+       閉じる時（吸い込み→中央円が下部ボタン化→フェードアウト）と全く逆の順番・逆再生で出現させる：
+       ①フェードイン（画面全体、既存の.hide解除によるopacity transitionをそのまま利用）
+       ②中央円が.menu-fabの位置から画面中央へ、行き過ぎ→戻りのバネ運動を逆再生しながら広がる
+       ③8個のring-itemが中心からプルンと飛び出しながら円周上の定位置へ戻る（②の直後に開始）
+       同じ@keyframesをanimation-direction:reverseで逆再生することで、閉じる演出と寸分違わぬ
+       軌道を逆になぞらせている（新しくキーフレームを書き起こす必要が無い）。 */
+    .top-ring-screen.ring-opening .ring-center {
+      animation-name: ringCenterCollapse;
+      animation-duration: .46s;
+      animation-timing-function: cubic-bezier(.36,.07,.19,.97);
+      animation-direction: reverse;
+      animation-fill-mode: both;
+    }
+    .top-ring-screen.ring-opening .ring-item {
+      animation-name: ringItemSuckIn;
+      animation-duration: .42s;
+      animation-timing-function: cubic-bezier(.36,.07,.19,.97);
+      animation-delay: .46s; /* 中央円が広がり切ってから項目が飛び出す（閉じる時の逆順） */
+      animation-direction: reverse;
+      animation-fill-mode: both; /* delay中は100%キーフレーム（吸い込まれた状態）を保持してから逆再生開始 */
+      pointer-events: none; /* 演出完了まではタップ不可。openRingOverlay()がring-openingを外すと復帰 */
+    }
+
 /* ===== LANDSCAPE (スマホ横向き) ===== */
 @media (orientation: landscape) and (max-height: 500px) {
   :root {

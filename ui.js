@@ -151,17 +151,28 @@ function toggleRingOverlay() {
     closeRingOverlay();
   }
 }
+// 開く時は、閉じる時の演出（項目が中心へ吸い込まれる→中央円が下部ボタン化→フェードアウト）を
+// そっくりそのまま逆再生する：①フェードイン→②中央円が広がる（.46s）→③項目が円周へ飛び出す（.42s）。
+// 演出中はタップ・回転をブロックする（_ringClosingを流用。ringGo()の演出ガードと同じ仕組み）。
 function openRingOverlay() {
   const screen = document.getElementById('topRingScreen');
   screen.classList.remove('hide', 'ring-closing', 'ring-collapse');
-  _ringClosing = false;
-  _ringStartLoop();
+  screen.classList.add('ring-opening');
+  _ringClosing = true;
+
   if (_ringClockTimer) clearInterval(_ringClockTimer);
   initRingClock();
+
+  setTimeout(() => {
+    // 中央円(.46s)→項目(.42s、.46s遅延で開始)の合計で演出完了。回転は演出が終わってから再開する。
+    screen.classList.remove('ring-opening');
+    _ringClosing = false;
+    _ringStartLoop();
+  }, 460 + 420);
 }
 function closeRingOverlay() {
   const screen = document.getElementById('topRingScreen');
-  screen.classList.remove('ring-closing', 'ring-collapse');
+  screen.classList.remove('ring-closing', 'ring-collapse', 'ring-opening');
   screen.classList.add('hide');
   _ringClosing = false;
   _ringLoopStopped = true;
