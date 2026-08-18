@@ -984,6 +984,14 @@
       font-size: 11px; color: var(--text-sub);
       margin-top: 2px; line-height: 1.45;
     }
+    /* 納品：同一品名の明細No/依頼数・進捗数まとめ表示用グリッド（2026-08-18追加） */
+    .sch-row-detail-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 3px 12px; margin-top: 4px;
+    }
+    .sch-row-detail-item {
+      font-size: 11px; color: var(--text-sub); line-height: 1.5;
+    }
     .sch-empty-msg {
       text-align: center; color: var(--text-faint);
       font-size: 13px; font-weight: 600;
