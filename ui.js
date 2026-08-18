@@ -160,6 +160,14 @@ function openRingOverlay() {
   screen.classList.add('ring-opening');
   _ringClosing = true;
 
+  // 2026-08-17追記：VDECKタブの上にリングを重ねて開くと、VDECK自身のanalyzerLoop（RAF）が
+  // 裏で動いたままなので、そこにリング自身の回転RAFまで足すと「VDECK再生中断バグ」と同じ
+  // 二重負荷になり、リング展開中に再生を続けているとホワイトアウト/リロードが再発する
+  // （2026-08-17おじさん報告で確認）。VDECKタブの上に開く時だけ、時計は出すが自動回転
+  // ループは起動しない（角度はその場で静止表示）。
+  const vdeckTab = document.getElementById('tab-vdeck');
+  const onVdeck = !!(vdeckTab && vdeckTab.classList.contains('active'));
+
   if (_ringClockTimer) clearInterval(_ringClockTimer);
   initRingClock();
 
@@ -167,7 +175,7 @@ function openRingOverlay() {
     // 中央円(.46s)→項目(.42s、.46s遅延で開始)の合計で演出完了。回転は演出が終わってから再開する。
     screen.classList.remove('ring-opening');
     _ringClosing = false;
-    _ringStartLoop();
+    if (!onVdeck) _ringStartLoop();
   }, 460 + 420);
 }
 function closeRingOverlay() {
