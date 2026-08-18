@@ -437,15 +437,43 @@ function renderSchedule() {
           </div>
         </div>`;
       });
+      // 2026-08-18〜：同一品名(d)の納品行が複数ある場合（同じ材料で明細Noが複数）、
+      // 品名を1行にまとめ、明細No・依頼数/進捗数(s/u)だけを2列グリッドでコンパクト表示する。
+      // 1件しか無い品名は今まで通りの単純な1行表示のまま。
+      const adGroups = [];
+      const adGroupIndex = {};
       adItems.forEach(item => {
-        const sub = [item.s, item.u].filter(Boolean).join(' · ');
-        html += `<div class="sch-row">
-          <span class="sch-tag sch-tag-ad">納品</span>
-          <div class="sch-row-body">
-            <div class="sch-row-main">${escH(item.d||'')}</div>
-            ${sub ? `<div class="sch-row-sub">${escH(sub)}</div>` : ''}
-          </div>
-        </div>`;
+        const key = item.d || '';
+        if (!(key in adGroupIndex)) {
+          adGroupIndex[key] = adGroups.length;
+          adGroups.push({ name: key, items: [] });
+        }
+        adGroups[adGroupIndex[key]].items.push(item);
+      });
+      adGroups.forEach(group => {
+        if (group.items.length <= 1) {
+          const item = group.items[0];
+          const sub = [item.s, item.u].filter(Boolean).join(' · ');
+          html += `<div class="sch-row">
+            <span class="sch-tag sch-tag-ad">納品</span>
+            <div class="sch-row-body">
+              <div class="sch-row-main">${escH(group.name)}</div>
+              ${sub ? `<div class="sch-row-sub">${escH(sub)}</div>` : ''}
+            </div>
+          </div>`;
+        } else {
+          const cells = group.items.map(item => {
+            const parts = [item.s, item.u].filter(Boolean).join('　');
+            return `<span class="sch-row-detail-item">${escH(parts)}</span>`;
+          }).join('');
+          html += `<div class="sch-row">
+            <span class="sch-tag sch-tag-ad">納品</span>
+            <div class="sch-row-body">
+              <div class="sch-row-main">${escH(group.name)}</div>
+              <div class="sch-row-detail-grid">${cells}</div>
+            </div>
+          </div>`;
+        }
       });
       html += '</div>';
     });
