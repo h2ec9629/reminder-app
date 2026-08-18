@@ -405,36 +405,37 @@ function renderSchedule() {
           <span class="sch-day-hd-dot" style="background:${dotColor}"></span>
           ${fmtDateStr(date)}
         </div>`;
+      // ag=材料名、hako=梱包箱名、qty=支給数（配送ページと同じ「箱は週内で初出日だけ表示」
+      // 仕様のため、hakoが付かない行もある＝その材料の箱は別の日にまとめて表示済み）。
+      // 1つのitemがag・hakoを両方持つケースもあるため、以前は1回のforEachでitem単位に
+      // 引取→梱包の順に出力しており、item同士の並び次第で引取/梱包が交互に見えていた。
+      // 2026-08-18〜：おじさんの要望により「引取→梱包→納品」で完全にまとめて表示するよう、
+      // 2回に分けたforEachでまず全ての引取行、続けて全ての梱包行を出力する形に変更。
       acItems.forEach(item => {
-        // ag=材料名、hako=梱包箱名、qty=支給数（配送ページと同じ「箱は週内で初出日だけ表示」
-        // 仕様のため、hakoが付かない行もある＝その材料の箱は別の日にまとめて表示済み）。
-        // 2026-08-15〜：引取(黄)・納品(緑)と同じ形式で、梱包箱行にも専用タグ「梱包」(青)を
-        // 新設。タグ自体は固定文言「梱包」、箱名・支給数はsch-row-mainとsch-row-sub側に出す
-        // （旧版は箱名をタグの中に詰め込んでいて引取/納品と見た目が揃っていなかった為の修正）。
-        if (item.ag) {
-          // mqty=材料自体の数量表示（配送ページの「品名（材料）」列の隣にある「数量」列の
-          // 再現。梱包箱側のqty＝「支給数」とは別物。大半は固定文言「要数」、ショーケース系は
-          // 急数の数字、灯具カバー系はその日の合算を100単位切り上げした数字。2026-08-16追加）
-          const mqtySub = item.mqty ? `数量 ${item.mqty}` : '';
-          html += `<div class="sch-row">
-            <span class="sch-tag sch-tag-ac">引取</span>
-            <div class="sch-row-body">
-              <div class="sch-row-main">${escH(item.ag)}</div>
-              ${mqtySub ? `<div class="sch-row-sub">${escH(mqtySub)}</div>` : ''}
-            </div>
-          </div>`;
-        }
-        if (item.hako) {
-          const hasQty = item.qty !== null && item.qty !== undefined && item.qty !== '';
-          const sub = hasQty ? `支給数 × ${item.qty}` : '';
-          html += `<div class="sch-row">
-            <span class="sch-tag sch-tag-hako">梱包</span>
-            <div class="sch-row-body">
-              <div class="sch-row-main">${escH(item.hako)}</div>
-              ${sub ? `<div class="sch-row-sub">${escH(sub)}</div>` : ''}
-            </div>
-          </div>`;
-        }
+        if (!item.ag) return;
+        // mqty=材料自体の数量表示（配送ページの「品名（材料）」列の隣にある「数量」列の
+        // 再現。梱包箱側のqty＝「支給数」とは別物。大半は固定文言「要数」、ショーケース系は
+        // 急数の数字、灯具カバー系はその日の合算を100単位切り上げした数字。2026-08-16追加）
+        const mqtySub = item.mqty ? `数量 ${item.mqty}` : '';
+        html += `<div class="sch-row">
+          <span class="sch-tag sch-tag-ac">引取</span>
+          <div class="sch-row-body">
+            <div class="sch-row-main">${escH(item.ag)}</div>
+            ${mqtySub ? `<div class="sch-row-sub">${escH(mqtySub)}</div>` : ''}
+          </div>
+        </div>`;
+      });
+      acItems.forEach(item => {
+        if (!item.hako) return;
+        const hasQty = item.qty !== null && item.qty !== undefined && item.qty !== '';
+        const sub = hasQty ? `支給数 × ${item.qty}` : '';
+        html += `<div class="sch-row">
+          <span class="sch-tag sch-tag-hako">梱包</span>
+          <div class="sch-row-body">
+            <div class="sch-row-main">${escH(item.hako)}</div>
+            ${sub ? `<div class="sch-row-sub">${escH(sub)}</div>` : ''}
+          </div>
+        </div>`;
       });
       adItems.forEach(item => {
         const sub = [item.s, item.u].filter(Boolean).join(' · ');
