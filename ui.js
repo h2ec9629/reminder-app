@@ -71,6 +71,12 @@ function cardHTML(r) {
 
 const escH=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
+// ①②③…の丸数字ラベル（2026-08-18追加：配送タブで複数明細をまとめて表示する箇所に
+// 「どれが何番目か」を分かりやすくするため付番する。①〜⑳(1-20)まではUnicode丸数字を使い、
+// 21以降は稀なケース想定でフォールバック表記(21)にする。
+const CIRCLED_NUMS = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'];
+const circledNum = n => CIRCLED_NUMS[n-1] || `(${n})`;
+
 // === NAV ===
 function switchTab(name,btn) {
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
@@ -462,9 +468,11 @@ function renderSchedule() {
             </div>
           </div>`;
         } else {
-          const cells = group.items.map(item => {
+          // 2026-08-18〜：まとめ表示された各明細に①②③…と付番し、どれが何番目か分かりやすくする。
+          const cells = group.items.map((item, idx) => {
+            const num = circledNum(idx + 1);
             const parts = [item.s, item.u].filter(Boolean).join('　');
-            return `<span class="sch-row-detail-item">${escH(parts)}</span>`;
+            return `<span class="sch-row-detail-item">${num} ${escH(parts)}</span>`;
           }).join('');
           html += `<div class="sch-row">
             <span class="sch-tag sch-tag-ad">納品</span>
