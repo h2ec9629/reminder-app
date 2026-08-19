@@ -1092,6 +1092,17 @@ $("#tBar").onclick=e=>{
   vid.currentTime=s+(en-s)*p;
 };
 
+// ===== REMINDER MODE用の変数はここで先に定義しておく =====
+// 理由：起動直後のデフォルトmodeが"reminder"のため、直後のapplyAnMode()が
+// 即座にloadReminders()を呼んで_remListに書き込もうとする。_remListの定義が
+// もし後方（drawReminderScene関数の近く）にあると、まだ定義されていない変数を
+// 先に触ることになりJSがエラーで停止し、それより後ろの処理（openDB()を含む
+// 起動処理全体）が丸ごと実行されなくなる（2026-08-19発見・修正）。
+const REM_KEY="ojisan_reminders_v1";
+const REM_FONT_SYS='-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif';
+const REM_FONT_MONO='ui-monospace,"SF Mono",Menlo,monospace';
+let _remList=[],_remReadAt=0;
+
 const AN_ORDER=["sparks","video","reminder"];
 let anMode="reminder";
 applyAnMode();
@@ -1201,10 +1212,7 @@ buildSparkGrid($("#sparkGridNow"));
 buildSparkGrid($("#sparkGridSide"));
 
 // ===== REMINDER MODE（おじさんリマインダーアプリと同一originのlocalStorageを直読み） =====
-const REM_KEY="ojisan_reminders_v1";
-const REM_FONT_SYS='-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif';
-const REM_FONT_MONO='ui-monospace,"SF Mono",Menlo,monospace';
-let _remList=[],_remReadAt=0;
+// REM_KEY/_remList等の定義は前方（AN_ORDERの直前）に移動済み。ここでは関数だけ定義する。
 function remDaysUntil(s){
   if(!s)return null;
   const d=new Date(s);if(isNaN(d))return null;d.setHours(0,0,0,0);
