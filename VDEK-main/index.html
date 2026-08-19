@@ -117,9 +117,37 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px}
 .analyzerWrap{
   padding:14px;border-radius:14px;
   background:var(--ink2);border:1px solid var(--line);
-  overflow:hidden;
+  overflow:hidden;cursor:pointer;
 }
-#analyzer{display:block;width:100%;cursor:pointer}
+/* #analyzer/#analyzer2は「reminder」モード時のみ表示するcanvas（テキスト描画専用）。
+   以前はドット演出もこのcanvasに毎フレームJSで描いていたが、2026-08-19に
+   ドット演出は.sparkGrid（CSSアニメのみ）へ分離し、canvasはreminderモードの
+   時だけ.onクラスで表示する方式に変更した（詳細は下部JSコメント参照） */
+#analyzer,#analyzer2{display:none;width:100%;aspect-ratio:23/25;cursor:pointer;margin:0 auto}
+#analyzer.on,#analyzer2.on{display:block}
+
+/* ===== ドット演出（sparkGrid、2026-08-19にcanvas毎フレーム描画から置き換え） =====
+   旧実装は毎フレームJSでgetComputedStyle/getBoundingClientRectを2回ずつ呼んで
+   575マス(23×25)を再計算・再描画しており、これがVDECK再生中の発熱の主因だった。
+   新実装はマスをdivとして一度だけ生成し、あとはCSS keyframesの明滅アニメに
+   完全に任せる（JSのrequestAnimationFrameループ自体を廃止）。 */
+.sparkGrid{
+  display:none; grid-template-columns:repeat(23,1fr); gap:3px;
+  width:100%; aspect-ratio:23/25; margin:0 auto;
+}
+.sparkGrid.on{display:grid}
+.sparkGrid .cell{
+  border-radius:1px; background:var(--ink3);
+  animation:vdSparkFlicker 3s ease-in-out infinite;
+}
+@keyframes vdSparkFlicker{
+  0%,100%{ background:var(--ink3); }
+  50%{ background:var(--claude-orange); }
+}
+/* 横向きは#sideAnalyzerの42%枠内に収まるよう、おじさん要望で3割ほど小さく表示する（2026-08-19） */
+@media (orientation:landscape){
+  .sparkGrid{ width:70%; }
+}
 .videoStage{
   width:100%;border-radius:14px;overflow:hidden;background:#000;
 }
@@ -208,7 +236,7 @@ input[type=text]{
 
 <div id="sideAnalyzer">
   <div class="anToggle" id="anCapSide">analyzer<span class="sw" id="anSwitch2">⇄ 動画</span></div>
-  <div class="analyzerWrap on" id="dotsBoxSide"><canvas id="analyzer2"></canvas></div>
+  <div class="analyzerWrap on" id="dotsBoxSide"><div class="sparkGrid" id="sparkGridSide"></div><canvas id="analyzer2"></canvas></div>
   <div class="videoStage" id="videoBoxSide"><video id="bgVid2" muted loop playsinline></video></div>
 </div>
 <div id="mainCol">
@@ -244,6 +272,7 @@ input[type=text]{
     <div>
       <div class="anToggle" id="anCapNow">analyzer<span class="sw" id="anSwitch">⇄ 動画</span></div>
       <div class="analyzerWrap on" id="dotsBoxNow">
+        <div class="sparkGrid" id="sparkGridNow"></div>
         <canvas id="analyzer"></canvas>
       </div>
       <div class="videoStage" id="videoBoxNow">
@@ -252,8 +281,7 @@ input[type=text]{
 
       <div class="volRow">
         <span class="volLabel">音量</span>
-        <input type="range" id="volSlider" min="0" max="100" value="100">
-        <span class="volVal" id="volVal">100%</span>
+        <span class="volVal" id="volVal">未調整</span>
       </div>
     </div>
   </section>
@@ -601,15 +629,23 @@ $("#fixAll").onclick=async()=>{
 };
 
 /* ===== 音量そろえ =====
-   曲によって音量差があるのを直す機能。以前どこかのセッションで
-   AudioContext＋GainNodeを常時つないで補正する版を作ったことがあるが、
-   その方式だと<audio>の出力をAudioContext経由に付け替えることになり、
-   今回このセッションで散々苦労して撤去した「バックグラウンド再生が
-   止まる」「タップで音がおかしくなる」不具合を再発させかねない。
-   なのでここでは<audio>要素が標準で持ってるvolumeプロパティ
-   （0〜1、下げることしかできない）だけで済ます方式にしてある。
-   測定だけは一時的なAudioContextで行うが、再生経路には一切繋がない
-   （測定用のcontextは使い捨てで、mainのvidには触れない） */
+   曲によって音量差があるのを直す機能。
+   ⚠️2026-08-19判明：iOS Safari/WKWebView（＝iPhoneのホーム画面PWA）は
+   <audio>要素の.volumeプロパティをJSから変更しても実機の音量には反映されない
+   仕様のため、旧実装（測定した倍率をvid.volumeに毎回掛けるだけの方式）は
+   iPhoneでは実質何も起きていなかった。以前検討したAudioContext＋GainNode
+   常時接続版は、このセッションで散々苦労して撤去した「バックグラウンド
+   再生が止まる」「タップで音がおかしくなる」不具合を再発させかねないため
+   不採用。代わりに「測定した倍率を、音声データ自体（波形）に焼き込んで
+   保存し直す」方式に変更した。実際のサンプル値を減衰させてWAVとして
+   保存し直すので、.volumeに頼らずiOSでも確実に効く。
+   引き換えに「再生しながらその場で微調整するスライダー」は廃止した
+   （調整のたびに数分の曲を丸ごと焼き直すのは重すぎるため）。自動測定の
+   「音量そろえ」に一本化し、既に十分静か（倍率0.97超）な曲は書き換え
+   自体をスキップして容量増加を最小限に抑える（WAVは元のmp3等より
+   容量が数倍〜10倍程度に増えるため、変更不要な曲まで焼き直さない）。
+   測定・焼き込みは一時的なAudioContextで行うが、再生経路(vid)には
+   一切繋がない（このcontextは使い捨てで、mainのvidには触れない）。 */
 const TARGET_RMS=0.1;
 let measureCtx=null;
 function ensureMeasureCtx(){
@@ -619,40 +655,89 @@ function ensureMeasureCtx(){
   }
   return measureCtx;
 }
-async function measureLoudness(rec){
-  const ctx=ensureMeasureCtx();
-  if(!ctx)return null;
-  const b=await blobOf(rec);
-  if(!b||b.size>300*1048576)return null;
-  let buf;
-  try{buf=await ctx.decodeAudioData(await b.arrayBuffer());}
-  catch(_){return null;}
-  const ch=buf.getChannelData(0);
-  const step=Math.max(1,Math.floor(ch.length/200000));
-  let sum=0,n=0;
-  for(let i=0;i<ch.length;i+=step){sum+=ch[i]*ch[i];n++;}
-  return Math.sqrt(sum/Math.max(1,n));
-}
 function volFromRms(rms){
   if(!rms||rms<=0)return 1;
   return Math.max(0.15,Math.min(1,TARGET_RMS/rms));
 }
+// AudioBufferを16bit PCM WAVへエンコードしつつ、gain(0〜1)を波形に焼き込む。
+// gain<=1前提（このアプリの音量そろえは下げる方向にしか使わないため、
+// クリッピング防止のclampはあるが実質発火しない）。
+function bufferToWavWithGain(buffer,gain){
+  const numCh=buffer.numberOfChannels;
+  const sampleRate=buffer.sampleRate;
+  const numFrames=buffer.length;
+  const blockAlign=numCh*2;
+  const dataSize=numFrames*blockAlign;
+  const ab=new ArrayBuffer(44+dataSize);
+  const view=new DataView(ab);
+  const ws=(off,s)=>{for(let i=0;i<s.length;i++)view.setUint8(off+i,s.charCodeAt(i));};
+  ws(0,'RIFF');view.setUint32(4,36+dataSize,true);ws(8,'WAVE');
+  ws(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);
+  view.setUint16(22,numCh,true);view.setUint32(24,sampleRate,true);
+  view.setUint32(28,sampleRate*blockAlign,true);view.setUint16(32,blockAlign,true);
+  view.setUint16(34,16,true);
+  ws(36,'data');view.setUint32(40,dataSize,true);
+  const chans=[];for(let c=0;c<numCh;c++)chans.push(buffer.getChannelData(c));
+  let off=44;
+  for(let i=0;i<numFrames;i++){
+    for(let c=0;c<numCh;c++){
+      let s=chans[c][i]*gain;
+      s=Math.max(-1,Math.min(1,s));
+      view.setInt16(off,s<0?s*0x8000:s*0x7FFF,true);
+      off+=2;
+    }
+  }
+  return new Blob([ab],{type:'audio/wav'});
+}
+// 測定して、必要なら音量そろえ後の音声データで保存し直すところまで一括で行う。
+// 戻り値: {ok, changed, vol}。changed=trueの時だけIndexedDBの中身を書き換えている。
+async function measureAndMaybeFix(v){
+  const b=await blobOf(v);
+  if(!b||!b.size||b.size>300*1048576)return{ok:false};
+  const ctx=ensureMeasureCtx();
+  if(!ctx)return{ok:false};
+  let buf;
+  try{buf=await ctx.decodeAudioData(await b.arrayBuffer());}
+  catch(_){return{ok:false};}
+  const ch=buf.getChannelData(0);
+  const step=Math.max(1,Math.floor(ch.length/200000));
+  let sum=0,n=0;
+  for(let i=0;i<ch.length;i+=step){sum+=ch[i]*ch[i];n++;}
+  const rms=Math.sqrt(sum/Math.max(1,n));
+  const vol=volFromRms(rms);
+  if(vol>0.97)return{ok:true,changed:false,vol};
+  const wavBlob=bufferToWavWithGain(buf,vol);
+  const oldChunks=v.chunks||0;
+  for(let i=0;i<oldChunks;i++){try{await del("chunks",v.id+":"+i);}catch(_){}}
+  const n2=Math.max(1,Math.ceil(wavBlob.size/CHUNK));
+  for(let i=0;i<n2;i++){
+    const chunkBuf=await wavBlob.slice(i*CHUNK,Math.min(wavBlob.size,(i+1)*CHUNK)).arrayBuffer();
+    await put("chunks",{id:v.id+":"+i,data:chunkBuf});
+  }
+  v.type='audio/wav';v.size=wavBlob.size;v.chunks=n2;v.vol=1;v.volApplied=true;v.volFactor=vol;
+  delete v.data;
+  await put("videos",v);
+  if(blobCache.id===v.id)blobCache={id:null,blob:null};
+  return{ok:true,changed:true,vol};
+}
 async function normalizeOne(v){
   toast("音量を測定中… "+v.name);
-  const rms=await measureLoudness(v);
-  if(!rms){toast("測定できませんでした");return;}
-  v.vol=volFromRms(rms);
-  await put("videos",v);await reload();
-  toast(v.name+" の音量 ×"+v.vol.toFixed(2));
+  const r=await measureAndMaybeFix(v);
+  if(!r.ok){toast("測定できませんでした");return;}
+  if(!r.changed){toast(v.name+" はそのままで大丈夫そうです");return;}
+  await reload();
+  toast(v.name+" の音量を ×"+r.vol.toFixed(2)+" に調整しました");
 }
 $("#normAll").onclick=async()=>{
   if(!VIDEOS.length)return;
+  let fixedCount=0;
   for(const v of VIDEOS.slice()){
-    toast("音量を測定中… "+v.name);
-    const rms=await measureLoudness(v);
-    if(rms){v.vol=volFromRms(rms);await put("videos",v);}
+    toast("音量を確認中… "+v.name);
+    const r=await measureAndMaybeFix(v);
+    if(r.ok&&r.changed)fixedCount++;
   }
-  await reload();toast("音量をそろえました");
+  await reload();
+  toast(fixedCount>0?(fixedCount+"曲の音量を調整しました"):"調整が必要な曲はありませんでした");
 };
 
 function cardEl(o){
@@ -670,7 +755,7 @@ function renderLib(){
   const w=$("#libList");w.innerHTML="";
   if(!VIDEOS.length){w.innerHTML='<div class="empty"><b>まだ何もありません</b>上の「曲を取り込む」からmp3などを選んでください。</div>';return;}
   VIDEOS.slice().sort((a,b)=>b.addedAt-a.addedAt).forEach(v=>{
-    w.appendChild(cardEl({thumb:v.thumb,title:v.name,sub:fmt(v.dur)+" · "+mb(v.size)+(v.data||v.chunks?"":" · 要 再取込")+(v.vol!=null&&v.vol!==1?" · 音量×"+v.vol.toFixed(2):""),
+    w.appendChild(cardEl({thumb:v.thumb,title:v.name,sub:fmt(v.dur)+" · "+mb(v.size)+(v.data||v.chunks?"":" · 要 再取込")+(v.volFactor!=null&&v.volFactor!==1?" · 音量そろえ済み×"+v.volFactor.toFixed(2):""),
       tap:()=>playLibraryFrom(v.id),
       menu:()=>sheet(v.name,[
         {label:"再生する",fn:()=>playLibraryFrom(v.id)},
@@ -897,7 +982,7 @@ async function load(auto){
     if(curURL)URL.revokeObjectURL(curURL);
     curURL=url;curVid=it.videoId;vid.src=curURL;vid.load();
     vid.volume=(v.vol!=null?v.vol:1);
-    syncVolUI();
+    syncVolUI(v.volFactor);
   }
   $("#miniTitle").textContent=it.title;
   mediaInfo(it);
@@ -948,34 +1033,36 @@ function syncBtns(){
   $("#bPlay").setAttribute("aria-label",vid.paused?"再生":"一時停止");
 }
 
-/* ===== 再生中の音量スライダー =====
-   音量そろえ（自動測定）だけだと合わない曲があるので、再生しながら
-   その場で微調整できるようにする。vid.volumeを直接いじるだけなので
-   （AudioContext等は経由しない）バックグラウンド再生への影響は無い。
-   ドラッグ後、少し待ってからその曲のvolとして保存し直す（曲ごとに記憶） */
-const volSlider=$("#volSlider"),volVal=$("#volVal");
-let volSaveTimer=null;
-function syncVolUI(){
-  const v=Math.round((vid.volume||0)*100);
-  volSlider.value=v;
-  volVal.textContent=v+"%";
+/* ===== 再生中の音量表示 =====
+   以前はここに「再生しながらその場で微調整するスライダー」があったが、
+   iOSでは.volumeが効かないと判明したため廃止（詳細は上の「音量そろえ」
+   セクションのコメント参照）。今は「音量そろえ」で焼き込み済みの倍率を
+   読み取り専用で表示するだけの場所になっている。 */
+const volVal=$("#volVal");
+function syncVolUI(factor){
+  volVal.textContent=(factor!=null&&factor<0.995)?("そろえ済み ×"+factor.toFixed(2)):"未調整";
 }
-volSlider.oninput=()=>{
-  const v=Math.max(0,Math.min(100,parseInt(volSlider.value,10)||0))/100;
-  vid.volume=v;
-  volVal.textContent=Math.round(v*100)+"%";
-  clearTimeout(volSaveTimer);
-  volSaveTimer=setTimeout(saveCurrentVol,500);
-};
-async function saveCurrentVol(){
-  if(!curVid)return;
-  const rec=await one("videos",curVid);
-  if(!rec)return;
-  rec.vol=vid.volume;
-  await put("videos",rec);
-  await reload();
-  toast("この曲の音量を "+Math.round(vid.volume*100)+"% で覚えました");
+
+// === 画面ロック防止（Wake Lock） ===
+// 再生中に画面が自動ロックされてバックグラウンドへ回ると、iOS側がページを
+// 作り直す（＝再読み込み）ことがあり、その際main.jsの起動処理でHOME画面に
+// 戻されてしまう。再生中だけ画面ロックを止めて発生条件を減らす。
+let wakeLock=null;
+async function requestWakeLock(){
+  if(!("wakeLock" in navigator))return;
+  try{
+    wakeLock=await navigator.wakeLock.request("screen");
+    wakeLock.addEventListener("release",()=>{wakeLock=null;});
+  }catch(_){wakeLock=null;}
 }
+async function releaseWakeLock(){
+  if(wakeLock){try{await wakeLock.release();}catch(_){}wakeLock=null;}
+}
+document.addEventListener("visibilitychange",()=>{
+  // Wake Lockはタブが隠れると自動で解除される仕様のため、
+  // 再生中に画面へ戻ってきたタイミングで再取得する。
+  if(!document.hidden&&!vid.paused)requestWakeLock();
+});
 
 vid.onplay=vid.onpause=()=>{
   syncBtns();mediaState();mediaPos();
@@ -983,6 +1070,7 @@ vid.onplay=vid.onpause=()=>{
     if(vid.paused){$("#bgVid").pause();$("#bgVid2").pause();}
     else{$("#bgVid").play().catch(()=>{});$("#bgVid2").play().catch(()=>{});}
   }
+  if(vid.paused)releaseWakeLock();else requestWakeLock();
 };
 vid.onended=next;
 vid.onerror=()=>{const c=vid.error&&vid.error.code;
@@ -1005,7 +1093,8 @@ $("#tBar").onclick=e=>{
 };
 
 const AN_ORDER=["sparks","video","reminder"];
-let anMode="sparks";
+let anMode="reminder";
+applyAnMode();
 let bgVideoURL=null;
 function hasBgVideo(){return !!$("#bgVid").src;}
 function nextAnMode(cur){
@@ -1019,10 +1108,17 @@ function nextAnMode(cur){
 }
 function applyAnMode(){
   const isVideo=anMode==="video";
+  const isSparks=anMode==="sparks";
   $("#dotsBoxNow").classList.toggle("on",!isVideo);
   $("#dotsBoxSide").classList.toggle("on",!isVideo);
   $("#videoBoxNow").classList.toggle("on",isVideo);
   $("#videoBoxSide").classList.toggle("on",isVideo);
+  // sparksモードは.sparkGrid（CSSアニメのみ）、reminderモードはcanvas、
+  // どちらか一方だけを.onクラスで表示する（2026-08-19、canvas常時描画をやめた変更）
+  $("#sparkGridNow").classList.toggle("on",isSparks);
+  $("#sparkGridSide").classList.toggle("on",isSparks);
+  $("#analyzer").classList.toggle("on",anMode==="reminder");
+  $("#analyzer2").classList.toggle("on",anMode==="reminder");
   const nextLabel={sparks:"動画",video:"Reminder",reminder:"ドット"}[anMode];
   const label="⇄ "+nextLabel;
   $("#anSwitch").textContent=label;
@@ -1079,72 +1175,31 @@ $("#bgVid2").addEventListener("click",togglePlay);
 let mpTick=0;
 const AN_COLS=23,AN_ROWS=25;
 const AN_TOTAL=AN_COLS*AN_ROWS;
-let anT=0;
 
-const SPARK_DUR=3;
-const SPARK_COUNT=40;
-const GROUP_GAP=1;
-const sparkGroups=[0,1,2].map(i=>({nextFire:i*GROUP_GAP,sparks:[]}));
-
-function pickRandomIdx(n,total){
-  const arr=Array.from({length:total},(_,i)=>i);
-  for(let i=0;i<n;i++){
-    const j=i+Math.floor(Math.random()*(total-i));
-    [arr[i],arr[j]]=[arr[j],arr[i]];
+// ===== ドット演出（sparkGrid、2026-08-19に書き直し） =====
+// 旧実装は毎フレームrequestAnimationFrameでgetComputedStyle/getBoundingClientRectを
+// canvas2枚ぶん(#analyzer/#analyzer2)×毎フレーム呼んで575マスを再計算・再描画しており、
+// これがVDECK再生中の発熱の主因だった（詳細はCSS側の.sparkGridコメント参照）。
+// 新実装はページ読み込み時に一度だけ575個のdivを生成するだけで、以後JSは一切動かず
+// 明滅そのものはCSS keyframes（vdSparkFlicker）に完全に任せる。
+function buildSparkGrid(el){
+  if(!el||el.dataset.built)return;
+  el.dataset.built="1";
+  const frag=document.createDocumentFragment();
+  for(let i=0;i<AN_TOTAL;i++){
+    const c=document.createElement("div");
+    c.className="cell";
+    const delay=(Math.random()*3).toFixed(2);
+    const dur=(2.4+Math.random()*1.6).toFixed(2);
+    c.style.animationDelay="-"+delay+"s";
+    c.style.animationDuration=dur+"s";
+    frag.appendChild(c);
   }
-  return arr.slice(0,n);
+  el.appendChild(frag);
 }
-function updateSparks(now){
-  for(const g of sparkGroups){
-    if(now>=g.nextFire){
-      for(const idx of pickRandomIdx(SPARK_COUNT,AN_TOTAL))g.sparks.push({idx,start:g.nextFire});
-      g.nextFire+=SPARK_DUR;
-    }
-    g.sparks=g.sparks.filter(s=>now-s.start<SPARK_DUR);
-  }
-}
-function drawFakeAnalyzer(cv,brightness){
-  if(!cv)return;
-  const rect=cv.getBoundingClientRect();
-  const dpr=Math.min(2,window.devicePixelRatio||1);
-  const wCss=Math.max(1,Math.round(rect.width));
-  if(wCss<=1)return;
+buildSparkGrid($("#sparkGridNow"));
+buildSparkGrid($("#sparkGridSide"));
 
-  const gap=3;
-  const cell=(wCss-gap*(AN_COLS+1))/AN_COLS;
-  const hCss=Math.round(cell*AN_ROWS+gap*(AN_ROWS+1));
-
-  if(cv.width!==Math.round(wCss*dpr)||cv.height!==Math.round(hCss*dpr)){
-    cv.style.width=wCss+"px";cv.style.height=hCss+"px";
-    cv.width=Math.round(wCss*dpr);cv.height=Math.round(hCss*dpr);
-  }
-  const g=cv.getContext("2d");
-  g.setTransform(dpr,0,0,dpr,0,0);
-  g.clearRect(0,0,wCss,hCss);
-
-  const totalW=AN_COLS*cell+(AN_COLS+1)*gap;
-  const offX=(wCss-totalW)/2;
-
-  const cs=getComputedStyle(document.body);
-  const claudeHex=cs.getPropertyValue("--claude-orange").trim()||"#da7756";
-  const offHex=cs.getPropertyValue("--ink3").trim()||"#2a2724";
-  const claudeRgb=hexToRgb(claudeHex),offRgb=hexToRgb(offHex);
-
-  if(anMode==="reminder"){
-    drawReminderScene(g,wCss,hCss);
-  }else{
-    for(let row=0;row<AN_ROWS;row++){
-      for(let col=0;col<AN_COLS;col++){
-        const idx=row*AN_COLS+col;
-        const v=brightness[idx]||0;
-        const x=offX+gap+col*(cell+gap), y=gap+row*(cell+gap);
-        const rgb=lerpRgb(offRgb,claudeRgb,v);
-        g.fillStyle="rgb("+rgb[0]+","+rgb[1]+","+rgb[2]+")";
-        g.fillRect(x,y,cell,cell);
-      }
-    }
-  }
-}
 // ===== REMINDER MODE（おじさんリマインダーアプリと同一originのlocalStorageを直読み） =====
 const REM_KEY="ojisan_reminders_v1";
 const REM_FONT_SYS='-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif';
@@ -1166,6 +1221,7 @@ function loadReminders(){
     return av-bv;
   });
   _remList=list;_remReadAt=Date.now();
+  if(anMode==="reminder")renderReminderCanvases();
 }
 loadReminders();
 setInterval(loadReminders,30000);
@@ -1237,37 +1293,36 @@ function drawReminderScene(g,wCss,hCss){
     g.fillText("+"+(_remList.length-items.length)+"件",padX,y+unit*1.5);
   }
 }
-function hexToRgb(hex){
-  hex=hex.replace("#","");
-  if(hex.length===3)hex=hex.split("").map(c=>c+c).join("");
-  const n=parseInt(hex,16);
-  return [(n>>16)&255,(n>>8)&255,n&255];
-}
-function lerpRgb(a,b,t){
-  return [
-    Math.round(a[0]+(b[0]-a[0])*t),
-    Math.round(a[1]+(b[1]-a[1])*t),
-    Math.round(a[2]+(b[2]-a[2])*t),
-  ];
-}
-(function analyzerLoop(){
-  const dt=(vid.paused?0.25:1)*0.016;
-  anT+=dt;
-  updateSparks(anT);
-
-  const brightness=new Float32Array(AN_TOTAL);
-  for(const g of sparkGroups){
-    for(const s of g.sparks){
-      const elapsed=anT-s.start;
-      if(elapsed<0||elapsed>SPARK_DUR)continue;
-      const v=Math.pow(1-elapsed/SPARK_DUR,1.4);
-      if(v>brightness[s.idx])brightness[s.idx]=v;
-    }
+// canvasはreminderモードの時だけ、リマインダーのテキストシーンを描く。
+// 旧実装と違って「毎フレーム」ではなく「モード切替時・データ更新(30秒毎)時・
+// リサイズ時」だけ呼ぶので、getComputedStyle等の重い処理も低頻度になり
+// 実質問題にならない（毎秒60回超→多くて数十秒に1回程度）。
+function renderReminderCanvas(cv){
+  if(!cv)return;
+  const rect=cv.getBoundingClientRect();
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  const wCss=Math.max(1,Math.round(rect.width));
+  const hCss=Math.max(1,Math.round(rect.height));
+  if(wCss<=1||hCss<=1)return;
+  if(cv.width!==Math.round(wCss*dpr)||cv.height!==Math.round(hCss*dpr)){
+    cv.width=Math.round(wCss*dpr);cv.height=Math.round(hCss*dpr);
   }
-  drawFakeAnalyzer($("#analyzer"),brightness);
-  drawFakeAnalyzer($("#analyzer2"),brightness);
-  requestAnimationFrame(analyzerLoop);
-})();
+  const g=cv.getContext("2d");
+  g.setTransform(dpr,0,0,dpr,0,0);
+  g.clearRect(0,0,wCss,hCss);
+  drawReminderScene(g,wCss,hCss);
+}
+function renderReminderCanvases(){
+  renderReminderCanvas($("#analyzer"));
+  renderReminderCanvas($("#analyzer2"));
+}
+// 横向き⇄縦向きの切り替えやウィンドウリサイズでcanvasの実サイズが変わった時だけ、
+// reminderモードなら再描画する（ポーリングではなくResizeObserverでイベント駆動）。
+if("ResizeObserver" in window){
+  const _remRO=new ResizeObserver(()=>{ if(anMode==="reminder")renderReminderCanvases(); });
+  _remRO.observe($("#analyzer"));
+  _remRO.observe($("#analyzer2"));
+}
 
 function togglePlay(){
   if(!queue.length)return toast("曲を選んでください");
@@ -1284,8 +1339,11 @@ function bindTapAndSwipe(el){
   });
   el.addEventListener("pointercancel",()=>{tracking=false;});
 }
-bindTapAndSwipe($("#analyzer"));
-bindTapAndSwipe($("#analyzer2"));
+// タップ/スワイプは#analyzer(canvas)単体ではなく親の.analyzerWrap全体で拾う。
+// sparksモード中はcanvasがdisplay:noneになる（.sparkGridが代わりに表示される）ため、
+// canvas単体にバインドしたままだとsparksモード中はジェスチャーが効かなくなる。
+bindTapAndSwipe($("#dotsBoxNow"));
+bindTapAndSwipe($("#dotsBoxSide"));
 
 async function reload(){
   [VIDEOS,PLAYLISTS]=await Promise.all([all("videos"),all("playlists")]);

@@ -1470,7 +1470,7 @@
   :root {
     --nav-h:      0px;
     --header-h:   0px;
-    --fab-clear:  0px; /* 横向きはボタン自体を隠す(pointer-events:none)ので余白も不要 */
+    --fab-clear:  0px; /* 横向きはボタンが右下の角に寄るので中央下の余白は不要（2026-08-19：以前は非表示だったが今は右下表示に変更） */
   }
   .header {
     transform: translateY(-100%);
@@ -1483,10 +1483,22 @@
     transition: transform 0.28s ease;
     pointer-events: none;
   }
-  .rima-fab, .menu-fab {
+  .rima-fab {
     transform: translateY(150%);
     transition: transform 0.28s ease;
     pointer-events: none;
+  }
+  /* 三本線メニューボタン(.menu-fab、#menuFab/#ringCloseFabで共通のクラス)は
+     横向きでは隠さず画面右下の角に寄せて表示する（2026-08-19変更）。
+     以前は.rima-fabと一緒に隠していたが、それだとリングが閉じている間は
+     横向きでリングを開く手段が無くなってしまうため、位置替えに変更した。
+     #menuFab（通常時）・#ringCloseFab（リング表示中）どちらもこのクラスを
+     使っているので、1つのルールで両方まとめて右下に寄る */
+  .menu-fab {
+    left: auto;
+    right: max(env(safe-area-inset-right, 0px), 12px);
+    bottom: calc(max(env(safe-area-inset-bottom, 0px), 8px) + 12px);
+    transform: none;
   }
   .main {
     margin-top: 0 !important;
@@ -1524,12 +1536,5 @@
     /* 縦向き用のmin(84vw, 82dvh, 360px)だと横並びで.ring-clock分の幅を
        圧迫するので、横向きでは横幅の取り分を控えめにする */
     width: min(46vw, 78dvh, 300px);
-  }
-  /* 上の.rima-fab, .menu-fabルールで横向き中は本物の三本線ボタンごと隠しているが、
-     #ringCloseFabはリング表示中の唯一の閉じ手段なので横向きでも隠さないよう
-     IDセレクタで個別に上書きする（隠したままだとリングを開いたまま閉じられなくなる） */
-  #ringCloseFab {
-    transform: none;
-    pointer-events: auto;
   }
 }
