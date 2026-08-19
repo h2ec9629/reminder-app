@@ -1503,4 +1503,33 @@
     .main { margin-bottom: 0 !important; }
     .toast { bottom: 14px; }
   }
+
+  /* ===== リングメニュー表示中の横向き対応（2026-08-19追加） =====
+     縦向きは.top-ring-screenが上下1fr/auto/1frのgridで日時→リングの縦並びだが、
+     横向きの間だけflexの横並びに切り替えて「左に日付時刻(.ring-clock)、
+     右にリングメニュー(.ring-wrap)」の配置にする（DOM順がclock→wrapなので
+     flex-directionをrowにするだけで左右の順番はそのまま活きる） */
+  .top-ring-screen {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(16px, 5vw, 48px);
+  }
+  .ring-clock {
+    padding-bottom: 0;
+    align-self: center;
+  }
+  .ring-wrap {
+    /* 縦向き用のmin(84vw, 82dvh, 360px)だと横並びで.ring-clock分の幅を
+       圧迫するので、横向きでは横幅の取り分を控えめにする */
+    width: min(46vw, 78dvh, 300px);
+  }
+  /* 上の.rima-fab, .menu-fabルールで横向き中は本物の三本線ボタンごと隠しているが、
+     #ringCloseFabはリング表示中の唯一の閉じ手段なので横向きでも隠さないよう
+     IDセレクタで個別に上書きする（隠したままだとリングを開いたまま閉じられなくなる） */
+  #ringCloseFab {
+    transform: none;
+    pointer-events: auto;
+  }
 }
