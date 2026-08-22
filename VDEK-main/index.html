@@ -214,20 +214,6 @@ input[type=text]{
 }
 #toast.on{opacity:1;transform:translate(-50%,0)}
 .hint{font-size:12px;color:var(--dim);line-height:1.6}
-.volRow{display:flex;align-items:center;gap:10px;margin:16px 2px 4px;font-family:var(--mono);font-size:11px;color:var(--dim)}
-.volRow input[type=range]{
-  flex:1;height:4px;-webkit-appearance:none;appearance:none;
-  background:var(--ink3);border-radius:2px;outline:none;
-}
-.volRow input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
-  background:var(--amber);cursor:pointer;border:0;
-}
-.volRow input[type=range]::-moz-range-thumb{
-  width:18px;height:18px;border-radius:50%;background:var(--amber);cursor:pointer;border:0;
-}
-.volRow .volVal{width:38px;text-align:right;color:var(--fg);flex:none}
-.volRow .volLabel{flex:none}
 </style>
 </head>
 <body>
@@ -279,10 +265,6 @@ input[type=text]{
         <video id="bgVid" muted loop playsinline></video>
       </div>
 
-      <div class="volRow">
-        <span class="volLabel">音量</span>
-        <span class="volVal" id="volVal">未調整</span>
-      </div>
     </div>
   </section>
 </main>
@@ -474,6 +456,151 @@ $("#pickBgVideo").onchange=async e=>{
   const ok=await storeBgVideo(f);
   if(ok){await loadBgVideo();toast("背景動画を更新しました。アナライザーの「⇄ 動画」で切り替えられます");}
 };
+/* ===== アーティスト名の読み取り =====
+   曲ファイルの中に埋め込まれているタグから、アーティスト名を取り出す。
+   外部ライブラリ（jsmediatags等）は使わず自前で読む（このアプリはCDN不使用のため）。
+     mp3  … ID3v2 の TPE1（無ければ末尾の ID3v1）
+     m4a  … moov > udta > meta > ilst > ©ART
+     flac … VORBIS_COMMENT の ARTIST
+     wav  … タグを持たないのが普通なので空（音量そろえで焼き直した曲もこれになる）
+   文字コード：ID3v2は規格上ISO-8859-1かUTF-16だが、国産ソフトが平気で
+   Shift_JISを書き込んでくる違反ファイルが多いため、総当たりで判定する。 */
+const _rd=(b,s,e)=>b.slice(s,e).arrayBuffer().then(a=>new Uint8Array(a));
+const _str=(a,i,n)=>{let s="";const end=Math.min(a.length,i+n);for(let k=i;k<end;k++)s+=String.fromCharCode(a[k]);return s;};
+const _u32=(a,i)=>((a[i]<<24|a[i+1]<<16|a[i+2]<<8|a[i+3])>>>0);
+const _ss=(a,i)=>((a[i]&0x7f)<<21)|((a[i+1]&0x7f)<<14)|((a[i+2]&0x7f)<<7)|(a[i+3]&0x7f);
+function _dec(u8){
+  let end=u8.length;while(end>0&&u8[end-1]===0)end--;
+  let st=0;while(st<end&&u8[st]===0)st++;
+  u8=u8.subarray(st,end);
+  if(!u8.length)return "";
+  for(const enc of ["utf-8","shift_jis"]){
+    try{const s=new TextDecoder(enc,{fatal:true}).decode(u8);if(s)return s}catch(_){}
+  }
+  try{return new TextDecoder("iso-8859-1").decode(u8)}catch(_){return ""}
+}
+function _decID3(u8,encByte){
+  if(encByte===1||encByte===2){
+    let be=encByte===2,b=u8;
+    if(u8[0]===0xFF&&u8[1]===0xFE){be=false;b=u8.subarray(2);}
+    else if(u8[0]===0xFE&&u8[1]===0xFF){be=true;b=u8.subarray(2);}
+    try{return new TextDecoder(be?"utf-16be":"utf-16le").decode(b).replace(/\0/g,"")}catch(_){}
+  }
+  return _dec(u8);
+}
+async function _id3v2Artist(blob){
+  const h=await _rd(blob,0,10);
+  if(h.length<10||_str(h,0,3)!=="ID3")return "";
+  const ver=h[3],size=_ss(h,6);
+  if(size<=0||size>blob.size)return "";
+  const body=await _rd(blob,10,10+size);
+  const small=ver<=2,idLen=small?3:4,hdr=small?6:10,want=small?"TP1":"TPE1";
+  let p=0;
+  while(p+hdr<=body.length){
+    const id=_str(body,p,idLen);
+    if(!/^[A-Z0-9]+$/.test(id))break;
+    let fs;
+    if(small)fs=(body[p+3]<<16)|(body[p+4]<<8)|body[p+5];
+    else if(ver===3)fs=_u32(body,p+4);
+    else fs=_ss(body,p+4);
+    if(fs<=0||p+hdr+fs>body.length)break;
+    if(id===want){
+      const f=body.subarray(p+hdr,p+hdr+fs);
+      const s=_decID3(f.subarray(1),f[0]).trim();
+      if(s)return s;
+    }
+    p+=hdr+fs;
+  }
+  return "";
+}
+async function _id3v1Artist(blob){
+  if(blob.size<128)return "";
+  const t=await _rd(blob,blob.size-128,blob.size);
+  if(_str(t,0,3)!=="TAG")return "";
+  return _dec(t.subarray(33,63)).trim();
+}
+async function _mp4Artist(blob){
+  // 目当ての箱（atom）まで階層を降りる。moovはファイル末尾に置かれることもある。
+  async function walk(start,end,path,depth){
+    let p=start;
+    while(p+8<=end){
+      const h=await _rd(blob,p,Math.min(end,p+16));
+      if(h.length<8)break;
+      let size=_u32(h,0),hs=8;
+      const type=_str(h,4,4);
+      if(size===1){if(h.length<16)break;size=_u32(h,8)*4294967296+_u32(h,12);hs=16;}
+      else if(size===0)size=end-p;
+      if(size<hs||p+size>end)break;
+      if(type===path[depth]){
+        if(depth===path.length-1)return {start:p+hs,end:p+size};
+        const inner=p+hs+(type==="meta"?4:0);
+        const r=await walk(inner,p+size,path,depth+1);
+        if(r)return r;
+      }
+      p+=size;
+    }
+    return null;
+  }
+  const r=await walk(0,blob.size,["moov","udta","meta","ilst"],0);
+  if(!r)return "";
+  let p=r.start;
+  while(p+8<=r.end){
+    const h=await _rd(blob,p,p+8);
+    if(h.length<8)break;
+    const size=_u32(h,0),type=_str(h,4,4);
+    if(size<8||p+size>r.end)break;
+    if(type==="©ART"||type==="aART"){
+      const d=await _rd(blob,p+8,p+size);
+      if(d.length>16&&_str(d,4,4)==="data"){
+        const s=_dec(d.subarray(16)).trim();
+        if(s)return s;
+      }
+    }
+    p+=size;
+  }
+  return "";
+}
+async function _flacArtist(blob){
+  const h=await _rd(blob,0,4);
+  if(_str(h,0,4)!=="fLaC")return "";
+  let p=4;
+  for(let i=0;i<32;i++){
+    const b=await _rd(blob,p,p+4);
+    if(b.length<4)break;
+    const last=b[0]&0x80,type=b[0]&0x7f,len=(b[1]<<16)|(b[2]<<8)|b[3];
+    if(type===4){
+      const c=await _rd(blob,p+4,p+4+len);
+      const dv=new DataView(c.buffer,c.byteOffset,c.byteLength);
+      let q=0;
+      if(q+4>c.length)return "";
+      q+=4+dv.getUint32(q,true);
+      if(q+4>c.length)return "";
+      const n=dv.getUint32(q,true);q+=4;
+      for(let k=0;k<n&&q+4<=c.length;k++){
+        const l=dv.getUint32(q,true);q+=4;
+        const s=_dec(c.subarray(q,q+l));q+=l;
+        const m=/^ARTIST=([\s\S]*)$/i.exec(s);
+        if(m&&m[1].trim())return m[1].trim();
+      }
+      return "";
+    }
+    p+=4+len;
+    if(last)break;
+  }
+  return "";
+}
+async function readArtist(blob){
+  if(!blob||!blob.size)return "";
+  try{
+    const head=await _rd(blob,0,12);
+    if(head.length<8)return "";
+    if(_str(head,0,3)==="ID3"){const a=await _id3v2Artist(blob);if(a)return a;}
+    if(_str(head,4,4)==="ftyp"){const a=await _mp4Artist(blob);if(a)return a;}
+    if(_str(head,0,4)==="fLaC"){const a=await _flacArtist(blob);if(a)return a;}
+    return await _id3v1Artist(blob);
+  }catch(_){return ""}
+}
+
 const CHUNK=8*1048576;
 let lastErr="";
 async function store(f){
@@ -486,7 +613,8 @@ async function store(f){
       await put("chunks",{id:id+":"+i,data:buf});
       if(n>4&&i%3===0)toast(f.name.slice(0,16)+" 保存中 "+Math.round((i+1)/n*100)+"%");
     }
-    await put("videos",{id,name:f.name.replace(/\.[^.]+$/,""),
+    let artist="";try{artist=await readArtist(f)}catch(_){}
+    await put("videos",{id,name:f.name.replace(/\.[^.]+$/,""),artist,
       type,size:f.size,chunks:n,dur:0,thumb:null,addedAt:Date.now()});
     return id;
   }catch(err){
@@ -612,6 +740,8 @@ async function repair(rec,quiet){
   if(!quiet)toast("調べ直してます… "+rec.name);
   const p=await probe(b);
   if(p.dur)rec.dur=p.dur;
+  // 手で入れ直したアーティスト名は上書きしない
+  if(!rec.artistManual){const a=await readArtist(b);if(a)rec.artist=a;}
   await put("videos",rec);
   if(!quiet){await reload();toast(p.dur?"長さ "+fmt(p.dur)+" に修正":"読み取れませんでした")}
 }
@@ -623,6 +753,7 @@ $("#fixAll").onclick=async()=>{
     toast("調べ直し中… "+v.name);
     const p=await probe(b);
     if(p.dur)v.dur=p.dur;
+    if(!v.artistManual){const a=await readArtist(b);if(a)v.artist=a;}
     await put("videos",v);
   }
   await reload();toast("全部やり直しました");
@@ -755,15 +886,17 @@ function renderLib(){
   const w=$("#libList");w.innerHTML="";
   if(!VIDEOS.length){w.innerHTML='<div class="empty"><b>まだ何もありません</b>上の「曲を取り込む」からmp3などを選んでください。</div>';return;}
   VIDEOS.slice().sort((a,b)=>b.addedAt-a.addedAt).forEach(v=>{
-    w.appendChild(cardEl({thumb:v.thumb,title:v.name,sub:fmt(v.dur)+" · "+mb(v.size)+(v.data||v.chunks?"":" · 要 再取込")+(v.volFactor!=null&&v.volFactor!==1?" · 音量そろえ済み×"+v.volFactor.toFixed(2):""),
+    w.appendChild(cardEl({thumb:v.thumb,title:v.name,sub:(v.artist?v.artist+" · ":"")+fmt(v.dur)+" · "+mb(v.size)+(v.data||v.chunks?"":" · 要 再取込"),
       tap:()=>playLibraryFrom(v.id),
       menu:()=>sheet(v.name,[
         {label:"再生する",fn:()=>playLibraryFrom(v.id)},
         {label:"再生リストに追加",fn:()=>addToPlaylist({kind:"video",refId:v.id})},
         {label:"音量をそろえる（測定）",fn:()=>normalizeOne(v)},
-        {label:"長さとサムネを調べ直す",fn:()=>repair(v)},
+        {label:"長さ・アーティスト名を調べ直す",fn:()=>repair(v)},
         {label:"診断する（データが揃ってるか）",fn:()=>diagnose(v)},
         {label:"名前を変える",fn:()=>sheetInput("名前を変える","タイトル",v.name,async n=>{v.name=n;await put("videos",v);await reload();})},
+        {label:"アーティスト名を変える",fn:()=>sheetInput("アーティスト名を変える","アーティスト名",v.artist||"",async n=>{
+          v.artist=(n||"").trim();v.artistManual=!!v.artist;await put("videos",v);await reload();})},
         {label:"削除する",danger:true,fn:async()=>{
           await dropVideo(v);
           await reload();toast("削除しました");}}
@@ -864,11 +997,13 @@ function mediaSetup(){
     vid.currentTime=(it.start||0)+e.seekTime;});
 }
 
+// ミニプレイヤーの時間表示の横に出すアーティスト名（setTrackで更新）
+let miniArtist="";
 function mediaInfo(it){
   if(!("mediaSession" in navigator)||!it)return;
   const v=VIDEOS.find(v=>v.id===it.videoId);
   const art=it.thumb||(v&&v.thumb);
-  const meta={title:it.title||"VDECK",artist:v?v.name:"VDECK",album:"VDECK"};
+  const meta={title:it.title||"VDECK",artist:(v&&v.artist)||(v?v.name:"VDECK"),album:"VDECK"};
   if(art)meta.artwork=[{src:art,sizes:"320x180",type:"image/jpeg"}];
   try{navigator.mediaSession.metadata=new MediaMetadata(meta)}catch(_){}
 }
@@ -982,9 +1117,9 @@ async function load(auto){
     if(curURL)URL.revokeObjectURL(curURL);
     curURL=url;curVid=it.videoId;vid.src=curURL;vid.load();
     vid.volume=(v.vol!=null?v.vol:1);
-    syncVolUI(v.volFactor);
   }
   $("#miniTitle").textContent=it.title;
+  {const mv=VIDEOS.find(x=>x.id===it.videoId);miniArtist=(mv&&mv.artist)||"";}
   mediaInfo(it);
   const seek=()=>{
     vid.onloadedmetadata=null;
@@ -1033,15 +1168,9 @@ function syncBtns(){
   $("#bPlay").setAttribute("aria-label",vid.paused?"再生":"一時停止");
 }
 
-/* ===== 再生中の音量表示 =====
-   以前はここに「再生しながらその場で微調整するスライダー」があったが、
-   iOSでは.volumeが効かないと判明したため廃止（詳細は上の「音量そろえ」
-   セクションのコメント参照）。今は「音量そろえ」で焼き込み済みの倍率を
-   読み取り専用で表示するだけの場所になっている。 */
-const volVal=$("#volVal");
-function syncVolUI(factor){
-  volVal.textContent=(factor!=null&&factor<0.995)?("そろえ済み ×"+factor.toFixed(2)):"未調整";
-}
+/* 再生中の音量表示（「音量 そろえ済み ×0.72」の行）は、見なくていい情報という
+   ことで撤去した。音量そろえ機能そのものと volFactor の記録は従来どおり残っている
+   （詳細は上の「音量そろえ」セクションのコメント参照）。 */
 
 // === 画面ロック防止（Wake Lock） ===
 // 再生中に画面が自動ロックされてバックグラウンドへ回ると、iOS側がページを
@@ -1082,7 +1211,7 @@ vid.ontimeupdate=()=>{
   if(it.end&&vid.currentTime>=it.end-0.03){next();return;}
   const p=e>s?((vid.currentTime-s)/(e-s))*100:0;
   $("#tFill").style.width=Math.max(0,Math.min(100,p))+"%";
-  $("#miniTime").textContent=fmt(vid.currentTime-s)+" / "+fmt(e-s);
+  $("#miniTime").textContent=(miniArtist?miniArtist+" · ":"")+fmt(vid.currentTime-s)+" / "+fmt(e-s);
   if((mpTick=(mpTick+1)%8)===0)mediaPos();
 };
 $("#tBar").onclick=e=>{
