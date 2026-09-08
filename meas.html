@@ -24,7 +24,7 @@
       --text-faint: #615D5A;
       --accent:     #C85C3A;
       --header-h:   44px;
-      --numpad-h:   299px;
+      --side-w:     152px;
     }
 
     html, body {
@@ -41,8 +41,9 @@
     /* ===== MAIN ===== */
     .main {
       margin-top: 0;
+      margin-left: var(--side-w);
       padding: 12px 10px;
-      margin-bottom: var(--numpad-h);
+      margin-bottom: 16px;
     }
 
     /* ===== PHASE BLOCK ===== */
@@ -98,6 +99,9 @@
       -webkit-appearance: none; appearance: none; outline: none;
     }
     .meas-in.active-inp { border-color: var(--accent) !important; background: #FFFFFF !important; color: #000000 !important; }
+    /* 前回値のグレー表示（プレースホルダー。実データではないので保存前に区別できるようにする） */
+    .meas-in::-webkit-input-placeholder { color: var(--text-sub); opacity: 1; }
+    .meas-in::placeholder { color: var(--text-sub); opacity: 1; }
     .meas-prev {
       -webkit-flex-shrink: 0; flex-shrink: 0;
       display: -webkit-box; display: -webkit-flex; display: flex;
@@ -151,7 +155,7 @@
 
     /* ===== TOAST ===== */
     .toast {
-      position: fixed; bottom: calc(var(--numpad-h) + 10px); left: 50%;
+      position: fixed; bottom: 20px; left: calc(50% + var(--side-w) / 2);
       -webkit-transform: translateX(-50%);
       transform: translateX(-50%);
       background: var(--surface-2); color: var(--text);
@@ -163,95 +167,71 @@
     }
     .toast.show { display: block; }
 
-    /* ===== NUMPAD 常駐 ===== */
-    .numpad {
-      position: fixed; left: 0; right: 0; bottom: 0;
-      height: var(--numpad-h);
+    /* ===== 左サイドバー（キーパッド廃止・常時展開・機番/ステータスも格納） ===== */
+    .bb-side {
+      position: fixed; left: 0; top: 0; bottom: 0;
+      width: var(--side-w);
       background: var(--surface);
-      border-top: 2px solid var(--accent);
+      border-right: 2px solid var(--accent);
       z-index: 200;
-      padding: 6px 6px 10px;
-      display: -webkit-box; display: -webkit-flex; display: flex;
-      -webkit-flex-direction: row; flex-direction: row;
-      -webkit-justify-content: space-between; justify-content: space-between;
-      gap: 6px;
-    }
-
-    /* 左パネル：サイドメニュー */
-    .numpad-side {
-      -webkit-flex: 0 0 28%; flex: 0 0 28%;
+      padding: 12px 8px;
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-flex-direction: column; flex-direction: column;
-      gap: 4px;
+      gap: 7px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
-    .numpad-app-title {
-      font-size: 11px; font-weight: 700;
-      color: var(--text-faint);
-      padding: 2px 4px;
-      letter-spacing: 0.5px;
+    .bb-kiban {
+      font-size: 12px; font-weight: 700; color: var(--accent);
+      word-break: break-all;
     }
-    .numpad-side-btn {
-      -webkit-flex: 1; flex: 1;
+    .bb-kiban-row {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-flex-direction: column; flex-direction: column;
+      gap: 3px;
+    }
+    .bb-kiban-lbl { font-size: 11px; color: var(--text-sub); font-weight: 600; }
+    .bb-kiban-input {
+      width: 100%;
+      background: var(--surface-2); border: 1px solid var(--accent);
+      border-radius: 6px; color: #FFB899;
+      font-size: 16px; font-weight: 700;
+      padding: 6px 8px; text-align: right;
+      font-family: inherit; outline: none;
+      -webkit-appearance: none; appearance: none;
+    }
+    .bb-status-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+    }
+    .bb-status-btn {
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text-sub); font-size: 11px; font-weight: 700;
+      padding: 7px 2px; border-radius: 6px;
+      cursor: pointer; font-family: inherit; text-align: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bb-status-btn.sel { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .bb-divider { height: 1px; background: var(--border); margin: 2px 0; }
+    .bb-btn {
+      width: 100%;
       background: var(--surface-2); border: 1px solid var(--border);
       color: var(--text-sub); font-size: 14px; font-weight: 700;
       border-radius: 8px; cursor: pointer; font-family: inherit;
       text-align: center; line-height: 1;
+      padding: 13px 8px;
       -webkit-tap-highlight-color: transparent;
     }
-    .numpad-side-btn:active { background: var(--border); }
-    .numpad-side-btn.btn-save { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .numpad-side-btn.btn-hist { }
-    .numpad-side-btn.btn-hist.active { border-color: var(--accent); color: var(--accent); }
-    .numpad-side-btn.btn-reset { color: #F87171; border-color: #2A1010; }
-
-    /* 右パネル：テンキー */
-    .numpad-right {
-      -webkit-flex: 0 0 60%; flex: 0 0 60%;
-      display: -webkit-box; display: -webkit-flex; display: flex;
-      -webkit-flex-direction: column; flex-direction: column;
-      gap: 4px;
-    }
-
-    /* 現在値バー */
-    .numpad-val-bar {
-      display: -webkit-box; display: -webkit-flex; display: flex;
-      -webkit-align-items: center; align-items: center;
-      background: var(--bg-2); border: 1px solid var(--border);
-      border-radius: 8px; padding: 4px 8px; gap: 6px;
-      -webkit-flex-shrink: 0; flex-shrink: 0;
-    }
-    .numpad-target-label {
-      font-size: 13px; font-weight: 700; color: #fff;
-      -webkit-flex: 1; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .numpad-target-val {
-      font-size: 20px; font-weight: 700; color: var(--text);
-      text-align: right; min-width: 60px;
-    }
-
-    /* 4×3 グリッド */
-    .numpad-grid {
-      display: -webkit-box; display: -webkit-flex; display: flex;
-      -webkit-flex-wrap: wrap; flex-wrap: wrap;
-      gap: 4px; -webkit-flex: 1; flex: 1;
-    }
-    .np-btn {
-      -webkit-box-flex: 1; -webkit-flex: 1 1 28%; flex: 1 1 28%;
-      min-width: 0;
-      background: var(--surface-2); border: 1px solid var(--border);
-      color: var(--text); font-size: 24px; font-weight: 600;
-      border-radius: 8px; cursor: pointer; font-family: inherit;
-      text-align: center; line-height: 1;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .np-btn:active { background: var(--border); }
-    .np-btn-bs    { background: var(--bg-2); color: #F87171; font-size: 20px; }
-    .np-btn-ok    { background: var(--accent); color: #fff; border-color: var(--accent); font-size: 20px; }
+    .bb-btn:active { background: var(--border); }
+    .bb-btn.bb-apply { border-color: var(--accent); color: var(--accent); }
+    .bb-btn.bb-save { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .bb-btn.active { border-color: var(--accent); color: var(--accent); }
+    .bb-btn.bb-reset { color: #F87171; border-color: #2A1010; }
 
     /* ===== 履歴画面 ===== */
     .hist-view {
       display: none;
       margin-top: 0;
+      margin-left: var(--side-w);
       height: 100vh;
       display: -webkit-box; display: -webkit-flex; display: flex;
     }
@@ -343,11 +323,11 @@
     .hr-ph-v  { color: #69d469; }
     .hr-ph-w  { color: #5bc8ff; }
 
-    /* ===== 保存パネル（テンキー上） ===== */
+    /* ===== 保存パネル（画面下部） ===== */
     .save-panel {
       display: none;
-      position: fixed; left: 0; right: 0;
-      bottom: var(--numpad-h);
+      position: fixed; left: var(--side-w); right: 0;
+      bottom: 0;
       background: var(--surface);
       border-top: 2px solid var(--accent);
       border-bottom: 1px solid var(--border);
@@ -363,27 +343,6 @@
       gap: 8px; margin-bottom: 8px;
     }
     .save-kiban-label { font-size: 11px; color: var(--text-sub); font-weight: 600; -webkit-flex-shrink: 0; flex-shrink: 0; }
-    .save-kiban-val {
-      -webkit-flex: 1; flex: 1;
-      background: var(--surface-2); border: 1px solid var(--accent);
-      border-radius: 6px; color: #FFB899;
-      font-size: 20px; font-weight: 700;
-      padding: 4px 10px; text-align: right;
-      min-height: 34px;
-    }
-    /* 状態ボタン行 */
-    .save-status-row {
-      display: -webkit-box; display: -webkit-flex; display: flex;
-      gap: 5px; margin-bottom: 8px;
-    }
-    .save-status-btn {
-      -webkit-flex: 1; flex: 1;
-      background: var(--surface-2); border: 1px solid var(--border);
-      color: var(--text-sub); font-size: 11px; font-weight: 700;
-      padding: 6px 2px; border-radius: 6px;
-      cursor: pointer; font-family: inherit; text-align: center;
-    }
-    .save-status-btn.sel { background: var(--accent); border-color: var(--accent); color: #fff; }
     /* 操作ボタン行 */
     .save-act-row {
       display: -webkit-box; display: -webkit-flex; display: flex;
@@ -436,14 +395,14 @@
       </tr></thead>
       <tbody>
         <tr>
-          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mu_on_b"></span><input class="meas-in" id="mu_on_b" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_b" data-ph="u">×</button></div></td>
-          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mu_on_a"></span><input class="meas-in" id="mu_on_a" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_a" data-ph="u">×</button></div></td>
-          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mu_on_r"></span><input class="meas-in" id="mu_on_r" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_r" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mu_on_b"></span><input class="meas-in" id="mu_on_b" type="text" inputmode="decimal" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_b" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mu_on_a"></span><input class="meas-in" id="mu_on_a" type="text" inputmode="decimal" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_a" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mu_on_r"></span><input class="meas-in" id="mu_on_r" type="text" inputmode="decimal" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_r" data-ph="u">×</button></div></td>
         </tr>
         <tr>
-          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mu_off_b"></span><input class="meas-in" id="mu_off_b" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_b" data-ph="u">×</button></div></td>
-          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mu_off_a"></span><input class="meas-in" id="mu_off_a" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_a" data-ph="u">×</button></div></td>
-          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mu_off_r"></span><input class="meas-in" id="mu_off_r" type="text" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_r" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mu_off_b"></span><input class="meas-in" id="mu_off_b" type="text" inputmode="decimal" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_b" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mu_off_a"></span><input class="meas-in" id="mu_off_a" type="text" inputmode="decimal" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_a" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mu_off_r"></span><input class="meas-in" id="mu_off_r" type="text" inputmode="decimal" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_r" data-ph="u">×</button></div></td>
         </tr>
         <tr>
           <td class="meas-diff judge-first" id="mu_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
@@ -465,14 +424,14 @@
       </tr></thead>
       <tbody>
         <tr>
-          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mv_on_b"></span><input class="meas-in" id="mv_on_b" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_b" data-ph="v">×</button></div></td>
-          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mv_on_a"></span><input class="meas-in" id="mv_on_a" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_a" data-ph="v">×</button></div></td>
-          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mv_on_r"></span><input class="meas-in" id="mv_on_r" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_r" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mv_on_b"></span><input class="meas-in" id="mv_on_b" type="text" inputmode="decimal" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_b" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mv_on_a"></span><input class="meas-in" id="mv_on_a" type="text" inputmode="decimal" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_a" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mv_on_r"></span><input class="meas-in" id="mv_on_r" type="text" inputmode="decimal" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_r" data-ph="v">×</button></div></td>
         </tr>
         <tr>
-          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mv_off_b"></span><input class="meas-in" id="mv_off_b" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_b" data-ph="v">×</button></div></td>
-          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mv_off_a"></span><input class="meas-in" id="mv_off_a" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_a" data-ph="v">×</button></div></td>
-          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mv_off_r"></span><input class="meas-in" id="mv_off_r" type="text" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_r" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mv_off_b"></span><input class="meas-in" id="mv_off_b" type="text" inputmode="decimal" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_b" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mv_off_a"></span><input class="meas-in" id="mv_off_a" type="text" inputmode="decimal" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_a" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mv_off_r"></span><input class="meas-in" id="mv_off_r" type="text" inputmode="decimal" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_r" data-ph="v">×</button></div></td>
         </tr>
         <tr>
           <td class="meas-diff judge-first" id="mv_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
@@ -494,14 +453,14 @@
       </tr></thead>
       <tbody>
         <tr>
-          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mw_on_b"></span><input class="meas-in" id="mw_on_b" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_b" data-ph="w">×</button></div></td>
-          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mw_on_a"></span><input class="meas-in" id="mw_on_a" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_a" data-ph="w">×</button></div></td>
-          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mw_on_r"></span><input class="meas-in" id="mw_on_r" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_r" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mw_on_b"></span><input class="meas-in" id="mw_on_b" type="text" inputmode="decimal" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_b" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mw_on_a"></span><input class="meas-in" id="mw_on_a" type="text" inputmode="decimal" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_a" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mw_on_r"></span><input class="meas-in" id="mw_on_r" type="text" inputmode="decimal" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_r" data-ph="w">×</button></div></td>
         </tr>
         <tr>
-          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mw_off_b"></span><input class="meas-in" id="mw_off_b" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_b" data-ph="w">×</button></div></td>
-          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mw_off_a"></span><input class="meas-in" id="mw_off_a" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_a" data-ph="w">×</button></div></td>
-          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mw_off_r"></span><input class="meas-in" id="mw_off_r" type="text" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_r" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mw_off_b"></span><input class="meas-in" id="mw_off_b" type="text" inputmode="decimal" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_b" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mw_off_a"></span><input class="meas-in" id="mw_off_a" type="text" inputmode="decimal" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_a" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mw_off_r"></span><input class="meas-in" id="mw_off_r" type="text" inputmode="decimal" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_r" data-ph="w">×</button></div></td>
         </tr>
         <tr>
           <td class="meas-diff judge-first" id="mw_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
@@ -529,81 +488,31 @@
   </div>
 </div>
 
-<!-- ===== 常駐テンキー ===== -->
-<div class="numpad">
+<!-- ===== 左サイドバー（キーパッド廃止・機番/ステータスも常時格納） ===== -->
+<div class="bb-side" id="bbSide">
+  <div class="bb-kiban" id="activeKibanBadge">機番未設定</div>
 
-  <!-- 左：サイドメニュー -->
-  <div class="numpad-side">
-    <div class="numpad-app-title">v1.509 中継版　三相測定</div>
-    <div id="activeKibanBadge" style="font-size:12px;font-weight:700;color:var(--accent);margin:2px 0 6px;line-height:1.3;">機番未設定</div>
-    <button class="numpad-side-btn btn-save" onclick="saveMeas()">SAVE</button>
-    <button class="numpad-side-btn btn-hist" id="histBtn" onclick="toggleHist()">LOG</button>
-    <button class="numpad-side-btn btn-reset" onclick="resetAll()">全リセット</button>
-    <button class="numpad-side-btn" onclick="toggleOptionPanel()">オプション</button>
+  <div class="bb-kiban-row">
+    <span class="bb-kiban-lbl">機番</span>
+    <input class="bb-kiban-input" id="kibanInput" type="text" inputmode="numeric" autocomplete="off">
   </div>
-
-  <!-- 右：テンキー -->
-  <div class="numpad-right">
-    <div class="numpad-val-bar">
-      <span class="numpad-target-label" id="padLabel">欄をタップ</span>
-      <span class="numpad-target-val"   id="padVal">—</span>
-    </div>
-    <div class="numpad-grid" id="numpadGrid">
-      <button class="np-btn" data-key="7">7</button>
-      <button class="np-btn" data-key="8">8</button>
-      <button class="np-btn" data-key="9">9</button>
-      <button class="np-btn" data-key="4">4</button>
-      <button class="np-btn" data-key="5">5</button>
-      <button class="np-btn" data-key="6">6</button>
-      <button class="np-btn" data-key="1">1</button>
-      <button class="np-btn" data-key="2">2</button>
-      <button class="np-btn" data-key="3">3</button>
-      <button class="np-btn np-btn-bs"  data-key="BS">⌫</button>
-      <button class="np-btn" data-key="0">0</button>
-      <button class="np-btn np-btn-ok"  data-key="OK">↵</button>
-    </div>
+  <div class="bb-status-row" id="statusRow">
+    <button class="bb-status-btn sel" data-status="完成時">完成時</button>
+    <button class="bb-status-btn"     data-status="AG前">AG前</button>
+    <button class="bb-status-btn"     data-status="エイジング途中">AG中</button>
+    <button class="bb-status-btn"     data-status="エイジング後">AG後</button>
   </div>
+  <button class="bb-btn bb-apply" id="applyBtn" onclick="applySetup()">測定開始</button>
 
+  <div class="bb-divider"></div>
+
+  <button class="bb-btn bb-save" onclick="saveMeas()">SAVE</button>
+  <button class="bb-btn" id="histBtn" onclick="toggleHist()">LOG</button>
+  <button class="bb-btn bb-reset" onclick="resetAll()">リセット</button>
+  <button class="bb-btn" onclick="toggleOptionPanel()">オプション</button>
 </div>
 
-<!-- ===== 保存パネル（テンキー上） ===== -->
-<div class="save-panel" id="savePanel">
-  <div class="save-panel-title">SAVE — テンキーで機番入力 → ↵で保存</div>
-  <div class="save-kiban-row">
-    <span class="save-kiban-label">機番</span>
-    <span class="save-kiban-val" id="saveKibanVal">—</span>
-  </div>
-  <div class="save-status-row" id="saveStatusRow">
-    <button class="save-status-btn sel" data-status="完成時">完成時</button>
-    <button class="save-status-btn"     data-status="AG前">AG前</button>
-    <button class="save-status-btn"     data-status="エイジング途中">AG中</button>
-    <button class="save-status-btn"     data-status="エイジング後">AG後</button>
-  </div>
-  <div class="save-act-row">
-    <button class="save-act-cancel" onclick="closeSaveDialog()">キャンセル</button>
-    <button class="save-act-ok"     onclick="confirmSave()">保存する</button>
-  </div>
-</div>
-
-<!-- ===== 起動時セットアップパネル（機番・ステータス先入力） ===== -->
-<div class="save-panel" id="setupPanel">
-  <div class="save-panel-title">機番・ステータスを入力 → 測定開始</div>
-  <div class="save-kiban-row">
-    <span class="save-kiban-label">機番</span>
-    <span class="save-kiban-val" id="setupKibanVal">—</span>
-  </div>
-  <div class="save-status-row" id="setupStatusRow">
-    <button class="save-status-btn sel" data-status="完成時">完成時</button>
-    <button class="save-status-btn"     data-status="AG前">AG前</button>
-    <button class="save-status-btn"     data-status="エイジング途中">AG中</button>
-    <button class="save-status-btn"     data-status="エイジング後">AG後</button>
-  </div>
-  <div class="save-act-row">
-    <button class="save-act-ok" style="-webkit-flex:1;flex:1;" onclick="confirmSetup()">測定開始</button>
-  </div>
-</div>
-
-<!-- ===== オプションパネル（テンキー上） ===== -->
+<!-- ===== オプションパネル（画面下部） ===== -->
 <div class="save-panel" id="optionPanel">
   <div class="save-panel-title">オプション</div>
   <div style="text-align:center;margin-bottom:10px;">
@@ -643,99 +552,53 @@
 var PHASES = ['u','v','w'];
 var COLS   = ['b','a','r'];
 
-// ===== フォーカス管理 =====
-var _padTarget = null;
-var _padPh     = '';
-var _padRaw    = '';
-var _padNeg    = false;
+// ===== フォーカス管理（キーパッド廃止・実キーボード入力） =====
+var _padTarget = null; // 現在フォーカス中の測定欄（ハイライト管理用）
 var _inputs    = [];  // ① 起動時にキャッシュ
 
+// 測定欄・機番欄を丸ごとロック／解除（機番・ステータス確定前は測定欄に触れない）
+function _lockMeasInputs(lock) {
+  var i;
+  for (i = 0; i < _inputs.length; i++) {
+    if (lock) _inputs[i].setAttribute('readonly', 'readonly');
+    else      _inputs[i].removeAttribute('readonly');
+  }
+}
+
+// 測定欄フォーカス時：ハイライトのみ（値は端末のキーボードで直接編集）
 function focusInp(inp) {
-  if (!_setupDone) return; // 機番・ステータス未確定のうちは測定欄をロック
-  if (_padTarget) {
+  if (_padTarget && _padTarget !== inp) {
     _padTarget.className = _padTarget.className.replace(' active-inp','').replace('active-inp','');
-    measCalc(_padPh);
   }
   _padTarget = inp;
-  _padPh     = inp.getAttribute('data-ph');
-  var cur    = inp.value || '';
-  _padNeg    = (cur.charAt(0) === '-');
-  _padRaw    = cur.replace(/[^0-9]/g, '');
-
-  inp.className += ' active-inp';
-
-  var id    = inp.id;
-  var parts = id.split('_');
-  var phMap = { u:'U相', v:'V相', w:'W相' };
-  document.getElementById('padLabel').textContent = phMap[_padPh] + '-' + parts[2].toUpperCase();
-  _refreshPadVal();
+  if (inp.className.indexOf('active-inp') < 0) inp.className += ' active-inp';
 }
 
-// ===== テンキー入力 =====
-function _npTap(key) {
-  // 起動時セットアップ中は機番入力に横取り
-  if (_setupMode) { _setupPadKey(key); return; }
-  // 保存モード中は機番入力に横取り
-  if (_saveMode) { _savePadKey(key); return; }
-  if (!_padTarget) return;
-  if (key === 'BS') {
-    if (_padRaw.length > 0) _padRaw = _padRaw.slice(0, -1);
-    else _padNeg = false;
-    _refreshPadVal();
-  } else if (key === 'OK') {
-    if (_padPh) measCalc(_padPh);
-    _nextFocus();
-  } else {
-    if (_padRaw.length < 6) _padRaw += key;
-    _refreshPadVal();
-  }
+// 測定欄フォーカスが外れた時：ハイライト解除＋判定計算
+function blurInp(inp) {
+  inp.className = inp.className.replace(' active-inp','').replace('active-inp','');
+  if (_padTarget === inp) _padTarget = null;
+  var ph = inp.getAttribute('data-ph');
+  if (ph) measCalc(ph);
 }
 
-function _nextFocus() {
+// Enterキーで次の測定欄へ（ソフトキーボードの「次へ」／物理キーボード共通）
+function _measEnter(inp) {
+  var ph = inp.getAttribute('data-ph');
+  if (ph) measCalc(ph);
+  _nextFocus(inp);
+}
+
+function _nextFocus(cur) {
   var i;
   for (i = 0; i < _inputs.length - 1; i++) {  // ① キャッシュ済み配列を使用
-    if (_inputs[i] === _padTarget) {
-      focusInp(_inputs[i + 1]);
+    if (_inputs[i] === cur) {
+      _inputs[i + 1].focus();
       return;
     }
   }
-  if (_padTarget) {
-    _padTarget.className = _padTarget.className.replace(' active-inp','').replace('active-inp','');
-    _padTarget = null;
-    document.getElementById('padLabel').textContent = '欄をタップして入力';
-    document.getElementById('padVal').textContent   = '—';
-  }
+  cur.blur();
 }
-
-function _refreshPadVal() {
-  var d = _padRaw, fmt;
-  if (d.length === 0)      fmt = '';
-  else if (d.length <= 2)  fmt = d;
-  else if (d.length === 3) fmt = d.slice(0, 2) + '.' + d.slice(2);
-  else                     fmt = d.slice(0, 2) + '.' + d.slice(2);
-  if (_padNeg && fmt) fmt = '-' + fmt;
-  if (_padTarget) _padTarget.value = fmt;
-  document.getElementById('padVal').textContent = fmt || '—';
-}
-
-// ===== 物理キーボード対応（常駐テンキーはそのまま・キー入力も同じ処理に流す） =====
-document.addEventListener('keydown', function(e) {
-  var tag = e.target.tagName;
-  // PAT入力欄など普通の編集可能なinputでは素通し（テンキーの横取りをしない）
-  if (tag === 'INPUT' && !e.target.readOnly) return;
-  if (tag === 'TEXTAREA') return;
-  var k = e.key;
-  if (k >= '0' && k <= '9') {
-    _npTap(k);
-    e.preventDefault();
-  } else if (k === 'Backspace') {
-    _npTap('BS');
-    e.preventDefault();
-  } else if (k === 'Enter') {
-    _npTap('OK');
-    e.preventDefault();
-  }
-});
 
 // ===== 判定計算（③ textContent で DOM更新）=====
 function _setDiff(dEl, numStr, lblStr, color) {
@@ -751,7 +614,7 @@ function _setDiff(dEl, numStr, lblStr, color) {
 }
 
 function measCalc(ph) {
-  var i, col, onEl, offEl, dEl, onV, offV, diff, diffStr, tmp;
+  var i, col, onEl, offEl, dEl, onV, offV, diff, diffStr, tmp, isRef;
   var gap, dir, absGap, full, whole, half, label;
   for (i = 0; i < COLS.length; i++) {
     col   = COLS[i];
@@ -759,11 +622,22 @@ function measCalc(ph) {
     offEl = document.getElementById('m' + ph + '_off_' + col);
     dEl   = document.getElementById('m' + ph + '_d_'   + col);
     if (!dEl) continue;
-    onV  = onEl  ? parseFloat(onEl.value)  : NaN;
-    offV = offEl ? parseFloat(offEl.value) : NaN;
+    onV  = onEl  && onEl.value  !== '' ? parseFloat(onEl.value)  : NaN;
+    offV = offEl && offEl.value !== '' ? parseFloat(offEl.value) : NaN;
+    isRef = false;
+    // 実入力が無い欄は、グレー表示中の前回値（プレースホルダー）があればそれで
+    // 判定だけ表示する（実データ＝valueには触れない。〇引き継ぎ保存はそのまま）
+    if (isNaN(onV) && onEl && onEl.value === '' && onEl.placeholder) {
+      onV = parseFloat(onEl.placeholder);
+      if (!isNaN(onV)) isRef = true;
+    }
+    if (isNaN(offV) && offEl && offEl.value === '' && offEl.placeholder) {
+      offV = parseFloat(offEl.placeholder);
+      if (!isNaN(offV)) isRef = true;
+    }
     if (!isNaN(onV) && !isNaN(offV)) {
-      // 大きい値＝ON・小さい値＝OFFになるよう表示欄を入れ替える
-      if (onV < offV) {
+      // 大きい値＝ON・小さい値＝OFFになるよう表示欄を入れ替える（実入力同士の時だけ）
+      if (!isRef && onV < offV) {
         tmp = onEl.value; onEl.value = offEl.value; offEl.value = tmp;
         tmp = onV; onV = offV; offV = tmp;
       }
@@ -771,7 +645,7 @@ function measCalc(ph) {
       diff    = Math.round(Math.abs(onV - offV) * 1000) / 1000;
       diffStr = diff.toFixed(2);
       if (diff >= 1.83 && diff <= 1.97) {
-        _setDiff(dEl, diffStr, '[正常]', '#4ADE80');
+        _setDiff(dEl, diffStr, '[正常]', isRef ? 'var(--text-sub)' : '#4ADE80');
       } else {
         gap    = Math.round((1.90 - diff) * 1000) / 1000;
         dir    = gap > 0 ? '緩め' : '締め';
@@ -782,7 +656,7 @@ function measCalc(ph) {
         label  = whole > 0 && half  ? whole + '角半'
                : whole > 0 && !half ? whole + '角'
                : half                ? '半角' : '？';
-        _setDiff(dEl, diffStr, '[' + label + dir + ']', (diff >= 1.80 && diff <= 2.00) ? '#fff' : '#ff9800');
+        _setDiff(dEl, diffStr, '[' + label + dir + ']', isRef ? 'var(--text-sub)' : (diff >= 1.80 && diff <= 2.00) ? '#fff' : '#ff9800');
       }
     } else {
       _setDiff(dEl, '—', '', '');
@@ -793,10 +667,7 @@ function measCalc(ph) {
 // ===== クリア =====
 function clearOne(id, ph) {
   var el = document.getElementById(id);
-  if (el) {
-    el.value = '';
-    if (_padTarget === el) { _padRaw = ''; _padNeg = false; _refreshPadVal(); }
-  }
+  if (el) el.value = '';
   measCalc(ph);
 }
 
@@ -804,10 +675,7 @@ function clearCol(ph, col) {
   var rows = ['on','off'], i, el;
   for (i = 0; i < rows.length; i++) {
     el = document.getElementById('m' + ph + '_' + rows[i] + '_' + col);
-    if (el) {
-      el.value = '';
-      if (_padTarget === el) { _padRaw = ''; _padNeg = false; _refreshPadVal(); }
-    }
+    if (el) el.value = '';
   }
   measCalc(ph);
 }
@@ -828,9 +696,8 @@ function resetAll() {
       if (dEl) { _setDiff(dEl, '—', '', ''); }
     }
   }
-  _padTarget = null; _padRaw = ''; _padNeg = false;
-  document.getElementById('padLabel').textContent = '欄をタップして入力';
-  document.getElementById('padVal').textContent   = '—';
+  if (_padTarget) { _padTarget.className = _padTarget.className.replace(' active-inp','').replace('active-inp',''); }
+  _padTarget = null;
   showToast('リセットしました');
 }
 
@@ -1392,12 +1259,9 @@ function _fetchGist(callback) {
   xhr.send();
 }
 
-// ===== 保存パネル（テンキー横取りモード） =====
-var _pendingData  = null;
-var _saveMode     = false;   // テンキーを機番入力に横取り中
-var _saveRaw      = '';      // 機番の生文字列
+// ===== サイドバー（機番・ステータスはキーボードで直接入力） =====
+var _saveRaw      = '';      // 機番の文字列
 var _saveStatus   = '完成時'; // 選択中の状態
-var _setupMode    = false;   // 起動時セットアップでテンキー横取り中
 var _setupDone    = false;   // 機番・ステータス確定済み（測定解禁）
 
 // ===== 測定ヘッダー更新 =====
@@ -1414,75 +1278,49 @@ function _prevSpanVal(ph, row, col) {
   return el ? (el.textContent || '') : '';
 }
 
-// ===== 起動時セットアップ（機番・ステータス先入力） =====
-function openSetup() {
+// ===== 起動時の初期化（機番・ステータス未確定・測定欄ロック） =====
+function initSidebar() {
   _setupDone = false;
-  _setupMode = true;
+  _lockMeasInputs(true);
   _clearPrevValues();
   _setMhCur('機番未設定');
   _setMhPrev('前回値: —');
   _saveRaw   = '';
   _saveStatus= '完成時';
-  _refreshSetupStatus();
-  document.getElementById('setupKibanVal').textContent = '—';
-  document.getElementById('padLabel').textContent = '機番を入力';
-  document.getElementById('padVal').textContent   = '—';
-  document.getElementById('setupPanel').className = 'save-panel show';
+  _refreshStatusRow();
+  document.getElementById('kibanInput').value = '';
+  document.getElementById('applyBtn').textContent = '測定開始';
 }
 
-// ヘッダーの機番ボタンから：現在の機番・ステータスを引き継いで再選択できる形で開く
-function reopenSetup() {
-  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-  var curK = _saveRaw, curS = _saveStatus, wasDone = _setupDone;
-  openSetup();
-  if (wasDone) {
-    _saveRaw    = curK;
-    _saveStatus = curS || '完成時';
-    _refreshSetupKiban();
-    _refreshSetupStatus();
-  }
-}
-
-function _refreshSetupKiban() {
-  var v = _saveRaw || '—';
-  document.getElementById('setupKibanVal').textContent = v;
-  document.getElementById('padVal').textContent        = v;
-}
-
-function _refreshSetupStatus() {
-  var btns = document.getElementById('setupStatusRow').getElementsByTagName('button');
+function _refreshStatusRow() {
+  var btns = document.getElementById('statusRow').getElementsByTagName('button');
   var k;
   for (k = 0; k < btns.length; k++) {
     btns[k].className = (btns[k].getAttribute('data-status') === _saveStatus)
-      ? 'save-status-btn sel' : 'save-status-btn';
+      ? 'bb-status-btn sel' : 'bb-status-btn';
   }
 }
 
-function _setupPadKey(key) {
-  if (key === 'BS') {
-    if (_saveRaw.length > 0) _saveRaw = _saveRaw.slice(0, -1);
-  } else if (key === 'OK') {
-    confirmSetup();
-    return;
-  } else {
-    if (_saveRaw.length < 8) _saveRaw += key;
-  }
-  _refreshSetupKiban();
-}
-
-function confirmSetup() {
+// サイドバーの「測定開始／機番更新」ボタン：機番・ステータスを確定して測定欄を解禁する
+function applySetup() {
+  _saveRaw = document.getElementById('kibanInput').value.trim();
   if (_saveRaw === '') { showToast('機番を入力してください'); return; }
   if (!_saveStatus)    { showToast('ステータスを選んでください'); return; }
-  _setupMode = false;
   _setupDone = true;
-  document.getElementById('setupPanel').className = 'save-panel';
-  document.getElementById('padLabel').textContent = '欄をタップして入力';
-  document.getElementById('padVal').textContent   = '—';
+  _lockMeasInputs(false);
+  document.getElementById('applyBtn').textContent = '機番更新';
   _updateKibanBadge();
   _setMhCur('機番 ' + _saveRaw + '　／　' + _saveStatus + '　測定中');
   _setMhPrev('前回値: 読込中…');
+  _clearPrevValues();
   loadPrevValues(_saveRaw);
   showToast('機番 ' + _saveRaw + '・' + _saveStatus + ' で測定開始');
+}
+
+// ヘッダーの機番表示タップ → サイドバーの機番欄にフォーカス（入力しやすいように）
+function reopenSetup() {
+  var el = document.getElementById('kibanInput');
+  if (el) { el.focus(); el.select(); }
 }
 
 function _updateKibanBadge() {
@@ -1502,8 +1340,14 @@ function _prevSpanIds() {
 }
 
 function _clearPrevValues() {
-  var ids = _prevSpanIds(), i, el;
-  for (i = 0; i < ids.length; i++) { el = document.getElementById(ids[i]); if (el) el.textContent = ''; }
+  var ids = _prevSpanIds(), i, el, inp;
+  for (i = 0; i < ids.length; i++) {
+    el = document.getElementById(ids[i]);
+    if (el) el.textContent = '';
+    // 対応する測定欄のグレー表示（プレースホルダー）も一緒にクリアする
+    inp = document.getElementById(ids[i].slice(2));
+    if (inp) inp.placeholder = '';
+  }
 }
 
 // 機番フォルダ内の全記録から、日時(date)が最も新しい1件を前回値として表示（ステータス問わず常に最新）
@@ -1514,7 +1358,10 @@ function loadPrevValues(kiban) {
   // これでオフライン・PAT未設定でも前回値と〇引き継ぎが使える。
   var local = _localNewest(kiban);
   if (local) { _fillPrev(local.rec, _fileFromRec(local.rec), 'ローカル'); }
-  else       { _setMhPrev('前回値: 記録なし'); }
+  else {
+    _setMhPrev('前回値: 記録なし');
+    for (var pi = 0; pi < PHASES.length; pi++) measCalc(PHASES[pi]); // グレー表示が無くなった分の判定表示をリセット
+  }
 
   var pat = _getMeasPat();
   if (!pat || !navigator.onLine) return;   // オフライン／PAT未設定ならローカルのみで確定
@@ -1591,19 +1438,30 @@ function _fileFromRec(rec) {
 
 function _fillPrev(rec, file, sourceTag) {
   if (!rec || !rec.phases) return;
-  var ph = ['u','v','w'], row = ['on','off'], col = ['b','a','r'], i, j, k, cell, v, el;
+  var ph = ['u','v','w'], row = ['on','off'], col = ['b','a','r'], i, j, k, cell, v, el, inp, diffNum, inRange;
   for (i = 0; i < ph.length; i++)
-    for (j = 0; j < row.length; j++)
-      for (k = 0; k < col.length; k++) {
-        cell = rec.phases[ph[i]] && rec.phases[ph[i]][col[k]];
+    for (k = 0; k < col.length; k++) {
+      cell = rec.phases[ph[i]] && rec.phases[ph[i]][col[k]];
+      // 前回の判定（差数）が1.80～2.00だった欄は、測定欄そのものに
+      // 「打ち込んだ状態」に見えるグレーのプレースホルダーとして前回値を出す。
+      // 実データ（value）には触れないので、保存時の〇引き継ぎ判定はそのまま動く。
+      diffNum = cell ? parseFloat(cell.diff) : NaN;
+      inRange = !isNaN(diffNum) && diffNum >= 1.80 && diffNum <= 2.00;
+      for (j = 0; j < row.length; j++) {
         v = cell ? (row[j] === 'on' ? cell.on : cell.off) : '';
         el = document.getElementById('p_m' + ph[i] + '_' + row[j] + '_' + col[k]);
         if (el) el.textContent = (v == null ? '' : v);
+        inp = document.getElementById('m' + ph[i] + '_' + row[j] + '_' + col[k]);
+        if (inp) inp.placeholder = (inRange && v) ? _stripMaru(v) : '';
       }
+    }
   var st  = rec.status || '';
   var eda = file ? _edaLabel(file, st) : '';
   var src = sourceTag ? ('［' + sourceTag + '］ ') : '';
   _setMhPrev('前回値: ' + src + st + (eda ? '（' + eda + '）' : '') + '　' + (rec.date || ''));
+
+  // グレー表示（プレースホルダー）にした欄も判定を出す
+  for (i = 0; i < ph.length; i++) measCalc(ph[i]);
 }
 
 function saveMeas() {
@@ -1653,62 +1511,41 @@ function saveMeas() {
   if (!hasAny) { showToast('入力がありません'); return; }
   if (!_setupDone) { showToast('先に機番・ステータスを入力してください'); return; }
 
-  _pendingData = data;
-  // 機番・ステータスは起動時セットアップの値を引き継ぐ（この場で選び直しも可）
-  _saveMode    = true;
+  // 機番・ステータスはサイドバーの現在値をそのまま使う
+  _saveRaw = document.getElementById('kibanInput').value.trim();
+  if (_saveRaw === '') { showToast('機番を入力してください'); return; }
 
-  // 測定欄のハイライトを外す
-  if (_padTarget) {
-    _padTarget.className = _padTarget.className.replace(' active-inp','').replace('active-inp','');
-    _padTarget = null;
-  }
+  data.memo   = '機番 ' + _saveRaw + '　' + _saveStatus;
+  data.kiban  = _saveRaw;
+  data.status = _saveStatus;
+  data.pendingSync = true; // GitHub共有が終わるまで「未同期」表示にする
 
-  // val-bar のラベルを書き換え
-  document.getElementById('padLabel').textContent = '機番（変更可）';
+  var arr = _loadHistory();
+  arr.unshift(data);
+  if (arr.length > 50) arr = arr.slice(0, 50);
+  _saveHistory(arr);       // 即時のローカル反映（オフラインでも一覧に出るように）
+  var recordToSave = data;
 
-  // パネル表示・現在の機番／状態を反映（起動時に入れた値を初期表示）
-  _refreshSaveStatus();
-  _refreshSaveKiban();
-  document.getElementById('savePanel').className = 'save-panel show';
-}
+  // 端末に実ファイルとしてJSON保存（localStorageとは別に、消えない記録として残す）
+  var dlName = '測定_' + recordToSave.kiban + '_' + recordToSave.status + '_'
+             + recordToSave.date.replace(/[\/: ]/g, '') + '.json';
+  _downloadJson(dlName, recordToSave);
 
-function _refreshSaveKiban() {
-  var v = _saveRaw || '—';
-  document.getElementById('saveKibanVal').textContent = v;
-  document.getElementById('padVal').textContent       = v;
-}
-
-function _refreshSaveStatus() {
-  var btns = document.getElementById('saveStatusRow').getElementsByTagName('button');
-  var k;
-  for (k = 0; k < btns.length; k++) {
-    if (btns[k].getAttribute('data-status') === _saveStatus) {
-      btns[k].className = 'save-status-btn sel';
-    } else {
-      btns[k].className = 'save-status-btn';
-    }
-  }
-}
-
-// テンキーから横取りして呼ばれる
-function _savePadKey(key) {
-  if (key === 'BS') {
-    if (_saveRaw.length > 0) _saveRaw = _saveRaw.slice(0, -1);
-  } else if (key === 'OK') {
-    confirmSave();
-    return;
+  // GitHub共有はオンライン時だけ試す。オフライン／PAT未設定ならキューに積んでおいて
+  // オンライン復帰時に自動で送る（_flushPendingSync）。
+  if (navigator.onLine && _getMeasPat()) {
+    _syncOneRecord(recordToSave, function(ok) {
+      if (!ok) { _queuePendingSync(recordToSave); }
+      _renderSidebar(); // 成功時も再描画して「未同期」表示を消す
+    });
   } else {
-    if (_saveRaw.length < 8) _saveRaw += key;
+    _queuePendingSync(recordToSave);
+    _notify(navigator.onLine ? '共有NG：PAT未設定（あとで同期するにはPATを設定して）' : 'オフライン保存：オンライン復帰時に自動で共有します');
   }
-  _refreshSaveKiban();
-}
 
-function closeSaveDialog() {
-  _saveMode    = false;
-  _pendingData = null;
-  document.getElementById('savePanel').className = 'save-panel';
-  document.getElementById('padLabel').textContent = '欄をタップして入力';
-  document.getElementById('padVal').textContent   = '—';
+  _updateKibanBadge();
+  showToast('保存しました');
+  _renderSidebar();
 }
 
 // ===== オプションパネル（PAT入力・強制更新） =====
@@ -1753,57 +1590,15 @@ function loadPatFromFile(fileInput) {
   fileInput.value = '';
 }
 
-function confirmSave() {
-  if (!_pendingData) return;
-  if (_saveRaw === '') { showToast('機番を入力してください'); return; }
-
-  _pendingData.memo   = '機番 ' + _saveRaw + '　' + _saveStatus;
-  _pendingData.kiban  = _saveRaw;
-  _pendingData.status = _saveStatus;
-  _pendingData.pendingSync = true; // GitHub共有が終わるまで「未同期」表示にする
-
-  var arr = _loadHistory();
-  arr.unshift(_pendingData);
-  if (arr.length > 50) arr = arr.slice(0, 50);
-  _saveHistory(arr);       // 即時のローカル反映（オフラインでも一覧に出るように）
-  // ※closeSaveDialog()が_pendingDataをnullにするので、先にローカル変数へ退避しておく
-  var recordToSave = _pendingData;
-
-  // 端末に実ファイルとしてJSON保存（localStorageとは別に、消えない記録として残す）
-  var dlName = '測定_' + recordToSave.kiban + '_' + recordToSave.status + '_'
-             + recordToSave.date.replace(/[\/: ]/g, '') + '.json';
-  _downloadJson(dlName, recordToSave);
-
-  // GitHub共有はオンライン時だけ試す。オフライン／PAT未設定ならキューに積んでおいて
-  // オンライン復帰時に自動で送る（_flushPendingSync）。
-  if (navigator.onLine && _getMeasPat()) {
-    _syncOneRecord(recordToSave, function(ok) {
-      if (!ok) { _queuePendingSync(recordToSave); }
-      _renderSidebar(); // 成功時も再描画して「未同期」表示を消す
-    });
-  } else {
-    _queuePendingSync(recordToSave);
-    _notify(navigator.onLine ? '共有NG：PAT未設定（あとで同期するにはPATを設定して）' : 'オフライン保存：オンライン復帰時に自動で共有します');
-  }
-
-  _updateKibanBadge();
-  closeSaveDialog();
-  showToast('保存しました');
-  _renderSidebar();
-}
-
 // 履歴画面 ON/OFF
 function toggleHist() {
   _histMode = !_histMode;
   var mv   = document.getElementById('histView');
   var main = document.getElementsByTagName('main')[0];
-  var np   = document.getElementsByClassName('numpad')[0];
   var btn  = document.getElementById('histBtn');
   if (_histMode) {
     closeOptionPanel(); // オプション展開中にLOGへ移行したら閉じる
-    document.getElementById('setupPanel').className = 'save-panel'; // セットアップの窓は一旦隠す
     main.style.display = 'none';
-    np.style.display   = 'none';
     mv.className       = 'hist-view';
     btn.classList.add('active');
     _selKiban = null;
@@ -1821,9 +1616,7 @@ function toggleHist() {
   } else {
     mv.className       = 'hist-view hidden';
     main.style.display = '';
-    np.style.display   = '';
     btn.classList.remove('active');
-    if (_setupMode) document.getElementById('setupPanel').className = 'save-panel show'; // 未確定なら戻す
   }
 }
 
@@ -1990,7 +1783,7 @@ if (navigator.onLine) { _flushPendingSync(); } // 起動時点で繋がってい
 
 // ===== 初期化 =====
 window.onload = function() {
-  var i, allInputs, btns, grid;
+  var i, allInputs, btns;
 
   // ① 入力欄を起動時にキャッシュ（meas-in クラスのみ）
   allInputs = document.getElementsByTagName('input');
@@ -2000,18 +1793,17 @@ window.onload = function() {
     }
   }
 
-  // ② 入力欄タップ → ontouchend で300ms遅延解消
+  // ② 入力欄フォーカス管理（キーパッド廃止・端末のキーボードで直接入力）
   for (i = 0; i < _inputs.length; i++) {
-    _inputs[i].ontouchend = (function(inp) {
-      return function(e) { e.preventDefault(); focusInp(inp); };
-    })(_inputs[i]);
-    // PC/マウス用フォールバック
-    _inputs[i].onclick = (function(inp) {
-      return function() { focusInp(inp); };
-    })(_inputs[i]);
-    // 物理キーボードのTabで欄移動した場合もフォーカス欄を同期
     _inputs[i].onfocus = (function(inp) {
       return function() { focusInp(inp); };
+    })(_inputs[i]);
+    _inputs[i].onblur = (function(inp) {
+      return function() { blurInp(inp); };
+    })(_inputs[i]);
+    // Enterキー（ソフトキーボードの「次へ」／物理キーボード共通）で次の欄へ
+    _inputs[i].onkeydown = (function(inp) {
+      return function(e) { if (e.key === 'Enter') { e.preventDefault(); _measEnter(inp); } };
     })(_inputs[i]);
   }
 
@@ -2073,59 +1865,31 @@ window.onload = function() {
     }
   }
 
-  // ② テンキー：ontouchend でイベント委譲（300ms遅延解消）
-  grid = document.getElementById('numpadGrid');
-  grid.ontouchend = function(e) {
-    var b = e.target;
-    if (b.tagName === 'BUTTON') {
-      e.preventDefault();
-      _npTap(b.getAttribute('data-key'));
-    }
-  };
-  // PC/マウス用フォールバック
-  grid.onclick = function(e) {
-    var b = e.target;
-    if (b.tagName === 'BUTTON') _npTap(b.getAttribute('data-key'));
+  // 機番入力欄：Enterキーで「測定開始／機番更新」を実行
+  document.getElementById('kibanInput').onkeydown = function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); applySetup(); }
   };
 
   // 状態選択ボタン（委譲）
-  var srow = document.getElementById('saveStatusRow');
+  var srow = document.getElementById('statusRow');
   srow.ontouchend = function(e) {
     var b = e.target;
     if (b.tagName === 'BUTTON') {
       e.preventDefault();
       _saveStatus = b.getAttribute('data-status');
-      _refreshSaveStatus();
+      _refreshStatusRow();
     }
   };
   srow.onclick = function(e) {
     var b = e.target;
     if (b.tagName === 'BUTTON') {
       _saveStatus = b.getAttribute('data-status');
-      _refreshSaveStatus();
+      _refreshStatusRow();
     }
   };
 
-  // 起動時セットアップの状態選択ボタン（委譲）
-  var strow = document.getElementById('setupStatusRow');
-  strow.ontouchend = function(e) {
-    var b = e.target;
-    if (b.tagName === 'BUTTON') {
-      e.preventDefault();
-      _saveStatus = b.getAttribute('data-status');
-      _refreshSetupStatus();
-    }
-  };
-  strow.onclick = function(e) {
-    var b = e.target;
-    if (b.tagName === 'BUTTON') {
-      _saveStatus = b.getAttribute('data-status');
-      _refreshSetupStatus();
-    }
-  };
-
-  // 起動時：機番・ステータス入力を必須で表示
-  openSetup();
+  // 起動時：機番・ステータス入力を必須で表示（測定欄はロック）
+  initSidebar();
 };
 </script>
 </body>
