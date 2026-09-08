@@ -279,6 +279,16 @@
     .hist-pending   { float: right; font-size: 9px; font-weight: 700; color: #ff9800; border: 1px solid #ff9800; border-radius: 4px; padding: 1px 4px; margin-right: 18px; }
     .hist-empty     { font-size: 12px; color: var(--text-faint); padding: 16px 10px; text-align: center; }
     .hist-item-kiban { font-size: 15px; font-weight: 700; color: var(--text); word-break: break-all; }
+    .hist-item-tags {
+      margin-top: 4px;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-flex-wrap: wrap; flex-wrap: wrap;
+      gap: 4px;
+    }
+    .hist-item-tag {
+      font-size: 10px; padding: 1px 6px; border-radius: 999px;
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--text-sub);
+    }
 
     /* 詳細：機番内の各ステータスセクション */
     .hist-rec { margin-bottom: 16px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 8px 4px; background: var(--surface); }
@@ -302,7 +312,18 @@
     }
     .hist-detail-empty { font-size: 13px; color: var(--text-faint); padding: 30px 10px; text-align: center; }
     .hist-detail-date  { font-size: 11px; color: var(--text-faint); margin-bottom: 4px; }
-    .hist-detail-memo  { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+    .hist-detail-memo  { font-size: 13px; font-weight: 700; color: var(--text); }
+    .hist-detail-hd {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      -webkit-justify-content: space-between; justify-content: space-between;
+      gap: 8px; margin-bottom: 12px;
+    }
+    .hist-print-btn {
+      background: var(--accent); color: #1A1614; border: none; border-radius: 6px;
+      padding: 6px 10px; font-size: 12px; font-weight: 700; cursor: pointer;
+      -webkit-flex-shrink: 0; flex-shrink: 0;
+    }
 
     /* 結果テーブル */
     .hr-tbl { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px; table-layout: fixed; }
@@ -370,6 +391,83 @@
       font-family: inherit; outline: none;
       min-height: 34px;
       -webkit-appearance: none; appearance: none;
+    }
+
+    /* ===== 印刷プレビュー（A4紙面） ===== */
+    .print-preview {
+      display: none;
+      position: fixed; inset: 0; z-index: 500;
+      background: #3a3632; overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .print-preview.show { display: block; }
+    .pp-toolbar {
+      position: -webkit-sticky; position: sticky; top: 0; z-index: 2;
+      background: #1A1614; color: #fff;
+      padding: 10px 12px;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      gap: 10px;
+    }
+    .pp-toolbar-info { font-size: 12px; color: #ddd; -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; text-align: center; }
+    .pp-close-btn, .pp-print-btn {
+      border: none; border-radius: 6px; padding: 8px 12px;
+      font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+      -webkit-flex-shrink: 0; flex-shrink: 0;
+    }
+    .pp-close-btn { background: #555; color: #fff; }
+    .pp-print-btn { background: var(--accent); color: #1A1614; }
+    .pp-pages { padding: 16px 0 40px; }
+    .pp-page {
+      background: #fff; color: #111;
+      width: 190mm; max-width: calc(100vw - 24px);
+      min-height: 277mm; box-sizing: border-box;
+      margin: 0 auto 14px; padding: 12mm;
+      box-shadow: 0 0 8px rgba(0,0,0,.4);
+    }
+    .pp-title { font-size: 16px; margin: 0 0 3mm; color: #111; }
+    .pp-meta  { font-size: 12px; color: #555; margin-bottom: 6mm; }
+    .pp-page .hr-tbl th, .pp-page .hr-tbl td.lbl { background: #f0f0f0; color: #333; border-color: #999; }
+    .pp-page .hr-tbl td { background: #fff; color: #111; border-color: #999; }
+    .pp-page .hr-ph-u { color: #b45309; }
+    .pp-page .hr-ph-v { color: #15803d; }
+    .pp-page .hr-ph-w { color: #1d4ed8; }
+    .pp-page .diff-ok   { color: #16a34a; }
+    .pp-page .diff-warn { color: #111; text-decoration: underline; }
+    .pp-page .diff-ng   { color: #ea580c; }
+
+    /* ===== 印刷：4件を1枚に集約するコンパクトレイアウト ===== */
+    .pp-page-compact { padding: 10mm; }
+    .pp-page-compact .pp-title { font-size: 14px; margin-bottom: 4mm; }
+    .pp-grid {
+      display: -ms-grid; display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4mm;
+    }
+    .pp-block { border: 1px solid #999; border-radius: 2mm; padding: 2.5mm 3mm; }
+    .pp-block-hd { font-size: 11px; font-weight: 700; color: #111; margin-bottom: 1.5mm; border-bottom: 1px solid #ccc; padding-bottom: 1mm; }
+    .pp-ctbl { width: 100%; border-collapse: collapse; font-size: 9px; table-layout: fixed; }
+    .pp-ctbl th, .pp-ctbl td {
+      border: 1px solid #bbb; padding: 1.2mm 1mm; text-align: center;
+    }
+    .pp-ctbl th { background: #f0f0f0; color: #333; font-weight: 600; }
+    .pp-ctbl td.lbl { background: #f7f7f7; color: #333; text-align: left; font-size: 8px; }
+    .pp-ctbl td.pp-ctbl-ph { font-weight: 700; text-align: center; vertical-align: middle; width: 9%; }
+    .pp-ctbl td { color: #111; background: #fff; }
+    .pp-ctbl .diff-ok   { color: #16a34a; font-weight: 700; }
+    .pp-ctbl .diff-warn { color: #111; font-weight: 700; text-decoration: underline; }
+    .pp-ctbl .diff-ng   { color: #ea580c; font-weight: 700; }
+
+    @media print {
+      @page { size: A4; margin: 10mm; }
+      body * { visibility: hidden; }
+      #printPreview, #printPreview * { visibility: visible; }
+      #printPreview { position: absolute; left: 0; top: 0; width: 100%; background: #fff; }
+      .pp-toolbar { display: none !important; }
+      .pp-pages { padding: 0; }
+      .pp-page {
+        box-shadow: none; margin: 0 auto; width: auto; max-width: none; min-height: 0;
+      }
     }
   </style>
 </head>
@@ -487,6 +585,9 @@
     <div class="hist-detail-empty">←履歴を選択</div>
   </div>
 </div>
+
+<!-- ===== 印刷プレビュー（A4・window.print()でPDF保存/印刷） ===== -->
+<div class="print-preview" id="printPreview"></div>
 
 <!-- ===== 左サイドバー（キーパッド廃止・機番/ステータスも常時格納） ===== -->
 <div class="bb-side" id="bbSide">
@@ -963,6 +1064,7 @@ function _syncNewRecord(newRecord, callback) {
       }
       merged.sort(function(a, b) { return b.date < a.date ? -1 : 1; });
       if (merged.length > 50) merged = merged.slice(0, 50);
+      _normalizePendingFlags(merged); // リモートに焼き付いた古いpendingSyncを無視して再計算
       _saveHistory(merged);
       _renderSidebar();
 
@@ -1092,6 +1194,24 @@ function _loadPending() {
 
 function _savePending(arr) {
   try { localStorage.setItem(PENDING_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+// pendingSync（未同期）は「この端末の未送信キューに載っているか」だけで決め直す。
+// GitHub側の共有索引ファイルには、過去のバグで pendingSync:true が焼き付いたまま
+// 残っている記録があるため、リモートから取り込んだ値をそのまま信用すると
+// 同期済みのはずの記録がLOG画面を開くたびに「未同期」へ復活してしまう。
+// リモートの値がどうであれ、ここで必ず未送信キューとの突き合わせで上書きする。
+function _normalizePendingFlags(arr) {
+  var pending = _loadPending(), pset = {}, i, k;
+  for (i = 0; i < pending.length; i++) {
+    k = pending[i].date + '|' + pending[i].memo;
+    pset[k] = true;
+  }
+  for (i = 0; i < arr.length; i++) {
+    k = arr[i].date + '|' + arr[i].memo;
+    arr[i].pendingSync = !!pset[k];
+  }
+  return arr;
 }
 
 // 同じ記録（date+memoで同定）が既にキューにあれば上書き、無ければ追加
@@ -1246,6 +1366,7 @@ function _fetchGist(callback) {
       }
       merged.sort(function(a, b) { return b.date < a.date ? -1 : 1; });
       if (merged.length > 50) merged = merged.slice(0, 50);
+      _normalizePendingFlags(merged); // リモートに焼き付いた古いpendingSyncを無視して再計算
       _saveHistory(merged);
       _notify('共有OK：最新の索引を取得（件数 ' + merged.length + '）');
       if (callback) callback();
@@ -1621,6 +1742,28 @@ function toggleHist() {
 }
 
 // サイドバー描画（機番ごとにまとめて1行。左は機番のみ表示）
+// LOGリストのタグ表示：どのステータスが保存済みかを機番ごとに示す（この順で並べる）
+var STATUS_TAG_ORDER = ['完成時', 'AG前', 'エイジング途中', 'エイジング後', '出荷前'];
+var STATUS_TAG_LABEL = { '完成時':'完成', 'AG前':'AG前', 'エイジング途中':'AG中', 'エイジング後':'AG後', '出荷前':'出荷前' };
+
+// stObj = { ステータス文字列: true, ... } から、既定の順でタグHTMLを組み立てる。
+// 既定外のステータス文字列（旧データ等）は末尾に回す。
+function _statusTagsHtml(stObj) {
+  var keys = [], k, i, idx, known = [], unknown = [], html = '';
+  for (k in stObj) { if (stObj.hasOwnProperty(k)) keys.push(k); }
+  for (i = 0; i < keys.length; i++) {
+    idx = STATUS_TAG_ORDER.indexOf(keys[i]);
+    if (idx === -1) unknown.push(keys[i]); else known[idx] = keys[i];
+  }
+  var ordered = [];
+  for (i = 0; i < STATUS_TAG_ORDER.length; i++) { if (known[i]) ordered.push(known[i]); }
+  ordered = ordered.concat(unknown);
+  for (i = 0; i < ordered.length; i++) {
+    html += '<span class="hist-item-tag">' + _esc(STATUS_TAG_LABEL[ordered[i]] || ordered[i]) + '</span>';
+  }
+  return html;
+}
+
 function _renderSidebar() {
   var arr  = _loadHistory();
   var list = document.getElementById('histList');
@@ -1628,20 +1771,33 @@ function _renderSidebar() {
     list.innerHTML = '<div class="hist-empty">保存データなし</div>';
     return;
   }
-  // 機番ごとにまとめる。arrは日付降順なので初出順＝新しい機番順で並ぶ。
-  // ひとつでも未同期の記録があれば、その機番に「未同期」バッジを付ける。
-  var order = [], seen = {}, pend = {}, i, kb;
+  // 機番ごとにまとめる。ひとつでも未同期の記録があれば、その機番に「未同期」バッジを付ける。
+  // どのステータスが保存済みかも機番ごとに集計してタグ表示する。
+  var order = [], seen = {}, pend = {}, sts = {}, i, kb, st;
   for (i = 0; i < arr.length; i++) {
     kb = arr[i].kiban || '未入力';
-    if (!seen[kb]) { seen[kb] = true; order.push(kb); pend[kb] = false; }
+    if (!seen[kb]) { seen[kb] = true; order.push(kb); pend[kb] = false; sts[kb] = {}; }
     if (arr[i].pendingSync) pend[kb] = true;
+    st = arr[i].status || '';
+    if (st) sts[kb][st] = true;
   }
+  // 機番の番号が大きい順（数値化できない機番は末尾へ）に並べ替える。
+  order.sort(function(a, b) {
+    var na = parseFloat(a), nb = parseFloat(b);
+    var aNum = !isNaN(na) && String(na) !== 'NaN' && /^\s*-?\d+(\.\d+)?\s*$/.test(a);
+    var bNum = !isNaN(nb) && String(nb) !== 'NaN' && /^\s*-?\d+(\.\d+)?\s*$/.test(b);
+    if (aNum && bNum) return nb - na;
+    if (aNum && !bNum) return -1;
+    if (!aNum && bNum) return 1;
+    return a < b ? -1 : (a > b ? 1 : 0);
+  });
   var html = '';
   for (i = 0; i < order.length; i++) {
     kb = order[i];
     html += '<div class="hist-item' + (kb === _selKiban ? ' selected' : '') + '">'
           + (pend[kb] ? '<span class="hist-pending">未同期</span>' : '')
           + '<div class="hist-item-kiban">機番 ' + _esc(kb) + '</div>'
+          + '<div class="hist-item-tags">' + _statusTagsHtml(sts[kb]) + '</div>'
           + '</div>';
   }
   list.innerHTML = html;
@@ -1687,7 +1843,149 @@ function _deleteRecord(rec, kiban) {
   }
 }
 
+// 相ごとの結果テーブルHTML生成（詳細画面・印刷プレビュー共用）
+function _phaseTablesHtml(rec) {
+  var phNames = { u:'U相', v:'V相', w:'W相' };
+  var phColors= { u:'hr-ph-u', v:'hr-ph-v', w:'hr-ph-w' };
+  var html = '', pi, ph, ci, col, ri, row, dv, cls, dNum, rows2;
+  for (pi = 0; pi < PHASES.length; pi++) {
+    ph = PHASES[pi];
+    html += '<div class="hr-ph-hd ' + phColors[ph] + '">' + phNames[ph] + '</div>';
+    html += '<table class="hr-tbl"><thead><tr>'
+          + '<th style="width:20%"></th><th>B</th><th>A</th><th>R</th>'
+          + '</tr></thead><tbody>';
+    rows2 = [['','on'],['','off'],['差数','diff']];
+    for (ri = 0; ri < rows2.length; ri++) {
+      row = rows2[ri];
+      html += '<tr><td class="lbl">' + row[0] + '</td>';
+      for (ci = 0; ci < COLS.length; ci++) {
+        col = COLS[ci];
+        dv  = rec.phases && rec.phases[ph] && rec.phases[ph][col] ? rec.phases[ph][col][row[1]] : '';
+        if (row[1] === 'diff' && dv !== '') {
+          dNum = parseFloat(dv);
+          cls = dNum >= 1.83 && dNum <= 1.97 ? 'diff-ok'
+              : dNum >= 1.80 && dNum <= 2.00 ? 'diff-warn'
+              : 'diff-ng';
+          html += '<td class="' + cls + '">' + _esc(dv) + '</td>';
+        } else {
+          html += '<td>' + _esc(dv || '—') + '</td>';
+        }
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+  }
+  return html;
+}
+
+// 印刷対象ステータス（この順で並べる）。「出荷前」は現行のステータスボタンには無いが、
+// 過去データ（旧運用）に残っている場合のみ拾って印刷対象に含める。
+var PRINT_STATUS_ORDER = ['完成時', '出荷前', 'AG前', 'エイジング後'];
+
+// 機番内の記録から、印刷対象ステータスごとの最終版（最新1件）を拾う。
+// recsは_loadHistory()の並び（新しい順）を前提とするので、先に見つかった方が最新。
+function _pickPrintRecords(recs) {
+  var out = [], i, j, t, found;
+  for (i = 0; i < PRINT_STATUS_ORDER.length; i++) {
+    t = PRINT_STATUS_ORDER[i];
+    found = null;
+    for (j = 0; j < recs.length; j++) {
+      if ((recs[j].status || '') === t) { found = recs[j]; break; }
+    }
+    if (found) out.push(found);
+  }
+  return out;
+}
+
+// 印刷プレビュー画面を開く（機番の各ステータス最終版をA4ページとして並べる）
+// 1ステータス分の結果を、相・項目をまとめたコンパクトな1テーブルに凝縮（印刷用）
+function _compactStatusTableHtml(rec) {
+  var phNames = { u:'U相', v:'V相', w:'W相' };
+  var phColors= { u:'hr-ph-u', v:'hr-ph-v', w:'hr-ph-w' };
+  var rows2 = [['ON','on'],['OFF','off'],['差数','diff']];
+  var html = '<table class="pp-ctbl"><thead><tr>'
+           + '<th class="pp-ctbl-ph"></th><th></th><th>B</th><th>A</th><th>R</th>'
+           + '</tr></thead><tbody>';
+  var pi, ph, ri, row, ci, col, dv, cls, dNum;
+  for (pi = 0; pi < PHASES.length; pi++) {
+    ph = PHASES[pi];
+    for (ri = 0; ri < rows2.length; ri++) {
+      row = rows2[ri];
+      html += '<tr>';
+      if (ri === 0) html += '<td class="pp-ctbl-ph ' + phColors[ph] + '" rowspan="3">' + phNames[ph] + '</td>';
+      html += '<td class="lbl">' + row[0] + '</td>';
+      for (ci = 0; ci < COLS.length; ci++) {
+        col = COLS[ci];
+        dv  = rec.phases && rec.phases[ph] && rec.phases[ph][col] ? rec.phases[ph][col][row[1]] : '';
+        if (row[1] === 'diff' && dv !== '') {
+          dNum = parseFloat(dv);
+          cls = dNum >= 1.83 && dNum <= 1.97 ? 'diff-ok'
+              : dNum >= 1.80 && dNum <= 2.00 ? 'diff-warn'
+              : 'diff-ng';
+          html += '<td class="' + cls + '">' + _esc(dv) + '</td>';
+        } else {
+          html += '<td>' + _esc(dv || '—') + '</td>';
+        }
+      }
+      html += '</tr>';
+    }
+  }
+  html += '</tbody></table>';
+  return html;
+}
+
+function openPrintPreview(kiban) {
+  var arr = _loadHistory(), recs = [], i;
+  for (i = 0; i < arr.length; i++) {
+    if ((arr[i].kiban || '未入力') === kiban) recs.push(arr[i]);
+  }
+  var targets = _pickPrintRecords(recs);
+  if (!targets.length) { showToast('印刷できる記録がないです'); return; }
+  var numOf = _statusOrdinals(recs); // targetsはrecsと同じオブジェクト参照（最終版＝そのステータスの最大回数）
+
+  var html = '<div class="pp-toolbar">'
+           +   '<button class="pp-close-btn" onclick="closePrintPreview()">← 閉じる</button>'
+           +   '<span class="pp-toolbar-info">機番 ' + _esc(kiban) + '　' + targets.length + '件（1枚に集約）</span>'
+           +   '<button class="pp-print-btn" onclick="window.print()">🖨 印刷する（PDFで保存も可）</button>'
+           + '</div><div class="pp-pages">';
+
+  html += '<div class="pp-page pp-page-compact">'
+        +   '<h2 class="pp-title">三相測定結果　機番 ' + _esc(kiban) + '</h2>'
+        +   '<div class="pp-grid">';
+  for (i = 0; i < targets.length; i++) {
+    var r = targets[i], ord = numOf[recs.indexOf(r)];
+    html += '<div class="pp-block">'
+          +   '<div class="pp-block-hd">' + _esc(r.status || '') + '（' + ord + '回目）　　' + _esc(r.date || '') + (r.pendingSync ? '　（未同期）' : '') + '</div>'
+          +   _compactStatusTableHtml(r)
+          + '</div>';
+  }
+  html +=   '</div>'
+        + '</div>';
+  html += '</div>';
+  var pv = document.getElementById('printPreview');
+  pv.innerHTML = html;
+  pv.classList.add('show');
+}
+
+function closePrintPreview() {
+  var pv = document.getElementById('printPreview');
+  pv.classList.remove('show');
+  pv.innerHTML = '';
+}
+
 // 詳細エリア描画：選択機番の各ステータスを縦に並べて表示
+// recs（新しい順の配列）を受け取り、各要素が「そのステータスで何回目の測定か」を
+// 同じ添字の配列で返す（一番古い記録＝1回目、以降その状態で保存するたびに+1）。
+function _statusOrdinals(recs) {
+  var count = {}, numOf = [], si, stt;
+  for (si = recs.length - 1; si >= 0; si--) {
+    stt = recs[si].status || '';
+    count[stt] = (count[stt] || 0) + 1;
+    numOf[si] = count[stt];
+  }
+  return numOf;
+}
+
 function _renderDetail(kiban) {
   var arr = _loadHistory();
   var recs = [], i;
@@ -1699,51 +1997,32 @@ function _renderDetail(kiban) {
     detail.innerHTML = '<div class="hist-detail-empty">←機番を選択</div>';
     return;
   }
-  var phNames = { u:'U相', v:'V相', w:'W相' };
-  var phColors= { u:'hr-ph-u', v:'hr-ph-v', w:'hr-ph-w' };
-  var html = '<div class="hist-detail-memo">機番 ' + _esc(kiban) + '</div>';
+  var html = '<div class="hist-detail-hd">'
+           +   '<span class="hist-detail-memo">機番 ' + _esc(kiban) + '</span>'
+           +   '<button class="hist-print-btn" id="histPrintBtn">🖨 印刷用紙</button>'
+           + '</div>';
 
-  var r, si, ph, col, ci, row, dv, cls, pi, ri, dNum, rows2;
+  // 同じステータスで何回測定したかを番号付け（recsは新しい順なので、古い方から1回目とする）
+  var numOf = _statusOrdinals(recs);
+
+  var r, si;
   for (si = 0; si < recs.length; si++) {
     r = recs[si];
     html += '<div class="hist-rec">';
     html += '<div class="hist-rec-hd">'
-          +   '<span class="hist-rec-status">' + _esc(r.status || '（状態なし）') + '</span>'
+          +   '<span class="hist-rec-status">' + _esc(r.status || '（状態なし）') + '　' + numOf[si] + '回目</span>'
           +   (r.pendingSync ? '<span class="hist-rec-pend">未同期</span>' : '')
           +   '<span class="hist-rec-date">' + _esc(r.date) + '</span>'
           +   '<button class="hist-rec-del">×</button>'
           + '</div>';
-    for (pi = 0; pi < PHASES.length; pi++) {
-      ph = PHASES[pi];
-      html += '<div class="hr-ph-hd ' + phColors[ph] + '">' + phNames[ph] + '</div>';
-      html += '<table class="hr-tbl"><thead><tr>'
-            + '<th style="width:20%"></th><th>B</th><th>A</th><th>R</th>'
-            + '</tr></thead><tbody>';
-      rows2 = [['','on'],['','off'],['差数','diff']];
-      for (ri = 0; ri < rows2.length; ri++) {
-        row = rows2[ri];
-        html += '<tr><td class="lbl">' + row[0] + '</td>';
-        for (ci = 0; ci < COLS.length; ci++) {
-          col = COLS[ci];
-          dv  = r.phases && r.phases[ph] && r.phases[ph][col] ? r.phases[ph][col][row[1]] : '';
-          if (row[1] === 'diff' && dv !== '') {
-            dNum = parseFloat(dv);
-            cls = dNum >= 1.83 && dNum <= 1.97 ? 'diff-ok'
-                : dNum >= 1.80 && dNum <= 2.00 ? 'diff-warn'
-                : 'diff-ng';
-            html += '<td class="' + cls + '">' + _esc(dv) + '</td>';
-          } else {
-            html += '<td>' + _esc(dv || '—') + '</td>';
-          }
-        }
-        html += '</tr>';
-      }
-      html += '</tbody></table>';
-    }
+    html += _phaseTablesHtml(r);
     html += '</div>';
   }
 
   detail.innerHTML = html;
+
+  var pbtn = document.getElementById('histPrintBtn');
+  if (pbtn) pbtn.onclick = function() { openPrintPreview(kiban); };
 
   // 各ステータスの×削除（合成clickの二重発火は _delTouchAt でガード。
   // 起点時刻は confirm 終了後に取り直す＝ログ削除バグと同じ対策）
