@@ -177,7 +177,8 @@
     },
     "kiban": "006",
     "status": "完成時",
-    "pendingSync": true
+    "pendingSync": true,
+    "recordFile": "records/006/完成時.json"
   },
   {
     "date": "2026/08/21 16:13",
