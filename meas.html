@@ -54,22 +54,23 @@
       border-radius: 12px;
       overflow: hidden;
     }
-    .phase-hd { font-size: 13px; font-weight: 700; padding: 7px 10px; border-bottom: 2px solid currentColor; }
+    .phase-hd { font-size: 16px; font-weight: 700; padding: 9px 12px; border-bottom: 2px solid currentColor; }
     .th-u { color: #FFEB3B; }
     .th-v { color: #69d469; }
     .th-w { color: #5bc8ff; }
 
     /* ===== TABLE ===== */
-    .meas-tbl { width: 100%; border-collapse: collapse; font-size: 15px; table-layout: fixed; }
+    .meas-tbl { width: 100%; border-collapse: collapse; font-size: 17px; table-layout: fixed; }
     .meas-tbl th {
-      padding: 5px 6px; text-align: left;
+      padding: 7px 8px; text-align: left;
       color: var(--text-sub); font-weight: 600;
       border-bottom: 1px solid var(--border);
       background: var(--bg-2);
+      font-size: 14px;
     }
-    .meas-tbl td { padding: 4px 5px; text-align: center; border-bottom: 1px solid var(--border); }
+    .meas-tbl td { padding: 7px 6px; text-align: center; border-bottom: 1px solid var(--border); }
     .meas-tbl tr:last-child td { border-bottom: none; }
-    .col-lbl { text-align: left !important; color: var(--text-sub); font-size: 14px; white-space: nowrap; width: 14%; padding: 4px 3px !important; }
+    .col-lbl { text-align: left !important; color: var(--text-sub); font-size: 14px; white-space: nowrap; width: 14%; padding: 5px 4px !important; }
 
     /* ===== INPUT CELL ===== */
     .meas-td-wrap {
@@ -85,8 +86,8 @@
       -webkit-flex-shrink: 0; flex-shrink: 0;
       background: none; border: none;
       border-left: 1px solid var(--border);
-      color: #D97757; font-size: 21px;
-      cursor: pointer; padding: 6px 11px;
+      color: #D97757; font-size: 22px;
+      cursor: pointer; padding: 8px 12px;
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-align-items: center; align-items: center;
     }
@@ -94,7 +95,7 @@
     .meas-in {
       width: 100%; border: 1px solid var(--border); border-radius: 4px;
       background: var(--surface-2); color: var(--text);
-      font-size: 16px; padding: 5px 3px;
+      font-size: 18px; padding: 8px 6px;
       text-align: right; font-family: inherit;
       -webkit-appearance: none; appearance: none; outline: none;
     }
@@ -107,8 +108,8 @@
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-align-items: center; align-items: center;
       -webkit-justify-content: flex-end; justify-content: flex-end;
-      min-width: 38px; padding: 0 4px;
-      font-size: 16px; color: #7FB3FF;
+      min-width: 40px; padding: 0 5px;
+      font-size: 17px; color: #7FB3FF;
       background: var(--bg-2); border-right: 1px solid var(--border);
     }
     .meas-prev:empty { display: none; }
@@ -117,28 +118,28 @@
     .meas-header {
       position: -webkit-sticky; position: sticky; top: 0; z-index: 50;
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; padding: 7px 10px; margin-bottom: 10px;
+      border-radius: 10px; padding: 8px 12px; margin-bottom: 9px;
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-flex-wrap: wrap; flex-wrap: wrap;
       -webkit-align-items: baseline; align-items: baseline;
     }
     .mh-cur  {
-      font-family: inherit; font-size: 14px; font-weight: 700;
+      font-family: inherit; font-size: 15px; font-weight: 700;
       color: var(--accent); background: var(--surface-2);
       border: 1px solid var(--border); border-radius: 8px;
-      padding: 3px 10px; cursor: pointer;
+      padding: 5px 12px; cursor: pointer;
     }
     .mh-cur::after { content: ' ✎'; font-weight: 400; color: var(--text-sub); }
     .mh-cur:active { background: var(--surface); }
-    .mh-prev { font-size: 13px; color: #7FB3FF; }
+    .mh-prev { font-size: 14px; color: #7FB3FF; }
     .mh-prev::before { content: '｜'; margin: 0 8px; color: var(--text-faint); font-weight: 400; }
 
     /* ===== DIFF CELL ===== */
-    .meas-diff { font-weight: 700; font-size: 14px; line-height: 1.1; vertical-align: middle; padding: 3px; }
+    .meas-diff { font-weight: 700; font-size: 16px; line-height: 1.2; vertical-align: middle; padding: 4px; }
     .d-num { display: block; }
-    .d-lbl { display: block; font-size: 13px; font-weight: 600; }
+    .d-lbl { display: block; font-size: 14px; font-weight: 600; }
     .meas-diff.judge-first { position: relative; }
-    .meas-diff.judge-first::before { content: "判定"; position: absolute; left: 3px; top: 3px; font-size: 10px; font-weight: 600; color: var(--text-sub); }
+    .meas-diff.judge-first::before { content: "判定"; position: absolute; left: 4px; top: 4px; font-size: 11px; font-weight: 600; color: var(--text-sub); }
 
     /* ===== COL HEADER ===== */
     .col-hd-wrap {
@@ -149,7 +150,7 @@
     .col-reset {
       background: none; border: 1px solid var(--border);
       border-radius: 4px; color: #D97757;
-      font-size: 12px; padding: 2px 5px;
+      font-size: 13px; padding: 3px 6px;
       cursor: pointer; font-family: inherit;
     }
 
@@ -174,51 +175,51 @@
       background: var(--surface);
       border-right: 2px solid var(--accent);
       z-index: 200;
-      padding: 12px 8px;
+      padding: 12px 9px;
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-flex-direction: column; flex-direction: column;
-      gap: 7px;
+      gap: 8px;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
     .bb-kiban {
-      font-size: 12px; font-weight: 700; color: var(--accent);
+      font-size: 13px; font-weight: 700; color: var(--accent);
       word-break: break-all;
     }
     .bb-kiban-row {
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-flex-direction: column; flex-direction: column;
-      gap: 3px;
+      gap: 4px;
     }
-    .bb-kiban-lbl { font-size: 11px; color: var(--text-sub); font-weight: 600; }
+    .bb-kiban-lbl { font-size: 12px; color: var(--text-sub); font-weight: 600; }
     .bb-kiban-input {
       width: 100%;
       background: var(--surface-2); border: 1px solid var(--accent);
       border-radius: 6px; color: #FFB899;
       font-size: 16px; font-weight: 700;
-      padding: 6px 8px; text-align: right;
+      padding: 7px 8px; text-align: right;
       font-family: inherit; outline: none;
       -webkit-appearance: none; appearance: none;
     }
     .bb-status-row {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
     }
     .bb-status-btn {
       background: var(--surface-2); border: 1px solid var(--border);
-      color: var(--text-sub); font-size: 11px; font-weight: 700;
-      padding: 7px 2px; border-radius: 6px;
+      color: var(--text-sub); font-size: 12px; font-weight: 700;
+      padding: 9px 3px; border-radius: 6px;
       cursor: pointer; font-family: inherit; text-align: center;
       -webkit-tap-highlight-color: transparent;
     }
     .bb-status-btn.sel { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .bb-divider { height: 1px; background: var(--border); margin: 2px 0; }
+    .bb-divider { height: 1px; background: var(--border); margin: 3px 0; }
     .bb-btn {
       width: 100%;
       background: var(--surface-2); border: 1px solid var(--border);
-      color: var(--text-sub); font-size: 14px; font-weight: 700;
+      color: var(--text-sub); font-size: 15px; font-weight: 700;
       border-radius: 8px; cursor: pointer; font-family: inherit;
       text-align: center; line-height: 1;
-      padding: 13px 8px;
+      padding: 15px 8px;
       -webkit-tap-highlight-color: transparent;
     }
     .bb-btn:active { background: var(--border); }
@@ -681,6 +682,24 @@ function blurInp(inp) {
   if (_padTarget === inp) _padTarget = null;
   var ph = inp.getAttribute('data-ph');
   if (ph) measCalc(ph);
+}
+
+// 数字を打つと自動で小数点が挿入される（末尾2桁が小数部）
+// 例：「1」→0.01 「12」→0.12 「123」→1.23 「-123」→-1.23
+function autoDecimalMeas(inp) {
+  var raw = inp.value;
+  var neg = raw.indexOf('-') >= 0;
+  var digits = raw.replace(/[^0-9]/g, '');
+  digits = digits.replace(/^0+(?=\d)/, ''); // 先頭の余分な0は削る
+  var formatted;
+  if (digits === '') {
+    formatted = neg ? '-' : '';
+  } else if (digits.length <= 2) {
+    formatted = (neg ? '-' : '') + '0.' + ('00' + digits).slice(-2);
+  } else {
+    formatted = (neg ? '-' : '') + digits.slice(0, digits.length - 2) + '.' + digits.slice(-2);
+  }
+  inp.value = formatted;
 }
 
 // Enterキーで次の測定欄へ（ソフトキーボードの「次へ」／物理キーボード共通）
@@ -2083,6 +2102,10 @@ window.onload = function() {
     // Enterキー（ソフトキーボードの「次へ」／物理キーボード共通）で次の欄へ
     _inputs[i].onkeydown = (function(inp) {
       return function(e) { if (e.key === 'Enter') { e.preventDefault(); _measEnter(inp); } };
+    })(_inputs[i]);
+    // 入力のたびに末尾2桁を小数部として自動で「.」を挿入
+    _inputs[i].oninput = (function(inp) {
+      return function() { autoDecimalMeas(inp); };
     })(_inputs[i]);
   }
 
