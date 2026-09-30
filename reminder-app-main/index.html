@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1A1614">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Wm2B">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>Wm2B</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ========== MASCOT DEF (hidden) ========== -->
+<!-- オリジナルキャラ「リマちゃん」 クリーム色のシンプルぷりぷり生物 -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="rimachan" viewBox="0 0 100 105">
+      <circle cx="50" cy="56" r="44" fill="#F0EBE6"/>
+      <circle cx="33" cy="44" r="2.5" fill="#1A1614"/>
+      <circle cx="59" cy="44" r="2.5" fill="#1A1614"/>
+      <path d="M39 54 Q46 57 53 54"
+            stroke="#1A1614" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ========== HEADER ========== -->
+<header class="header">
+  <span class="header-title" onclick="forceUpdate()" style="cursor:pointer;">Wm2B</span>
+  <span class="urgent-badge" id="urgentBadge"></span>
+  <span class="header-date" id="headerDate"></span>
+  <button class="pat-status" id="patStatus" onclick="showPatStatusDetail()" aria-label="投函箱PAT接続状態"></button>
+</header>
+
+<!-- ========== MAIN ========== -->
+<main class="main">
+
+  <!-- HOME -->
+  <div id="tab-home" class="tab-content active">
+    <div id="notifBanner" class="banner" style="display:none">
+      <span>🔔 期限前に通知を受け取りませんか？</span>
+      <button onclick="requestNotif()">許可する</button>
+    </div>
+
+    <div id="homeContent"></div>
+
+    <button class="btn btn-accent" style="margin-top:14px;" onclick="switchTab('add', document.getElementById('nav-add') || document.createElement('button')); rimaTapCount();">＋ 追加</button>
+  </div>
+
+  <!-- ADD -->
+  <div id="tab-add" class="tab-content">
+    <form id="addForm" autocomplete="off">
+      <div class="form-group">
+        <label class="form-label">タイトル <span style="color:var(--danger)">*</span></label>
+        <div class="input-wrap">
+        <input type="text" class="form-input" id="titleInput" placeholder="例：○○社 納品締め切り" required>
+        <button type="button" class="clear-x" onclick="clearFormInput(this)">×</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">期限日 <span style="color:var(--danger)">*</span></label>
+        <div class="input-wrap">
+        <input type="date" class="form-input" id="deadlineInput" required>
+        <button type="button" class="clear-x" onclick="clearFormInput(this)">×</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">カテゴリー</label>
+        <select class="form-input" id="categoryInput">
+          <option value="manual">手動入力</option>
+          <option value="excel">Excel（SGT）</option>
+          <option value="obsidian">Obsidian</option>
+          <option value="claude">Claude会話</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">何日前から通知</label>
+        <select class="form-input" id="advanceDaysInput">
+          <option value="1">1日前</option>
+          <option value="3" selected>3日前</option>
+          <option value="5">5日前</option>
+          <option value="7">1週間前</option>
+          <option value="14">2週間前</option>
+          <option value="30">1ヶ月前</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">メモ</label>
+        <div class="input-wrap is-ta">
+        <textarea class="form-input" id="notesInput" placeholder="詳細・備考（任意）"></textarea>
+        <button type="button" class="clear-x" onclick="clearFormInput(this)">×</button>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-accent">追加する</button>
+    </form>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="tab-settings" class="tab-content">
+
+    <!-- グループ1: 通知 -->
+    <div class="set-group">
+      <div class="set-section-title">通知</div>
+      <div class="set-item set-only">
+        <div class="set-info">
+          <div class="set-label">通知設定</div>
+          <div class="set-sub" id="notifStatus">確認中...</div>
+        </div>
+        <div class="set-act">
+          <button class="sm-btn sm-btn-accent" onclick="requestNotif()">設定する</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- グループ2: 表示 -->
+    <div class="set-group">
+      <div class="set-section-title">表示</div>
+      <div class="set-item set-first">
+        <div class="set-info">
+          <div class="set-label">完了済みを表示</div>
+          <div class="set-sub">ホームに完了リマインドも出す</div>
+        </div>
+        <div class="set-act">
+          <label class="toggle">
+            <input type="checkbox" id="showCompleted" onchange="renderHome()">
+            <span class="toggle-sl"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- グループ3: GitHub Gist 同期 -->
+    <div class="set-group">
+      <div class="set-section-title">GitHub Gist 同期</div>
+      <div class="set-item set-first set-col">
+        <div class="set-label">🔗 自動同期</div>
+        <div class="set-sub">毎晩23:45にタスクスケジューラが自動更新します</div>
+        <div style="font-size:11px; color:var(--text-faint); word-break:break-all; background:var(--bg-2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-family:monospace; line-height:1.6;" id="gistUrlDisplay"></div>
+        <button class="sm-btn sm-btn-accent" style="width:100%; padding:9px;" onclick="syncFromGist(true)">今すぐ同期</button>
+      </div>
+      <div class="set-item set-last set-col">
+        <div class="set-label">📬 投函箱Gist設定</div>
+        <div class="set-sub">手動追加をObsidianに届ける仕組み（各デバイスで1回だけ設定）</div>
+        <input type="text" class="form-input" id="mailboxGistId" placeholder="GistID（URLの末尾の英数字）" style="font-size:13px;">
+        <input type="password" class="form-input" id="mailboxPat" placeholder="Fine-grained PAT" style="font-size:13px;">
+        <button class="sm-btn sm-btn-accent" style="width:100%; padding:9px;" onclick="saveMailboxSettings()">保存する</button>
+        <div style="font-size:11px; color:var(--text-faint);" id="mailboxStatus"></div>
+      </div>
+    </div>
+
+    <!-- グループ4: データ管理 -->
+    <div class="set-group">
+      <div class="set-section-title">データ管理</div>
+      <div class="set-item set-first">
+        <div class="set-info">
+          <div class="set-label">データエクスポート</div>
+          <div class="set-sub">JSONでバックアップ保存</div>
+        </div>
+        <div class="set-act">
+          <button class="sm-btn sm-btn-sec" onclick="exportData()">書き出す</button>
+        </div>
+      </div>
+      <div class="set-item set-last">
+        <div class="set-info">
+          <div class="set-label">バックアップを復元</div>
+          <div class="set-sub">エクスポートしたJSONを読み込む</div>
+        </div>
+        <div class="set-act">
+          <label class="sm-btn sm-btn-sec" style="cursor:pointer; display:inline-block;">
+            <input type="file" accept=".json" style="display:none" onchange="importBackup(this)">
+            読み込む
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 操作ボタン群 -->
+    <div style="margin-top:4px;">
+      <button class="btn btn-secondary" onclick="forceUpdate()">🔄 最新版に更新</button>
+      <button class="btn btn-secondary" onclick="clearCompleted()">完了済みをまとめて削除</button>
+      <button class="btn btn-danger" onclick="clearAll()">全データ削除</button>
+    </div>
+    <div style="text-align:center; margin-top:28px; color:var(--text-faint); font-size:11px; line-height:2;">
+      おじさんリマインダー v1.5<br>
+      データはこのデバイスのみに保存されます
+    </div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div id="tab-calendar" class="tab-content">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="calPrev()">‹</button>
+      <span class="cal-month-label" id="calMonthLabel"></span>
+      <button class="cal-nav-btn" onclick="calNext()">›</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div id="calDetail"></div>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div id="tab-schedule" class="tab-content">
+    <div class="sch-title-bar">引取・配送日程</div>
+    <div class="sch-week-nav">
+      <button type="button" class="sch-week-btn" id="schPrevBtn" onclick="schPrevWeek()">◀ 前週</button>
+      <span class="sch-week-label" id="schWeekLabel">今週</span>
+      <button type="button" class="sch-week-btn" id="schNextBtn" onclick="schNextWeek()">来週 ▶</button>
+    </div>
+    <div id="scheduleGrid"></div>
+    <div id="schSynced" class="sch-synced"></div>
+  </div>
+
+  <!-- GANTT -->
+  <div id="tab-gantt" class="tab-content">
+    <div class="gantt-summary">工程ガントチャート（SGT2605 日程シート）</div>
+    <div class="gantt-outer" id="ganttOuter">
+      <div id="ganttInner"></div>
+    </div>
+  </div>
+
+  <!-- CALC -->
+  <div id="tab-calc" class="tab-content">
+    <div class="calc-pg-wrap" id="calcPgWrap">
+      <div class="calc-pg" id="calcPg0">
+        <div class="calc-container">
+
+      <!-- 変換パネル -->
+      <div class="calc-conv">
+        <div class="calc-conv-item">
+          <div class="calc-conv-value" id="convKgfNm">—</div>
+        </div>
+        <div class="calc-conv-item">
+          <div class="calc-conv-value" id="convNmKgf">—</div>
+        </div>
+        <div class="calc-conv-item">
+          <div class="calc-conv-value" id="convTg">—</div>
+        </div>
+        <div class="calc-conv-item">
+          <div class="calc-conv-value" id="convSrb">—</div>
+        </div>
+        <div class="calc-conv-item">
+          <div class="calc-conv-value" id="convSra">—</div>
+        </div>
+      </div>
+
+      <!-- 電卓本体 -->
+      <div class="calc-right">
+        <!-- 上: 履歴パネル -->
+        <div class="calc-history">
+          <div class="calc-history-title">履歴</div>
+          <div class="calc-history-list" id="calcHistoryList">
+            <div class="calc-history-empty">まだ計算してへん</div>
+          </div>
+        </div>
+        <div class="calc-display">
+          <div class="calc-sub" id="calcSub"></div>
+          <div class="calc-main" id="calcMain">0</div>
+        </div>
+        <div class="calc-grid">
+          <button class="calc-btn calc-btn-func" onclick="calcFn('C')">C</button>
+          <button class="calc-btn calc-btn-func" onclick="calcFn('⌫')">⌫</button>
+          <button class="calc-btn calc-btn-func" onclick="calcFn('+/-')">+/−</button>
+          <button class="calc-btn calc-btn-op"   onclick="calcFn('÷')">÷</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('7')">7</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('8')">8</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('9')">9</button>
+          <button class="calc-btn calc-btn-op"   onclick="calcFn('×')">×</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('4')">4</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('5')">5</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('6')">6</button>
+          <button class="calc-btn calc-btn-op"   onclick="calcFn('−')">−</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('1')">1</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('2')">2</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('3')">3</button>
+          <button class="calc-btn calc-btn-op"   onclick="calcFn('+')">+</button>
+          <button class="calc-btn calc-btn-num calc-btn-wide" onclick="calcNum('0')">0</button>
+          <button class="calc-btn calc-btn-num"  onclick="calcNum('.')">.</button>
+          <button class="calc-btn calc-btn-eq"   onclick="calcFn('=')">=</button>
+        </div>
+      </div>
+
+        </div>
+      </div>
+      <div class="calc-pg pg-right" id="calcPg1">
+        <div class="meas-container"><div class="meas-reset-bar">
+          <button class="meas-bar-btn meas-bar-save" onclick="measSave()">SAVE</button>
+          <button class="meas-bar-btn meas-bar-log"  id="measLogBtn" onclick="measToggleHist()">LOG</button>
+          <button class="meas-bar-btn meas-bar-reset" onclick="resetAllMeas()">全リセット</button>
+        </div>
+          <div class="meas-phase">
+            <div class="meas-phase-hd th-u">U相</div>
+            <table class="meas-tbl">
+              <tr><th style="width:8%"></th><th class="th-ur"><span class="meas-th-inner">R<button class="col-reset" onclick="clearMeasCol('u','r')">CLR</button></span></th><th class="meas-sep-th"></th><th><span class="meas-th-inner">A<button class="col-reset" onclick="clearMeasCol('u','a')">CLR</button></span></th><th><span class="meas-th-inner">B<button class="col-reset" onclick="clearMeasCol('u','b')">CLR</button></span></th></tr>
+              <tr><td class="meas-lbl">ON</td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mu_on_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'u')"><button class="meas-x" onclick="clearMeasInput(this,'u')">×</button></div></td>
+                <td class="meas-sep-lbl">OFF</td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mu_on_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'u')"><button class="meas-x" onclick="clearMeasInput(this,'u')">×</button></div></td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mu_on_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'u')"><button class="meas-x" onclick="clearMeasInput(this,'u')">×</button></div></td></tr>
+              <tr><td class="meas-lbl">OFF</td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mu_off_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'u')"><button class="meas-x" onclick="clearMeasInput(this,'u')">×</button></div></td>
+                <td class="meas-sep-lbl">ON</td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mu_off_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'u')"><button class="meas-x" onclick="clearMeasInput(this,'u')">×</button></div></td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mu_off_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'u')"><button class="meas-x" onclick="clearMeasInput(this,'u')">×</button></div></td></tr>
+              <tr><td class="meas-lbl">判定</td>
+                <td class="meas-diff" id="mu_d_r"><span class="d-num">—</span><span class="d-lbl"></span></td>
+                <td class="meas-sep-td"></td>
+                <td class="meas-diff" id="mu_d_a"><span class="d-num">—</span><span class="d-lbl"></span></td>
+                <td class="meas-diff" id="mu_d_b"><span class="d-num">—</span><span class="d-lbl"></span></td></tr>
+            </table>
+          </div>
+          <div class="meas-phase">
+            <div class="meas-phase-hd th-v">V相</div>
+            <table class="meas-tbl">
+              <tr><th style="width:8%"></th><th class="th-vr"><span class="meas-th-inner">R<button class="col-reset" onclick="clearMeasCol('v','r')">CLR</button></span></th><th class="meas-sep-th"></th><th><span class="meas-th-inner">A<button class="col-reset" onclick="clearMeasCol('v','a')">CLR</button></span></th><th><span class="meas-th-inner">B<button class="col-reset" onclick="clearMeasCol('v','b')">CLR</button></span></th></tr>
+              <tr><td class="meas-lbl">ON</td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mv_on_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'v')"><button class="meas-x" onclick="clearMeasInput(this,'v')">×</button></div></td>
+                <td class="meas-sep-lbl">OFF</td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mv_on_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'v')"><button class="meas-x" onclick="clearMeasInput(this,'v')">×</button></div></td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mv_on_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'v')"><button class="meas-x" onclick="clearMeasInput(this,'v')">×</button></div></td></tr>
+              <tr><td class="meas-lbl">OFF</td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mv_off_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'v')"><button class="meas-x" onclick="clearMeasInput(this,'v')">×</button></div></td>
+                <td class="meas-sep-lbl">ON</td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mv_off_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'v')"><button class="meas-x" onclick="clearMeasInput(this,'v')">×</button></div></td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mv_off_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'v')"><button class="meas-x" onclick="clearMeasInput(this,'v')">×</button></div></td></tr>
+              <tr><td class="meas-lbl">判定</td>
+                <td class="meas-diff" id="mv_d_r"><span class="d-num">—</span><span class="d-lbl"></span></td>
+                <td class="meas-sep-td"></td>
+                <td class="meas-diff" id="mv_d_a"><span class="d-num">—</span><span class="d-lbl"></span></td>
+                <td class="meas-diff" id="mv_d_b"><span class="d-num">—</span><span class="d-lbl"></span></td></tr>
+            </table>
+          </div>
+          <div class="meas-phase">
+            <div class="meas-phase-hd th-w">W相</div>
+            <table class="meas-tbl">
+              <tr><th style="width:8%"></th><th class="th-wr"><span class="meas-th-inner">R<button class="col-reset" onclick="clearMeasCol('w','r')">CLR</button></span></th><th class="meas-sep-th"></th><th><span class="meas-th-inner">A<button class="col-reset" onclick="clearMeasCol('w','a')">CLR</button></span></th><th><span class="meas-th-inner">B<button class="col-reset" onclick="clearMeasCol('w','b')">CLR</button></span></th></tr>
+              <tr><td class="meas-lbl">ON</td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mw_on_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'w')"><button class="meas-x" onclick="clearMeasInput(this,'w')">×</button></div></td>
+                <td class="meas-sep-lbl">OFF</td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mw_on_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'w')"><button class="meas-x" onclick="clearMeasInput(this,'w')">×</button></div></td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mw_on_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'w')"><button class="meas-x" onclick="clearMeasInput(this,'w')">×</button></div></td></tr>
+              <tr><td class="meas-lbl">OFF</td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mw_off_r" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'w')"><button class="meas-x" onclick="clearMeasInput(this,'w')">×</button></div></td>
+                <td class="meas-sep-lbl">ON</td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mw_off_a" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'w')"><button class="meas-x" onclick="clearMeasInput(this,'w')">×</button></div></td>
+                <td><div class="meas-td-wrap"><input class="meas-in" id="mw_off_b" type="text" inputmode="decimal" pattern="[0-9.\-]*" oninput="autoDecimalMeas(this,'w')"><button class="meas-x" onclick="clearMeasInput(this,'w')">×</button></div></td></tr>
+              <tr><td class="meas-lbl">判定</td>
+                <td class="meas-diff" id="mw_d_r"><span class="d-num">—</span><span class="d-lbl"></span></td>
+                <td class="meas-sep-td"></td>
+                <td class="meas-diff" id="mw_d_a"><span class="d-num">—</span><span class="d-lbl"></span></td>
+                <td class="meas-diff" id="mw_d_b"><span class="d-num">—</span><span class="d-lbl"></span></td></tr>
+            </table>
+          </div>
+
+        </div>
+      <!-- ===== SAVE パネル（calcPg1直下） ===== -->
+      <div class="meas-save-panel" id="measSavePanel">
+        <div class="meas-sp-title">SAVE — 機番を入力して保存</div>
+        <div class="meas-sp-kiban-row">
+          <span class="meas-sp-lbl">機番</span>
+          <input class="meas-sp-kiban-in" id="measKibanIn" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="機番を入力">
+        </div>
+        <div class="meas-sp-status-row" id="measSaveStatusRow">
+          <button class="meas-sp-status sel" data-status="完成時">完成時</button>
+          <button class="meas-sp-status"     data-status="出荷前">出荷前</button>
+          <button class="meas-sp-status"     data-status="AG中">AG中</button>
+          <button class="meas-sp-status"     data-status="AG後">AG後</button>
+        </div>
+        <div class="meas-sp-act-row">
+          <button class="meas-sp-cancel" onclick="measCloseSavePanel()">キャンセル</button>
+          <button class="meas-sp-ok"     onclick="measConfirmSave()">保存する</button>
+        </div>
+      </div>
+      <!-- ===== LOG ビュー（calcPg1直下） ===== -->
+      <div class="meas-hist-view hidden" id="measHistView">
+        <div class="meas-hist-sidebar" id="measHistSidebar">
+          <button class="meas-hist-back" onclick="measToggleHist()">◀ 測定へ戻る</button>
+          <div class="meas-hist-sidebar-hd">保存履歴</div>
+          <div id="measHistList"></div>
+        </div>
+        <div class="meas-hist-detail" id="measHistDetail">
+          <div class="meas-hist-empty">← 履歴を選択</div>
+        </div>
+      </div>
+      </div>
+      <div class="calc-pg pg-right" id="calcPg2">
+        <div class="vape-container">
+          <div class="vape-title">ニコチン調合計算</div>
+          <div class="vape-section">
+            <div class="vape-label">Liquid</div>
+            <div class="vape-presets">
+              <button class="vape-preset" onclick="vapeSetVol(30,this)">30ml</button>
+              <button class="vape-preset" onclick="vapeSetVol(60,this)">60ml</button>
+              <button class="vape-preset" onclick="vapeSetVol(120,this)">120ml</button>
+            </div>
+            <div class="vape-input-row">
+              <input type="text" inputmode="decimal" pattern="[0-9.]*" class="vape-in" id="vapeVol" placeholder="0" oninput="vapeCalc()">
+              <span class="vape-unit">ml</span>
+            </div>
+          </div>
+          <div class="vape-section">
+            <div class="vape-label">目標ニコチン濃度</div>
+            <div class="vape-target-grid">
+              <button class="vape-preset" onclick="vapeSetTarget(5,this)">5</button>
+              <button class="vape-preset" onclick="vapeSetTarget(6,this)">6</button>
+              <button class="vape-preset" onclick="vapeSetTarget(7,this)">7</button>
+              <button class="vape-preset" onclick="vapeSetTarget(8,this)">8</button>
+              <button class="vape-preset" onclick="vapeSetTarget(9,this)">9</button>
+              <button class="vape-preset" onclick="vapeSetTarget(10,this)">10</button>
+              <button class="vape-preset" onclick="vapeSetTarget(11,this)">11</button>
+              <button class="vape-preset" onclick="vapeSetTarget(12,this)">12</button>
+            </div>
+            <div class="vape-unit" style="text-align:right; margin-top:6px;">mg/ml</div>
+          </div>
+          <div class="vape-section">
+            <div class="vape-label">ニコチン原液濃度</div>
+            <div class="vape-nicbase-row">
+              <div class="vape-fixed-val">200 mg/ml</div>
+              <span class="vape-result-val" id="vapeResNic">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="calc-dots">
+      <span class="calc-dot on" id="cdot0" onclick="calcPgGoto(0)"></span>
+      <span class="calc-dot" id="cdot1" onclick="calcPgGoto(1)"></span>
+      <span class="calc-dot" id="cdot2" onclick="calcPgGoto(2)"></span>
+    </div>
+  </div>
+
+  <!-- VDECK（動画プレイヤー・別アプリをiframeで内蔵） -->
+  <div id="tab-vdeck" class="tab-content">
+    <iframe id="vdeckFrame" class="vdeck-frame" data-src="VDEK-main/index.html" title="VDECK" loading="lazy"></iframe>
+  </div>
+
+</main>
+
+<!-- ========== FLOATING NAV（丸ボタン。タップでリングメニューをオーバーレイ表示） ========== -->
+<!-- 2026-08-16：縦リストのハンバーガーメニュー(nav-menu/nav-overlay)は廃止し、三本線タップで
+     起動時と同じリングメニュー(#topRingScreen)をオーバーレイ表示する方式に統一した。
+     「同期」機能は設定タブの「今すぐ同期」ボタンに既に同等の導線があるためリングには追加していない。 -->
+<nav class="fab-layer">
+
+  <!-- リマちゃん表示は一旦廃止（rimaWrapは使わなくなったがrima.js側は残す。ゲーム起動はGAME項目から） -->
+
+  <!-- メニューを開く丸ボタン（下部中央）。リング表示中はこのボタン自体がリングの裏に隠れるため、
+       閉じる操作はリング側に重ねて表示する#ringCloseFab（同じ見た目のボタン）が担う -->
+  <button class="menu-fab" id="menuFab" onclick="toggleRingOverlay()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>
+    </svg>
+  </button>
+
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<!-- ========== EDIT PANEL ========== -->
+<div class="edit-overlay" id="editOverlay" onclick="closeEdit()"></div>
+<div class="edit-panel" id="editPanel">
+  <div class="edit-panel-title">リマインドを編集</div>
+  <div class="edit-field">
+    <label class="edit-label">タイトル</label>
+    <input type="text" class="edit-input" id="editTitle">
+  </div>
+  <div class="edit-field">
+    <label class="edit-label">期限日</label>
+    <input type="date" class="edit-input" id="editDeadline">
+    <div class="edit-snz-row">
+      <button class="ract snz-btn" onclick="snoozeEdit(1)">+1日</button>
+      <button class="ract snz-btn" onclick="snoozeEdit(3)">+3日</button>
+      <button class="ract snz-btn" onclick="snoozeEdit(7)">+1週間</button>
+    </div>
+  </div>
+  <div class="edit-field">
+    <label class="edit-label">メモ</label>
+    <textarea class="edit-input" id="editNotes" rows="3" placeholder="詳細・備考（任意）"></textarea>
+  </div>
+  <div class="edit-act-row">
+    <button class="edit-cancel" onclick="closeEdit()">キャンセル</button>
+    <button class="edit-ok" onclick="saveEdit()">保存</button>
+  </div>
+</div>
+
+<!-- ========== GAME PANEL ========== -->
+<div class="game-overlay" id="gameOverlay" onclick="closeGame()"></div>
+<div class="game-panel" id="gamePanel"></div>
+
+<!-- ========== TOP RING SCREEN（起動時トップページ・リングメニュー） ========== -->
+<div class="top-ring-screen" id="topRingScreen">
+
+  <!-- リング表示中は本物の.menu-fabがこの画面の下に隠れて押せなくなるため、見た目が同じボタンを
+       ここに重ねて表示し、同じ場所をもう一度タップすればリングを閉じられるようにしている（2026-08-16） -->
+  <button class="menu-fab" id="ringCloseFab" onclick="toggleRingOverlay()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>
+    </svg>
+  </button>
+
+  <div class="ring-clock" id="ringClock">
+    <div class="ring-clock-row">
+      <div class="ring-clock-month" id="ringClockMonth">--</div>
+      <div class="ring-clock-sub">
+        <div class="ring-clock-date" id="ringClockDate">--(-)</div>
+        <div class="ring-clock-time" id="ringClockTime">--:--:--</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ring-wrap" id="ringWrap">
+    <div class="ring-center">
+      <span class="ring-logo">Wm2B</span>
+    </div>
+
+    <div class="ring-spin" id="ringSpin">
+
+      <button class="ring-item" style="--i:0" data-tab="home">
+        <span class="ring-item-inner">
+          <span class="nav-dot" id="homeDot"></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12L12 4L21 12V21H15V15H9V21H3V12Z"/>
+          </svg>
+          <span>予定</span>
+        </span>
+      </button>
+
+      <button class="ring-item" style="--i:1" data-tab="schedule">
+        <span class="ring-item-inner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="15" height="13" rx="1"/>
+            <path d="M16 8h4l3 3v5h-7V8z"/>
+            <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+          </svg>
+          <span>配送</span>
+        </span>
+      </button>
+
+      <button class="ring-item" style="--i:2" data-tab="gantt">
+        <span class="ring-item-inner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="4" x2="3" y2="20"/>
+            <rect x="4" y="5" width="7" height="3.5" rx="1"/>
+            <rect x="4" y="10" width="11" height="3.5" rx="1"/>
+            <rect x="4" y="15" width="15" height="3.5" rx="1"/>
+          </svg>
+          <span>日程</span>
+        </span>
+      </button>
+
+      <button class="ring-item" style="--i:3" data-tab="calendar">
+        <span class="ring-item-inner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="17" rx="2"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/>
+          </svg>
+          <span>カレンダー</span>
+        </span>
+      </button>
+
+      <button class="ring-item" style="--i:4" data-tab="calc">
+        <span class="ring-item-inner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="2" width="16" height="20" rx="2"/>
+            <rect x="7" y="5" width="10" height="4" rx="1"/>
+            <circle cx="8"  cy="13" r="1" fill="currentColor"/>
+            <circle cx="12" cy="13" r="1" fill="currentColor"/>
+            <circle cx="16" cy="13" r="1" fill="currentColor"/>
+            <circle cx="8"  cy="17" r="1" fill="currentColor"/>
+            <circle cx="12" cy="17" r="1" fill="currentColor"/>
+            <circle cx="16" cy="17" r="1" fill="currentColor"/>
+          </svg>
+          <span>電卓</span>
+        </span>
+      </button>
+
+      <button class="ring-item" style="--i:5" data-tab="vdeck">
+        <span class="ring-item-inner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="14" height="14" rx="2"/>
+            <path d="M16 10l6-4v12l-6-4z"/>
+          </svg>
+          <span>VDECK</span>
+        </span>
+      </button>
+
+      <button class="ring-item" style="--i:6" data-tab="settings">
+        <span class="ring-item-inner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <line x1="4" y1="6"  x2="20" y2="6"/>
+            <line x1="4" y1="12" x2="20" y2="12"/>
+            <line x1="4" y1="18" x2="20" y2="18"/>
+            <circle cx="9"  cy="6"  r="2.2" fill="#1A1614" stroke="currentColor" stroke-width="1.8"/>
+            <circle cx="16" cy="12" r="2.2" fill="#1A1614" stroke="currentColor" stroke-width="1.8"/>
+            <circle cx="11" cy="18" r="2.2" fill="#1A1614" stroke="currentColor" stroke-width="1.8"/>
+          </svg>
+          <span>設定</span>
+        </span>
+      </button>
+
+      <button class="ring-item" style="--i:7" data-tab="game">
+        <span class="ring-item-inner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="11" rx="5.5"/>
+            <line x1="7.5" y1="12.5" x2="7.5" y2="12.5"/>
+            <line x1="6" y1="12.5" x2="9" y2="12.5"/><line x1="7.5" y1="11" x2="7.5" y2="14"/>
+            <circle cx="15" cy="11" r="0.8" fill="currentColor"/>
+            <circle cx="17.5" cy="13.5" r="0.8" fill="currentColor"/>
+          </svg>
+          <span>GAME</span>
+        </span>
+      </button>
+
+    </div>
+  </div>
+</div>
+
+<!-- 分割JS: 読み込み順を変えないこと -->
+<script src="core.js"></script>
+<script src="rima.js"></script>
+<script src="ui.js"></script>
+<script src="sync.js"></script>
+<script src="calendar.js"></script>
+<script src="calc.js"></script>
+<script src="game.js"></script>
+<script src="quiz.js"></script>
+<script src="mahjong.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+@echo off
+cd /d "%~dp0"
+title Reminder Server
+set PORT=8765
+
+echo ==========================================
+echo  Reminder local server
+echo  Browser opens automatically in 2 sec.
+echo  Close this window to stop.
+echo ==========================================
+echo.
+
+start "" /b cmd /c "timeout /t 2 >nul & start http://localhost:%PORT%/index.html"
+
+where python >nul 2>&1
+if not errorlevel 1 (
+  python -m http.server %PORT%
+  goto end
+)
+
+where py >nul 2>&1
+if not errorlevel 1 (
+  py -m http.server %PORT%
+  goto end
+)
+
+where node >nul 2>&1
+if not errorlevel 1 (
+  npx --yes http-server -p %PORT% -c-1
+  goto end
+)
+
+echo Python or Node not found.
+echo Install Python: https://www.python.org/downloads/
+echo Check "Add Python to PATH" during install.
+pause
+
+:end
+

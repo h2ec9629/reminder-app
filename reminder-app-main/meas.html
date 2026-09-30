@@ -1,0 +1,2188 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1A1614">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="三相測定">
+  <link rel="manifest" href="meas_manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>三相測定</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #1A1614;
+      --bg-2:       #141210;
+      --surface:    #262220;
+      --surface-2:  #302C2A;
+      --border:     #3A3532;
+      --text:       #F0EBE6;
+      --text-sub:   #9E9691;
+      --text-faint: #615D5A;
+      --accent:     #C85C3A;
+      --header-h:   44px;
+      --side-w:     198px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+      background: var(--bg); color: var(--text);
+      overflow-x: hidden; overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== HEADER 廃止 ===== */
+    .header { display: none; }
+
+    /* ===== MAIN ===== */
+    .main {
+      margin-top: 0;
+      margin-left: var(--side-w);
+      padding: 12px 10px;
+      margin-bottom: 16px;
+    }
+
+    /* ===== PHASE BLOCK ===== */
+    .phase-block {
+      margin-bottom: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .phase-hd { font-size: 13px; font-weight: 700; padding: 7px 10px; border-bottom: 2px solid currentColor; }
+    .th-u { color: #FFEB3B; }
+    .th-v { color: #69d469; }
+    .th-w { color: #5bc8ff; }
+
+    /* ===== TABLE ===== */
+    .meas-tbl { width: 100%; border-collapse: collapse; font-size: 15px; table-layout: fixed; }
+    .meas-tbl th {
+      padding: 5px 6px; text-align: left;
+      color: var(--text-sub); font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-2);
+    }
+    .meas-tbl td { padding: 4px 5px; text-align: center; border-bottom: 1px solid var(--border); }
+    .meas-tbl tr:last-child td { border-bottom: none; }
+    .col-lbl { text-align: left !important; color: var(--text-sub); font-size: 14px; white-space: nowrap; width: 14%; padding: 4px 3px !important; }
+
+    /* ===== INPUT CELL ===== */
+    .meas-td-wrap {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: stretch; align-items: stretch;
+      border: 1px solid var(--border); border-radius: 999px;
+      overflow: hidden; background: var(--surface-2);
+    }
+    .meas-td-wrap .meas-in { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; min-width: 0; border: none !important; background: transparent; border-radius: 0; }
+    .meas-td-wrap.mc-g { background: #000; }
+    .meas-td-wrap.mc-r { background: #000; }
+    .meas-x {
+      -webkit-flex-shrink: 0; flex-shrink: 0;
+      background: none; border: none;
+      border-left: 1px solid var(--border);
+      color: #D97757; font-size: 21px;
+      cursor: pointer; padding: 6px 11px;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+    }
+
+    .meas-in {
+      width: 100%; border: 1px solid var(--border); border-radius: 4px;
+      background: var(--surface-2); color: var(--text);
+      font-size: 16px; padding: 5px 3px;
+      text-align: right; font-family: inherit;
+      -webkit-appearance: none; appearance: none; outline: none;
+    }
+    .meas-in.active-inp { border-color: var(--accent) !important; background: #FFFFFF !important; color: #000000 !important; }
+    /* 前回値のグレー表示（プレースホルダー。実データではないので保存前に区別できるようにする） */
+    .meas-in::-webkit-input-placeholder { color: var(--text-sub); opacity: 1; }
+    .meas-in::placeholder { color: var(--text-sub); opacity: 1; }
+    .meas-prev {
+      -webkit-flex-shrink: 0; flex-shrink: 0;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      -webkit-justify-content: flex-end; justify-content: flex-end;
+      min-width: 38px; padding: 0 4px;
+      font-size: 16px; color: #7FB3FF;
+      background: var(--bg-2); border-right: 1px solid var(--border);
+    }
+    .meas-prev:empty { display: none; }
+
+    /* ===== 測定ヘッダー ===== */
+    .meas-header {
+      position: -webkit-sticky; position: sticky; top: 0; z-index: 50;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 7px 10px; margin-bottom: 10px;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-flex-wrap: wrap; flex-wrap: wrap;
+      -webkit-align-items: baseline; align-items: baseline;
+    }
+    .mh-cur  {
+      font-family: inherit; font-size: 14px; font-weight: 700;
+      color: var(--accent); background: var(--surface-2);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 3px 10px; cursor: pointer;
+    }
+    .mh-cur::after { content: ' ✎'; font-weight: 400; color: var(--text-sub); }
+    .mh-cur:active { background: var(--surface); }
+    .mh-prev { font-size: 13px; color: #7FB3FF; }
+    .mh-prev::before { content: '｜'; margin: 0 8px; color: var(--text-faint); font-weight: 400; }
+
+    /* ===== DIFF CELL ===== */
+    .meas-diff { font-weight: 700; font-size: 14px; line-height: 1.1; vertical-align: middle; padding: 3px; }
+    .d-num { display: block; }
+    .d-lbl { display: block; font-size: 13px; font-weight: 600; }
+    .meas-diff.judge-first { position: relative; }
+    .meas-diff.judge-first::before { content: "判定"; position: absolute; left: 3px; top: 3px; font-size: 10px; font-weight: 600; color: var(--text-sub); }
+
+    /* ===== COL HEADER ===== */
+    .col-hd-wrap {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      -webkit-justify-content: space-between; justify-content: space-between;
+    }
+    .col-reset {
+      background: none; border: 1px solid var(--border);
+      border-radius: 4px; color: #D97757;
+      font-size: 12px; padding: 2px 5px;
+      cursor: pointer; font-family: inherit;
+    }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed; bottom: 20px; left: calc(50% + var(--side-w) / 2);
+      -webkit-transform: translateX(-50%);
+      transform: translateX(-50%);
+      background: var(--surface-2); color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 18px; border-radius: 10px;
+      font-size: 15px; font-weight: 600;
+      z-index: 999; white-space: nowrap;
+      display: none;
+    }
+    .toast.show { display: block; }
+
+    /* ===== 左サイドバー（キーパッド廃止・常時展開・機番/ステータスも格納） ===== */
+    .bb-side {
+      position: fixed; left: 0; top: 0; bottom: 0;
+      width: var(--side-w);
+      background: var(--surface);
+      border-right: 2px solid var(--accent);
+      z-index: 200;
+      padding: 12px 8px;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-flex-direction: column; flex-direction: column;
+      gap: 7px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .bb-kiban {
+      font-size: 12px; font-weight: 700; color: var(--accent);
+      word-break: break-all;
+    }
+    .bb-kiban-row {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-flex-direction: column; flex-direction: column;
+      gap: 3px;
+    }
+    .bb-kiban-lbl { font-size: 11px; color: var(--text-sub); font-weight: 600; }
+    .bb-kiban-input {
+      width: 100%;
+      background: var(--surface-2); border: 1px solid var(--accent);
+      border-radius: 6px; color: #FFB899;
+      font-size: 16px; font-weight: 700;
+      padding: 6px 8px; text-align: right;
+      font-family: inherit; outline: none;
+      -webkit-appearance: none; appearance: none;
+    }
+    .bb-status-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+    }
+    .bb-status-btn {
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text-sub); font-size: 11px; font-weight: 700;
+      padding: 7px 2px; border-radius: 6px;
+      cursor: pointer; font-family: inherit; text-align: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bb-status-btn.sel { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .bb-divider { height: 1px; background: var(--border); margin: 2px 0; }
+    .bb-btn {
+      width: 100%;
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text-sub); font-size: 14px; font-weight: 700;
+      border-radius: 8px; cursor: pointer; font-family: inherit;
+      text-align: center; line-height: 1;
+      padding: 13px 8px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bb-btn:active { background: var(--border); }
+    .bb-btn.bb-apply { border-color: var(--accent); color: var(--accent); }
+    .bb-btn.bb-save { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .bb-btn.active { border-color: var(--accent); color: var(--accent); }
+    .bb-btn.bb-reset { color: #F87171; border-color: #2A1010; }
+
+    /* ===== 履歴画面 ===== */
+    .hist-view {
+      display: none;
+      margin-top: 0;
+      margin-left: var(--side-w);
+      height: 100vh;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+    }
+    .hist-view.hidden { display: none !important; }
+
+    /* サイドバー */
+    .hist-sidebar {
+      width: 49%;
+      min-width: 143px;
+      max-width: 208px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      -webkit-flex-shrink: 0; flex-shrink: 0;
+    }
+    .hist-sidebar-hd {
+      font-size: 11px; font-weight: 700; color: var(--text-faint);
+      padding: 8px 10px 6px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-2);
+      position: sticky; top: 0;
+    }
+    .hist-back-btn {
+      display: block; width: 100%;
+      background: var(--accent); border: none;
+      color: #fff; font-size: 15px; font-weight: 700;
+      padding: 12px 10px;
+      cursor: pointer; font-family: inherit;
+      text-align: center; letter-spacing: 1px;
+      border-bottom: 2px solid rgba(0,0,0,0.25);
+      position: sticky; top: 0; z-index: 10;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hist-back-btn:active { opacity: 0.8; }
+    .hist-item {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .hist-item.selected { background: var(--surface-2); border-left: 3px solid var(--accent); }
+    .hist-item-date { font-size: 11px; color: var(--text-sub); }
+    .hist-item-memo { font-size: 12px; font-weight: 700; color: var(--text); margin-top: 2px; word-break: break-all; }
+    .hist-item-del  { float: right; background: none; border: none; color: var(--text-faint); font-size: 14px; cursor: pointer; padding: 0 2px; }
+    .hist-pending   { float: right; font-size: 9px; font-weight: 700; color: #ff9800; border: 1px solid #ff9800; border-radius: 4px; padding: 1px 4px; margin-right: 18px; }
+    .hist-empty     { font-size: 12px; color: var(--text-faint); padding: 16px 10px; text-align: center; }
+    .hist-item-kiban { font-size: 15px; font-weight: 700; color: var(--text); word-break: break-all; }
+    .hist-item-tags {
+      margin-top: 4px;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-flex-wrap: wrap; flex-wrap: wrap;
+      gap: 4px;
+    }
+    .hist-item-tag {
+      font-size: 10px; padding: 1px 6px; border-radius: 999px;
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--text-sub);
+    }
+
+    /* 詳細：機番内の各ステータスセクション */
+    .hist-rec { margin-bottom: 16px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 8px 4px; background: var(--surface); }
+    .hist-rec-hd {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      gap: 8px; margin-bottom: 6px;
+    }
+    .hist-rec-status { font-size: 14px; font-weight: 700; color: var(--accent); }
+    .hist-rec-pend { font-size: 9px; font-weight: 700; color: #ff9800; border: 1px solid #ff9800; border-radius: 4px; padding: 1px 4px; }
+    .hist-rec-date { font-size: 11px; color: var(--text-faint); margin-left: auto; }
+    .hist-rec-del { background: none; border: 1px solid var(--border); border-radius: 4px; color: #F87171; font-size: 14px; cursor: pointer; padding: 1px 9px; -webkit-flex-shrink: 0; flex-shrink: 0; }
+
+    /* 結果エリア */
+    .hist-detail {
+      -webkit-flex: 1; flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 10px 10px 20px;
+      background: var(--bg);
+    }
+    .hist-detail-empty { font-size: 13px; color: var(--text-faint); padding: 30px 10px; text-align: center; }
+    .hist-detail-date  { font-size: 11px; color: var(--text-faint); margin-bottom: 4px; }
+    .hist-detail-memo  { font-size: 13px; font-weight: 700; color: var(--text); }
+    .hist-detail-hd {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      -webkit-justify-content: space-between; justify-content: space-between;
+      gap: 8px; margin-bottom: 12px;
+    }
+    .hist-print-btn {
+      background: var(--accent); color: #1A1614; border: none; border-radius: 6px;
+      padding: 6px 10px; font-size: 12px; font-weight: 700; cursor: pointer;
+      -webkit-flex-shrink: 0; flex-shrink: 0;
+    }
+
+    /* 結果テーブル */
+    .hr-tbl { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px; table-layout: fixed; }
+    .hr-tbl th {
+      background: var(--bg-2); color: var(--text-sub); font-weight: 600;
+      padding: 4px 5px; border: 1px solid var(--border); text-align: center;
+    }
+    .hr-tbl td {
+      padding: 4px 5px; border: 1px solid var(--border); text-align: right;
+      color: var(--text); background: var(--surface);
+    }
+    .hr-tbl td.lbl { text-align: left; color: var(--text-sub); font-size: 11px; background: var(--bg-2); }
+    .hr-tbl td.diff-ok  { color: #4ADE80; font-weight: 700; }
+    .hr-tbl td.diff-warn { color: #fff; font-weight: 700; }
+    .hr-tbl td.diff-ng  { color: #ff9800; font-weight: 700; }
+    .hr-tbl td.same-prev { color: #4FC3F7; }
+    .hr-ph-hd { font-size: 12px; font-weight: 700; padding: 6px 2px 3px; }
+    .hr-ph-u  { color: #FFEB3B; }
+    .hr-ph-v  { color: #69d469; }
+    .hr-ph-w  { color: #5bc8ff; }
+
+    /* ===== 保存パネル（画面下部） ===== */
+    .save-panel {
+      display: none;
+      position: fixed; left: var(--side-w); right: 0;
+      bottom: 0;
+      background: var(--surface);
+      border-top: 2px solid var(--accent);
+      border-bottom: 1px solid var(--border);
+      z-index: 210;
+      padding: 10px 12px;
+    }
+    .save-panel.show { display: block; }
+    .save-panel-title { font-size: 12px; font-weight: 700; color: var(--text-faint); margin-bottom: 8px; }
+    /* 機番行 */
+    .save-kiban-row {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      gap: 8px; margin-bottom: 8px;
+    }
+    .save-kiban-label { font-size: 11px; color: var(--text-sub); font-weight: 600; -webkit-flex-shrink: 0; flex-shrink: 0; }
+    /* 操作ボタン行 */
+    .save-act-row {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      gap: 8px;
+    }
+    .save-act-cancel {
+      -webkit-flex: 1; flex: 1;
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text-sub); font-size: 13px; font-weight: 700;
+      padding: 7px; border-radius: 7px; cursor: pointer; font-family: inherit;
+    }
+    .save-act-ok {
+      -webkit-flex: 2; flex: 2;
+      background: var(--accent); border: 1px solid var(--accent);
+      color: #fff; font-size: 13px; font-weight: 700;
+      padding: 7px; border-radius: 7px; cursor: pointer; font-family: inherit;
+    }
+    /* ===== オプションパネル：PAT入力欄 ===== */
+    .opt-pat-input {
+      -webkit-box-flex: 1; -webkit-flex: 1; flex: 1;
+      background: var(--surface-2); border: 1px solid var(--accent);
+      border-radius: 6px; color: #FFB899;
+      font-size: 14px; font-weight: 600;
+      padding: 6px 10px; text-align: left;
+      font-family: inherit; outline: none;
+      min-height: 34px;
+      -webkit-appearance: none; appearance: none;
+    }
+
+    /* ===== 印刷プレビュー（A4紙面） ===== */
+    .print-preview {
+      display: none;
+      position: fixed; inset: 0; z-index: 500;
+      background: #3a3632; overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .print-preview.show { display: block; }
+    .pp-toolbar {
+      position: -webkit-sticky; position: sticky; top: 0; z-index: 2;
+      background: #1A1614; color: #fff;
+      padding: 10px 12px;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      gap: 10px;
+    }
+    .pp-toolbar-info { font-size: 12px; color: #ddd; -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; text-align: center; }
+    .pp-close-btn, .pp-print-btn {
+      border: none; border-radius: 6px; padding: 8px 12px;
+      font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+      -webkit-flex-shrink: 0; flex-shrink: 0;
+    }
+    .pp-close-btn { background: #555; color: #fff; }
+    .pp-print-btn { background: var(--accent); color: #1A1614; }
+    .pp-pages { padding: 16px 0 40px; }
+    .pp-page {
+      background: #fff; color: #111;
+      width: 190mm; max-width: calc(100vw - 24px);
+      min-height: 277mm; box-sizing: border-box;
+      margin: 0 auto 14px; padding: 12mm;
+      box-shadow: 0 0 8px rgba(0,0,0,.4);
+    }
+    .pp-title { font-size: 16px; margin: 0 0 3mm; color: #111; }
+    .pp-meta  { font-size: 12px; color: #555; margin-bottom: 6mm; }
+    .pp-page .hr-tbl th, .pp-page .hr-tbl td.lbl { background: #f0f0f0; color: #333; border-color: #999; }
+    .pp-page .hr-tbl td { background: #fff; color: #111; border-color: #999; }
+    .pp-page .hr-ph-u { color: #b45309; }
+    .pp-page .hr-ph-v { color: #15803d; }
+    .pp-page .hr-ph-w { color: #1d4ed8; }
+    .pp-page .diff-ok   { color: #16a34a; }
+    .pp-page .diff-warn { color: #111; text-decoration: underline; }
+    .pp-page .diff-ng   { color: #ea580c; }
+
+    /* ===== 印刷：4件を1枚に集約するコンパクトレイアウト ===== */
+    .pp-page-compact { padding: 10mm; }
+    .pp-page-compact .pp-title { font-size: 14px; margin-bottom: 4mm; }
+    .pp-grid {
+      display: -ms-grid; display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4mm;
+    }
+    .pp-block { border: 1px solid #999; border-radius: 2mm; padding: 2.5mm 3mm; }
+    .pp-block-hd { font-size: 11px; font-weight: 700; color: #111; margin-bottom: 1.5mm; border-bottom: 1px solid #ccc; padding-bottom: 1mm; }
+    .pp-ctbl { width: 100%; border-collapse: collapse; font-size: 9px; table-layout: fixed; }
+    .pp-ctbl th, .pp-ctbl td {
+      border: 1px solid #bbb; padding: 1.2mm 1mm; text-align: center;
+    }
+    .pp-ctbl th { background: #f0f0f0; color: #333; font-weight: 600; }
+    .pp-ctbl td.lbl { background: #f7f7f7; color: #333; text-align: left; font-size: 8px; }
+    .pp-ctbl td.pp-ctbl-ph { font-weight: 700; text-align: center; vertical-align: middle; width: 9%; }
+    .pp-ctbl td { color: #111; background: #fff; }
+    .pp-ctbl .diff-ok   { color: #16a34a; font-weight: 700; }
+    .pp-ctbl .diff-warn { color: #111; font-weight: 700; text-decoration: underline; }
+    .pp-ctbl .diff-ng   { color: #ea580c; font-weight: 700; }
+
+    @media print {
+      @page { size: A4; margin: 10mm; }
+      body * { visibility: hidden; }
+      #printPreview, #printPreview * { visibility: visible; }
+      #printPreview { position: absolute; left: 0; top: 0; width: 100%; background: #fff; }
+      .pp-toolbar { display: none !important; }
+      .pp-pages { padding: 0; }
+      .pp-page {
+        box-shadow: none; margin: 0 auto; width: auto; max-width: none; min-height: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header"></header>
+
+<main class="main">
+
+  <div class="meas-header" id="measHeader">
+    <button class="mh-cur" id="mhCur" type="button" onclick="reopenSetup()">機番未設定</button>
+    <div class="mh-prev" id="mhPrev">前回値: —</div>
+  </div>
+
+  <!-- U相 -->
+  <div class="phase-block">
+    <div class="phase-hd th-u">U相</div>
+    <table class="meas-tbl">
+      <thead><tr>
+        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" data-colclear="b" data-ph="u">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" data-colclear="a" data-ph="u">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span class="th-u">R</span><button class="col-reset" data-colclear="r" data-ph="u">CLR</button></div></th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mu_on_b"></span><input class="meas-in" id="mu_on_b" type="text" inputmode="decimal" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_b" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mu_on_a"></span><input class="meas-in" id="mu_on_a" type="text" inputmode="decimal" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_a" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mu_on_r"></span><input class="meas-in" id="mu_on_r" type="text" inputmode="decimal" readonly data-ph="u"><button class="meas-x" data-clear="mu_on_r" data-ph="u">×</button></div></td>
+        </tr>
+        <tr>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mu_off_b"></span><input class="meas-in" id="mu_off_b" type="text" inputmode="decimal" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_b" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mu_off_a"></span><input class="meas-in" id="mu_off_a" type="text" inputmode="decimal" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_a" data-ph="u">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mu_off_r"></span><input class="meas-in" id="mu_off_r" type="text" inputmode="decimal" readonly data-ph="u"><button class="meas-x" data-clear="mu_off_r" data-ph="u">×</button></div></td>
+        </tr>
+        <tr>
+          <td class="meas-diff judge-first" id="mu_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mu_d_a"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mu_d_r"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- V相 -->
+  <div class="phase-block">
+    <div class="phase-hd th-v">V相</div>
+    <table class="meas-tbl">
+      <thead><tr>
+        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" data-colclear="b" data-ph="v">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" data-colclear="a" data-ph="v">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span class="th-v">R</span><button class="col-reset" data-colclear="r" data-ph="v">CLR</button></div></th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mv_on_b"></span><input class="meas-in" id="mv_on_b" type="text" inputmode="decimal" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_b" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mv_on_a"></span><input class="meas-in" id="mv_on_a" type="text" inputmode="decimal" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_a" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mv_on_r"></span><input class="meas-in" id="mv_on_r" type="text" inputmode="decimal" readonly data-ph="v"><button class="meas-x" data-clear="mv_on_r" data-ph="v">×</button></div></td>
+        </tr>
+        <tr>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mv_off_b"></span><input class="meas-in" id="mv_off_b" type="text" inputmode="decimal" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_b" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mv_off_a"></span><input class="meas-in" id="mv_off_a" type="text" inputmode="decimal" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_a" data-ph="v">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mv_off_r"></span><input class="meas-in" id="mv_off_r" type="text" inputmode="decimal" readonly data-ph="v"><button class="meas-x" data-clear="mv_off_r" data-ph="v">×</button></div></td>
+        </tr>
+        <tr>
+          <td class="meas-diff judge-first" id="mv_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mv_d_a"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mv_d_r"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- W相 -->
+  <div class="phase-block">
+    <div class="phase-hd th-w">W相</div>
+    <table class="meas-tbl">
+      <thead><tr>
+        <th><div class="col-hd-wrap"><span>B</span><button class="col-reset" data-colclear="b" data-ph="w">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span>A</span><button class="col-reset" data-colclear="a" data-ph="w">CLR</button></div></th>
+        <th><div class="col-hd-wrap"><span class="th-w">R</span><button class="col-reset" data-colclear="r" data-ph="w">CLR</button></div></th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mw_on_b"></span><input class="meas-in" id="mw_on_b" type="text" inputmode="decimal" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_b" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mw_on_a"></span><input class="meas-in" id="mw_on_a" type="text" inputmode="decimal" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_a" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mw_on_r"></span><input class="meas-in" id="mw_on_r" type="text" inputmode="decimal" readonly data-ph="w"><button class="meas-x" data-clear="mw_on_r" data-ph="w">×</button></div></td>
+        </tr>
+        <tr>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mw_off_b"></span><input class="meas-in" id="mw_off_b" type="text" inputmode="decimal" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_b" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-g"><span class="meas-prev" id="p_mw_off_a"></span><input class="meas-in" id="mw_off_a" type="text" inputmode="decimal" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_a" data-ph="w">×</button></div></td>
+          <td><div class="meas-td-wrap mc-r"><span class="meas-prev" id="p_mw_off_r"></span><input class="meas-in" id="mw_off_r" type="text" inputmode="decimal" readonly data-ph="w"><button class="meas-x" data-clear="mw_off_r" data-ph="w">×</button></div></td>
+        </tr>
+        <tr>
+          <td class="meas-diff judge-first" id="mw_d_b"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mw_d_a"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+          <td class="meas-diff" id="mw_d_r"><span class="d-num">—</span><br><span class="d-lbl"></span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<!-- ===== 履歴画面 ===== -->
+<div class="hist-view hidden" id="histView">
+  <div class="hist-sidebar" id="histSidebar">
+    <button class="hist-back-btn" onclick="toggleHist()">◀ 測定へ戻る</button>
+    <div class="hist-sidebar-hd" style="display:-webkit-box;display:-webkit-flex;display:flex;-webkit-justify-content:space-between;justify-content:space-between;-webkit-align-items:center;align-items:center;">
+      <span>保存履歴</span>
+      <button class="col-reset" onclick="bulkDownloadJson()">一括DL</button>
+    </div>
+    <div id="histList"></div>
+  </div>
+  <div class="hist-detail" id="histDetail">
+    <div class="hist-detail-empty">←履歴を選択</div>
+  </div>
+</div>
+
+<!-- ===== 印刷プレビュー（A4・window.print()でPDF保存/印刷） ===== -->
+<div class="print-preview" id="printPreview"></div>
+
+<!-- ===== 左サイドバー（キーパッド廃止・機番/ステータスも常時格納） ===== -->
+<div class="bb-side" id="bbSide">
+  <div class="bb-kiban" id="activeKibanBadge">機番未設定</div>
+
+  <div class="bb-kiban-row">
+    <span class="bb-kiban-lbl">機番</span>
+    <input class="bb-kiban-input" id="kibanInput" type="text" inputmode="numeric" autocomplete="off">
+  </div>
+  <div class="bb-status-row" id="statusRow">
+    <button class="bb-status-btn sel" data-status="完成時">完成時</button>
+    <button class="bb-status-btn"     data-status="AG前">AG前</button>
+    <button class="bb-status-btn"     data-status="エイジング途中">AG中</button>
+    <button class="bb-status-btn"     data-status="エイジング後">AG後</button>
+  </div>
+  <button class="bb-btn bb-apply" id="applyBtn" onclick="applySetup()">測定開始</button>
+
+  <div class="bb-divider"></div>
+
+  <button class="bb-btn bb-save" onclick="saveMeas()">SAVE</button>
+  <button class="bb-btn" id="histBtn" onclick="toggleHist()">LOG</button>
+  <button class="bb-btn bb-reset" onclick="resetAll()">リセット</button>
+  <button class="bb-btn" onclick="toggleOptionPanel()">オプション</button>
+</div>
+
+<!-- ===== オプションパネル（画面下部） ===== -->
+<div class="save-panel" id="optionPanel">
+  <div class="save-panel-title">オプション</div>
+  <div style="text-align:center;margin-bottom:10px;">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZoAAAGaAQAAAAAefbjOAAADMklEQVR4nO2c243bOBSGv7Mi4EcKmAKmFKmDlBRsSduBWMoUMID4aIDGnwdSGo03QDBxIt8OH2Tq8kEkRJw7beLLLf3zdQYccsghhxxyyKHHhKy1AMkCNgI2cjIbs7WDmZmNVxmeQztCof4ME0B+AeK7CU4B8osgd6UdANt7eA5dDcpNANiYD7IxByAWSK+FesMsXG94Du0GhfMLw38vCEoQuUfDm/2hNzl0r1AsizERJbPX8tfe5NAtQouMiAIykPr3oGF+KcApiHwQZNhGsm58Tg79ASiZmVkPDG8H2chqUbB4HWZmn6H9hufQ3jLi56HseDTS69GaBLnwTQ7dB4QkiWEGoJOmWDY91bbelSRNNz4nhy6B2jefYoFBzYrUFNWkwjC3gyY6MfiKeHToXEZAlDTRlkU9rI+4jHgWaFkCpfYgSpADVkPZAKnv9Anab3gO7S8jquFA13qagaFKhmY9wGpWuIx4ZGj5yEBTGFVNFKS5a/pj7bkd8fhQ9T4NumLk0EzLNNZr2KB6aoLVS73xOTl0CbTxNZqHEUtzLqpkWLwOTe59PgW0+BoqVJuhxSMAFnezrhKi3Pt8Ami1Iz59/WHjkYI0ezziaaBNNlzJqqUgS/17oNoWdKWaFcPcm9sRTwNVeRBLra+T5q65mx9KJPVdTXzdy5wcukRraO6amqih7NiyGcva2KoT1xoPDX14n6h5l50gGxCFDdPRRA5F5IO8zvLxoTWv0WKW57nPGrCqgUuPWT4DtK2zHHQykQNK32ZseAsYhALxaCL3+w/PoatB8WiQQw1KQA7o39eCpFLLsG1cM+T3MieHfh9qSa5aant0+z7DkvukhSc+Tu9jTg5daFkC0BWlb52Ao0GcsWQAuRbiejziCaA1ir24oDXpPXfbysoqI/CKmWeClj1drRZ7jT1o7kQys6pTxisNz6HdoP/t6Up9h1L/HpSsK1VkAFjdC7rz8By6PjTMJ2N4C2zMSzMzTfmwVNbc25wc+kI739MlEDZMJQgKRiwojV3Zbv+88Tk5dAm01lkCrSBiqZip+zVmWEosPWb5DJDp18+cN/9nMocccsghhxxyCOAHNDg7RXkYZvYAAAAASUVORK5CYII=" alt="アプリURL QRコード" style="width:110px;height:110px;background:#fff;padding:6px;border-radius:8px;">
+    <div style="font-size:10px;color:var(--text-faint);margin-top:4px;">h2ec9629.github.io/reminder-app/meas.html</div>
+  </div>
+  <div class="save-kiban-row">
+    <span class="save-kiban-label">PAT</span>
+    <input class="opt-pat-input" id="optPatInput" type="text" placeholder="GitHubトークン" autocomplete="off" autocapitalize="off" spellcheck="false">
+  </div>
+  <div class="save-act-row" style="margin-bottom:8px;">
+    <button class="save-act-cancel" style="-webkit-flex:1;flex:1;" onclick="document.getElementById('optPatFile').click()">📄 テキストファイルから読込</button>
+    <input type="file" id="optPatFile" accept=".txt,text/plain" style="display:none" onchange="loadPatFromFile(this)">
+  </div>
+  <div class="save-act-row">
+    <button class="save-act-cancel" onclick="closeOptionPanel()">閉じる</button>
+    <button class="save-act-ok"     onclick="saveOptionPat()">PAT保存</button>
+  </div>
+  <div class="save-act-row" style="margin-top:8px;">
+    <button class="save-act-ok" style="-webkit-flex:1;flex:1;" onclick="forceUpdate()">Update（強制更新）</button>
+  </div>
+  <div class="save-act-row" style="margin-top:8px;">
+    <button class="save-act-cancel" style="-webkit-flex:1;flex:1;" onclick="testApiConnection()">API接続テスト</button>
+  </div>
+  <div style="margin-top:10px;">
+    <div style="font-size:11px;color:var(--text-faint);margin-bottom:4px;display:flex;justify-content:space-between;">
+      <span>通信ログ（新しい順）</span>
+      <button class="col-reset" onclick="clearDebugLog()">消去</button>
+    </div>
+    <pre id="debugLogBox" style="background:var(--bg-2);border:1px solid var(--border);border-radius:6px;padding:6px;font-size:11px;color:var(--text-sub);max-height:120px;overflow-y:auto;white-space:pre-wrap;margin:0;font-family:inherit;"></pre>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var PHASES = ['u','v','w'];
+var COLS   = ['b','a','r'];
+
+// ===== フォーカス管理（キーパッド廃止・実キーボード入力） =====
+var _padTarget = null; // 現在フォーカス中の測定欄（ハイライト管理用）
+var _inputs    = [];  // ① 起動時にキャッシュ
+
+// 測定欄・機番欄を丸ごとロック／解除（機番・ステータス確定前は測定欄に触れない）
+function _lockMeasInputs(lock) {
+  var i;
+  for (i = 0; i < _inputs.length; i++) {
+    if (lock) _inputs[i].setAttribute('readonly', 'readonly');
+    else      _inputs[i].removeAttribute('readonly');
+  }
+}
+
+// 測定欄フォーカス時：ハイライトのみ（値は端末のキーボードで直接編集）
+function focusInp(inp) {
+  if (_padTarget && _padTarget !== inp) {
+    _padTarget.className = _padTarget.className.replace(' active-inp','').replace('active-inp','');
+  }
+  _padTarget = inp;
+  if (inp.className.indexOf('active-inp') < 0) inp.className += ' active-inp';
+}
+
+// 測定欄フォーカスが外れた時：ハイライト解除＋判定計算
+function blurInp(inp) {
+  inp.className = inp.className.replace(' active-inp','').replace('active-inp','');
+  if (_padTarget === inp) _padTarget = null;
+  var ph = inp.getAttribute('data-ph');
+  if (ph) measCalc(ph);
+}
+
+// Enterキーで次の測定欄へ（ソフトキーボードの「次へ」／物理キーボード共通）
+function _measEnter(inp) {
+  var ph = inp.getAttribute('data-ph');
+  if (ph) measCalc(ph);
+  _nextFocus(inp);
+}
+
+function _nextFocus(cur) {
+  var i;
+  for (i = 0; i < _inputs.length - 1; i++) {  // ① キャッシュ済み配列を使用
+    if (_inputs[i] === cur) {
+      _inputs[i + 1].focus();
+      return;
+    }
+  }
+  cur.blur();
+}
+
+// ===== 判定計算（③ textContent で DOM更新）=====
+function _setDiff(dEl, numStr, lblStr, color) {
+  var spans = dEl.getElementsByTagName('span');
+  dEl.style.color = color;
+  if (spans.length >= 2) {
+    spans[0].textContent = numStr;
+    spans[1].textContent = lblStr;
+  } else {
+    // フォールバック（念のため）
+    dEl.textContent = numStr + ' ' + lblStr;
+  }
+}
+
+function measCalc(ph) {
+  var i, col, onEl, offEl, dEl, onV, offV, diff, diffStr, tmp, isRef;
+  var gap, dir, absGap, full, whole, half, label;
+  for (i = 0; i < COLS.length; i++) {
+    col   = COLS[i];
+    onEl  = document.getElementById('m' + ph + '_on_'  + col);
+    offEl = document.getElementById('m' + ph + '_off_' + col);
+    dEl   = document.getElementById('m' + ph + '_d_'   + col);
+    if (!dEl) continue;
+    onV  = onEl  && onEl.value  !== '' ? parseFloat(onEl.value)  : NaN;
+    offV = offEl && offEl.value !== '' ? parseFloat(offEl.value) : NaN;
+    isRef = false;
+    // 実入力が無い欄は、グレー表示中の前回値（プレースホルダー）があればそれで
+    // 判定だけ表示する（実データ＝valueには触れない。〇引き継ぎ保存はそのまま）
+    if (isNaN(onV) && onEl && onEl.value === '' && onEl.placeholder) {
+      onV = parseFloat(onEl.placeholder);
+      if (!isNaN(onV)) isRef = true;
+    }
+    if (isNaN(offV) && offEl && offEl.value === '' && offEl.placeholder) {
+      offV = parseFloat(offEl.placeholder);
+      if (!isNaN(offV)) isRef = true;
+    }
+    if (!isNaN(onV) && !isNaN(offV)) {
+      // 大きい値＝ON・小さい値＝OFFになるよう表示欄を入れ替える（実入力同士の時だけ）
+      if (!isRef && onV < offV) {
+        tmp = onEl.value; onEl.value = offEl.value; offEl.value = tmp;
+        tmp = onV; onV = offV; offV = tmp;
+      }
+      // 大きい値－小さい値＝差数（入力ミスで段が逆でも計算できるように）
+      diff    = Math.round(Math.abs(onV - offV) * 1000) / 1000;
+      diffStr = diff.toFixed(2);
+      if (diff >= 1.83 && diff <= 1.97) {
+        _setDiff(dEl, diffStr, '[正常]', isRef ? 'var(--text-sub)' : '#4ADE80');
+      } else {
+        gap    = Math.round((1.90 - diff) * 1000) / 1000;
+        dir    = gap > 0 ? '緩め' : '締め';
+        absGap = Math.abs(gap);
+        full   = Math.floor(Math.round(absGap / 0.125));
+        whole  = Math.floor(full / 2);
+        half   = (full % 2 === 1);
+        label  = whole > 0 && half  ? whole + '角半'
+               : whole > 0 && !half ? whole + '角'
+               : half                ? '半角' : '？';
+        _setDiff(dEl, diffStr, '[' + label + dir + ']', isRef ? 'var(--text-sub)' : (diff >= 1.80 && diff <= 2.00) ? '#fff' : '#ff9800');
+      }
+    } else {
+      _setDiff(dEl, '—', '', '');
+    }
+  }
+}
+
+// ===== クリア =====
+function clearOne(id, ph) {
+  var el = document.getElementById(id);
+  if (el) el.value = '';
+  measCalc(ph);
+}
+
+function clearCol(ph, col) {
+  var rows = ['on','off'], i, el;
+  for (i = 0; i < rows.length; i++) {
+    el = document.getElementById('m' + ph + '_' + rows[i] + '_' + col);
+    if (el) el.value = '';
+  }
+  measCalc(ph);
+}
+
+function resetAll() {
+  if (!confirm('全ての入力をリセットしますか？')) return;
+  var pi, ci, ri, ph, col, rows, el, dEl;
+  rows = ['on','off'];
+  for (pi = 0; pi < PHASES.length; pi++) {
+    ph = PHASES[pi];
+    for (ci = 0; ci < COLS.length; ci++) {
+      col = COLS[ci];
+      for (ri = 0; ri < rows.length; ri++) {
+        el = document.getElementById('m' + ph + '_' + rows[ri] + '_' + col);
+        if (el) el.value = '';
+      }
+      dEl = document.getElementById('m' + ph + '_d_' + col);
+      if (dEl) { _setDiff(dEl, '—', '', ''); }
+    }
+  }
+  if (_padTarget) { _padTarget.className = _padTarget.className.replace(' active-inp','').replace('active-inp',''); }
+  _padTarget = null;
+  showToast('リセットしました');
+}
+
+// ===== 強制更新 =====
+function forceUpdate() {
+  showToast('更新中...');
+  try {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        var i;
+        for (i = 0; i < regs.length; i++) regs[i].unregister();
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(keys) {
+        var i;
+        for (i = 0; i < keys.length; i++) caches.delete(keys[i]);
+      });
+    }
+  } catch(e) {}
+  setTimeout(function() { location.reload(true); }, 1000);
+}
+
+// ===== API接続テスト（ヘッダーあり/なしで切り分け） =====
+function testApiConnection() {
+  var base = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME;
+
+  var xhrA = new XMLHttpRequest();
+  xhrA.open('GET', base + '?a=' + Date.now(), true);
+  xhrA.onreadystatechange = function() {
+    if (xhrA.readyState !== 4) return;
+    _notify('テストA(素の通信)：status ' + xhrA.status);
+  };
+  xhrA.onerror = function() { _notify('テストA(素の通信)：通信エラー'); };
+  xhrA.send();
+
+  var xhrB = new XMLHttpRequest();
+  xhrB.open('GET', base + '?b=' + Date.now(), true);
+  xhrB.setRequestHeader('Accept', 'application/vnd.github+json');
+  xhrB.onreadystatechange = function() {
+    if (xhrB.readyState !== 4) return;
+    _notify('テストB(ヘッダー付き)：status ' + xhrB.status);
+  };
+  xhrB.onerror = function() { _notify('テストB(ヘッダー付き)：通信エラー'); };
+  xhrB.send();
+
+  // テストC：GitHub以外の他ドメインへの素の通信（cross-origin自体がダメなのか、GitHub側特有の問題かを切り分け）
+  var xhrC = new XMLHttpRequest();
+  xhrC.open('GET', 'https://jsonplaceholder.typicode.com/todos/1?c=' + Date.now(), true);
+  xhrC.onreadystatechange = function() {
+    if (xhrC.readyState !== 4) return;
+    _notify('テストC(GitHub以外の他ドメイン)：status ' + xhrC.status);
+  };
+  xhrC.onerror = function() { _notify('テストC(GitHub以外の他ドメイン)：通信エラー'); };
+  xhrC.send();
+
+  // テストD：他ドメイン＋独自ヘッダー付き（preflightが絡んでも他ドメインなら通るかを確認）
+  var xhrD = new XMLHttpRequest();
+  xhrD.open('GET', 'https://jsonplaceholder.typicode.com/todos/2?d=' + Date.now(), true);
+  xhrD.setRequestHeader('Authorization', 'Bearer dummy-test-token');
+  xhrD.onreadystatechange = function() {
+    if (xhrD.readyState !== 4) return;
+    _notify('テストD(他ドメイン+ヘッダー付き)：status ' + xhrD.status);
+  };
+  xhrD.onerror = function() { _notify('テストD(他ドメイン+ヘッダー付き)：通信エラー'); };
+  xhrD.send();
+}
+
+// ===== トースト =====
+var _tt;
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'toast show';
+  clearTimeout(_tt);
+  _tt = setTimeout(function(){ t.className = 'toast'; }, 2200);
+}
+
+// ===== 通信ログ（消えるトーストと違い、オプションパネルに残る） =====
+var _debugLines = [];
+function _debugLog(msg) {
+  var now = new Date();
+  var hh = ('0' + now.getHours()).slice(-2);
+  var mi = ('0' + now.getMinutes()).slice(-2);
+  var ss = ('0' + now.getSeconds()).slice(-2);
+  _debugLines.unshift(hh + ':' + mi + ':' + ss + ' ' + msg);
+  if (_debugLines.length > 20) _debugLines = _debugLines.slice(0, 20);
+  var box = document.getElementById('debugLogBox');
+  if (box) box.textContent = _debugLines.join('\n');
+}
+function clearDebugLog() {
+  _debugLines = [];
+  var box = document.getElementById('debugLogBox');
+  if (box) box.textContent = '';
+}
+function _notify(msg) {
+  showToast(msg);
+  _debugLog(msg);
+}
+
+// ===== 保存・履歴機能 =====
+var STORE_KEY = 'meas_history';
+var _histMode = false;
+var _selKiban = null;
+// 古いiPad(iOS9系)はconfirm()等のブロッキングダイアログをtouchend中に呼ぶと、
+// preventDefault()していても後から合成clickイベントが発火してしまうことがある。
+// その結果、削除ボタンが「touchend→click」で二重に呼ばれ、削除確認が2回出た上に
+// 2回目でYESすると（1回目の削除で配列がずれた後の）別の行が消えてしまう。
+// touchendが処理した直後は一定時間clickを無視することで二重実行を防ぐ。
+var _delTouchAt = 0;
+
+function _loadHistory() {
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function _saveHistory(arr) {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+// ===== 端末へのJSONファイル保存（ダウンロード） =====
+function _downloadJson(filename, dataObj) {
+  try {
+    var blob = new Blob([JSON.stringify(dataObj, null, 2)], { type: 'application/json' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href     = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+  } catch(e) {
+    _notify('ファイル保存に失敗しました：' + e.message);
+  }
+}
+
+// LOG画面から機番ごとにまとめてJSONダウンロード
+function bulkDownloadJson() {
+  var arr = _loadHistory();
+  if (!arr.length) { showToast('保存データがありません'); return; }
+  var groups = {}, i, key;
+  for (i = 0; i < arr.length; i++) {
+    key = arr[i].kiban || '未入力';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(arr[i]);
+  }
+  var keys = Object.keys(groups);
+  for (i = 0; i < keys.length; i++) {
+    _downloadJson('測定履歴_機番' + keys[i] + '.json', groups[keys[i]]);
+  }
+  showToast('機番ごとに' + keys.length + '件のJSONを保存しました');
+}
+
+// === GIST SYNC (XHR / iOS9互換) ===
+// 旧Gist方式は廃止（古いiPadのホーム画面アプリで他ドメイン通信がブロックされたため）
+// 同じreminder-app内のファイルを直接読み書きする方式に変更
+var MEAS_REPO_OWNER = 'h2ec9629';
+var MEAS_REPO_NAME  = 'reminder-app';
+var MEAS_REPO_PATH  = 'meas_history.json';
+var MEAS_HIST_SAME_ORIGIN_URL = 'meas_history.json'; // 同一オリジン（相対パス）
+// iPad2はapi.github.comへの直接通信がTLS/ネットワークの都合で全滅するため、
+// Cloudflare Worker中継（cloudflare_worker_relay.js）経由でGitHub APIを叩く
+var MEAS_API_BASE = 'https://morning-resonance-c98bh.h2ec9629.workers.dev';
+
+function _b64EncodeUtf8(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+function _b64DecodeUtf8(b64) {
+  return decodeURIComponent(escape(atob(b64.replace(/\n/g, ''))));
+}
+
+function _escRe(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function _getMeasCfg() {
+  try { return JSON.parse(localStorage.getItem('ojisan_mailbox_cfg_v1') || '{}'); } catch(e) { return {}; }
+}
+
+function _getMeasPat() {
+  return _getMeasCfg().pat || '';
+}
+
+function _setMeasPat(pat) {
+  var cfg = _getMeasCfg();
+  cfg.pat = pat;
+  try { localStorage.setItem('ojisan_mailbox_cfg_v1', JSON.stringify(cfg)); } catch(e) {}
+}
+
+// 索引ファイル（meas_history.json）を「指定した配列でそのまま上書き」する。
+// 削除操作など、呼び出し側が最終形を確定済みのケース専用。
+function _pushHistoryIndex(arr) {
+  var pat = _getMeasPat();
+  if (!pat) return;
+  var apiUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
+
+  // 更新には現在のファイルのshaが要るので先にGETしてから書き込む
+  var getXhr = new XMLHttpRequest();
+  getXhr.open('GET', apiUrl + '?t=' + Date.now(), true);
+  getXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  getXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  getXhr.onreadystatechange = function() {
+    if (getXhr.readyState !== 4) return;
+    var sha = null;
+    if (getXhr.status === 200) {
+      try { sha = JSON.parse(getXhr.responseText).sha; } catch(e) {}
+    }
+    var body = {
+      message: '測定ログ更新',
+      content: _b64EncodeUtf8(JSON.stringify(arr, null, 2)),
+      branch: 'main'
+    };
+    if (sha) body.sha = sha;
+    var putXhr = new XMLHttpRequest();
+    putXhr.open('PUT', apiUrl, true);
+    putXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+    putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    putXhr.setRequestHeader('Content-Type', 'application/json');
+    putXhr.send(JSON.stringify(body));
+  };
+  getXhr.send();
+}
+
+// 新規1件を保存するとき専用：保存直前にリモートの最新を取りに行ってからマージして書き込む。
+// 他端末が追加した分を上書きで消してしまう事故を防ぐための安全版。
+function _syncNewRecord(newRecord, callback) {
+  var pat = _getMeasPat();
+  if (!pat) { _notify('共有NG：PAT未設定（オプションで設定して）'); if (callback) callback(false); return; }
+  var apiUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
+
+  // 他端末が同時に索引ファイルを更新すると、GET時点のshaがPUT時点で古くなり
+  // status:409（競合）になることがある。その場合は最新shaを取り直して再試行する。
+  function attempt(triesLeft) {
+    var getXhr = new XMLHttpRequest();
+    getXhr.open('GET', apiUrl + '?t=' + Date.now(), true);
+    getXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+    getXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    getXhr.onreadystatechange = function() {
+      if (getXhr.readyState !== 4) return;
+      var sha = null, remote = [];
+      if (getXhr.status === 200) {
+        try {
+          var meta = JSON.parse(getXhr.responseText);
+          sha = meta.sha;
+          remote = JSON.parse(_b64DecodeUtf8(meta.content));
+          if (!Array.isArray(remote)) remote = [];
+        } catch(e) { remote = []; }
+      }
+      // ローカルキャッシュ全体は混ぜない（他端末が削除した記録がローカルにだけ
+      // 残っていると、それを保存のたびに復活させてリモートに書き戻してしまうため）。
+      // 今取得した最新のリモートに、今回保存する新規分＋まだ未送信キューに残っている
+      // 他のオフライン保存分も一緒に足す（そうしないと複数件を順番に送るとき、
+      // 途中でローカル保存がこの1件だけに上書きされて他の分が消えてしまうため）。
+      var all = [newRecord].concat(_loadPending()).concat(remote);
+      var seen = {}, merged = [], i, k;
+      for (i = 0; i < all.length; i++) {
+        k = all[i].date + '|' + all[i].memo;
+        if (!seen[k]) { seen[k] = true; merged.push(all[i]); }
+      }
+      merged.sort(function(a, b) { return b.date < a.date ? -1 : 1; });
+      if (merged.length > 50) merged = merged.slice(0, 50);
+      _normalizePendingFlags(merged); // リモートに焼き付いた古いpendingSyncを無視して再計算
+      _saveHistory(merged);
+      _renderSidebar();
+
+      var body = {
+        message: '測定ログ更新（機番 ' + (newRecord.kiban || '') + '）',
+        content: _b64EncodeUtf8(JSON.stringify(merged, null, 2)),
+        branch: 'main'
+      };
+      if (sha) body.sha = sha;
+      var putXhr = new XMLHttpRequest();
+      putXhr.open('PUT', apiUrl, true);
+      putXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+      putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+      putXhr.setRequestHeader('Content-Type', 'application/json');
+      putXhr.onreadystatechange = function() {
+        if (putXhr.readyState !== 4) return;
+        if (putXhr.status === 200 || putXhr.status === 201) {
+          _notify('共有OK：索引ファイル更新済み');
+          if (callback) callback(true);
+        } else if (putXhr.status === 409 && triesLeft > 0) {
+          _notify('共有再試行中：他端末との競合を検知（残り' + triesLeft + '回）');
+          setTimeout(function() { attempt(triesLeft - 1); }, 400 + Math.random() * 400);
+        } else {
+          _notify('共有NG：索引書き込み失敗（status:' + putXhr.status + '）');
+          if (callback) callback(false);
+        }
+      };
+      putXhr.onerror = function() { _notify('共有NG：索引書き込み通信エラー'); if (callback) callback(false); };
+      putXhr.send(JSON.stringify(body));
+    };
+    getXhr.onerror = function() { _notify('共有NG：索引取得の通信エラー'); if (callback) callback(false); };
+    getXhr.send();
+  }
+
+  attempt(3);
+}
+
+// 機番ごとにフォルダ分け、ステータス別にjsonで個別保存する際のファイル名を先に決める。
+// （再測定は連番で履歴として残す。削除時に対応ファイルを特定できるよう、決めた名前は
+//   呼び出し側で履歴レコードのrecordFileとして保存しておく）
+function _resolveRecordFilename(kiban, status, callback) {
+  var pat = _getMeasPat();
+  if (!pat) { callback(status + '.json'); return; }
+  var dirUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+             + '/contents/records/' + encodeURIComponent(kiban);
+  var listXhr = new XMLHttpRequest();
+  listXhr.open('GET', dirUrl + '?t=' + Date.now(), true);
+  listXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  listXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  listXhr.onreadystatechange = function() {
+    if (listXhr.readyState !== 4) return;
+    var existing = [];
+    if (listXhr.status === 200) {
+      try {
+        var parsed = JSON.parse(listXhr.responseText);
+        if (Array.isArray(parsed)) existing = parsed;
+      } catch(e) {}
+    }
+    var maxN = 0, found = false, i, name, m;
+    var reSuffix = new RegExp('^' + _escRe(status) + '_(\\d+)\\.json$');
+    for (i = 0; i < existing.length; i++) {
+      name = existing[i].name || '';
+      if (name === status + '.json') { found = true; }
+      m = name.match(reSuffix);
+      if (m) { found = true; var n = parseInt(m[1], 10); if (n > maxN) maxN = n; }
+    }
+    var filename = found ? (status + '_' + (maxN + 1) + '.json') : (status + '.json');
+    callback(filename);
+  };
+  listXhr.onerror = function() { callback(status + '.json'); };
+  listXhr.send();
+}
+
+// 決まったファイル名で個別ファイルを書き込む。
+// 索引ファイル更新と同時に走らせるとGitHub側のコミットが競合してstatus:409になることがあるため、
+// こちらも自動で再試行する。
+function _putRecordFile(data, filename, callback) {
+  var pat = _getMeasPat();
+  if (!pat) { _notify('個別ファイル保存NG：PAT未設定'); if (callback) callback(false); return; }
+  var kiban  = String(data.kiban || '未入力');
+  var status = String(data.status || '不明');
+  var path    = 'records/' + kiban + '/' + filename;
+  var putUrl  = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+              + '/contents/' + path.split('/').map(encodeURIComponent).join('/');
+
+  function attempt(triesLeft) {
+    var body = {
+      message: '測定記録保存：機番' + kiban + '・' + status,
+      content: _b64EncodeUtf8(JSON.stringify(data, null, 2)),
+      branch: 'main'
+    };
+    var putXhr = new XMLHttpRequest();
+    putXhr.open('PUT', putUrl, true);
+    putXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+    putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    putXhr.setRequestHeader('Content-Type', 'application/json');
+    putXhr.onreadystatechange = function() {
+      if (putXhr.readyState !== 4) return;
+      if (putXhr.status === 200 || putXhr.status === 201) {
+        _notify('共有OK：個別ファイル保存済み（' + filename + '）');
+        if (callback) callback(true);
+      } else if (putXhr.status === 409 && triesLeft > 0) {
+        _notify('共有再試行中：個別ファイルが競合（残り' + triesLeft + '回）');
+        setTimeout(function() { attempt(triesLeft - 1); }, 400 + Math.random() * 400);
+      } else {
+        _notify('共有NG：個別ファイル保存失敗（status:' + putXhr.status + '）');
+        if (callback) callback(false);
+      }
+    };
+    putXhr.onerror = function() { _notify('共有NG：個別ファイル通信エラー'); if (callback) callback(false); };
+    putXhr.send(JSON.stringify(body));
+  }
+
+  attempt(3);
+}
+
+// ===== オフライン対応：GitHub共有の未送信分をキューで管理 =====
+// 索引更新＋個別ファイル保存の2つをまとめて1件分実行し、両方成功したときだけ「同期済み」にする
+var PENDING_KEY = 'meas_pending_sync';
+
+function _loadPending() {
+  try {
+    var raw = localStorage.getItem(PENDING_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function _savePending(arr) {
+  try { localStorage.setItem(PENDING_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+// pendingSync（未同期）は「この端末の未送信キューに載っているか」だけで決め直す。
+// GitHub側の共有索引ファイルには、過去のバグで pendingSync:true が焼き付いたまま
+// 残っている記録があるため、リモートから取り込んだ値をそのまま信用すると
+// 同期済みのはずの記録がLOG画面を開くたびに「未同期」へ復活してしまう。
+// リモートの値がどうであれ、ここで必ず未送信キューとの突き合わせで上書きする。
+function _normalizePendingFlags(arr) {
+  var pending = _loadPending(), pset = {}, i, k;
+  for (i = 0; i < pending.length; i++) {
+    k = pending[i].date + '|' + pending[i].memo;
+    pset[k] = true;
+  }
+  for (i = 0; i < arr.length; i++) {
+    k = arr[i].date + '|' + arr[i].memo;
+    arr[i].pendingSync = !!pset[k];
+  }
+  return arr;
+}
+
+// 同じ記録（date+memoで同定）が既にキューにあれば上書き、無ければ追加
+function _queuePendingSync(record) {
+  var arr = _loadPending(), i;
+  for (i = 0; i < arr.length; i++) {
+    if (arr[i].date === record.date && arr[i].memo === record.memo) { arr[i] = record; _savePending(arr); return; }
+  }
+  arr.push(record);
+  _savePending(arr);
+}
+
+function _removePending(record) {
+  var arr = _loadPending(), i;
+  for (i = 0; i < arr.length; i++) {
+    if (arr[i].date === record.date && arr[i].memo === record.memo) { arr.splice(i, 1); break; }
+  }
+  _savePending(arr);
+}
+
+// ローカル履歴側のpendingSyncフラグとrecordFileを更新
+function _markSynced(record) {
+  var arr = _loadHistory(), i;
+  for (i = 0; i < arr.length; i++) {
+    if (arr[i].date === record.date && arr[i].memo === record.memo) {
+      arr[i].pendingSync = false;
+      arr[i].recordFile  = record.recordFile;
+      break;
+    }
+  }
+  _saveHistory(arr);
+}
+
+// 1件分：索引ファイル更新→個別ファイル保存　の順で実行し、両方成功したかをcallback(ok)で返す
+function _syncOneRecord(record, callback) {
+  _resolveRecordFilename(record.kiban, record.status, function(filename) {
+    record.recordFile = 'records/' + record.kiban + '/' + filename;
+    _syncNewRecord(record, function(indexOk) {
+      _putRecordFile(record, filename, function(fileOk) {
+        var ok = !!(indexOk && fileOk);
+        if (ok) _markSynced(record);
+        if (callback) callback(ok);
+      });
+    });
+  });
+}
+
+// オンライン復帰時などにキューの未送信分をまとめて送る（1件ずつ順番に）
+function _flushPendingSync(onDone) {
+  if (!navigator.onLine) { if (onDone) onDone(); return; }
+  if (!_getMeasPat()) { if (onDone) onDone(); return; }
+  var queue = _loadPending();
+  if (!queue.length) { if (onDone) onDone(); return; }
+  _notify('未同期分(' + queue.length + '件)を送信中...');
+  function next(list) {
+    if (!list.length) { _renderSidebar(); if (onDone) onDone(); return; }
+    var rec = list.shift();
+    _syncOneRecord(rec, function(ok) {
+      if (ok) _removePending(rec);
+      next(list);
+    });
+  }
+  next(queue.slice());
+}
+
+// 端末上でログを削除したとき、対応する個別ファイルもGitHub側から削除する。
+// recordFile未設定の古い履歴（この機能を入れる前に保存した分）は対象外。
+function _deleteRecordFile(path) {
+  var pat = _getMeasPat();
+  if (!pat) { _notify('個別ファイル削除NG：PAT未設定'); return; }
+  var url = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+          + '/contents/' + path.split('/').map(encodeURIComponent).join('/');
+
+  var getXhr = new XMLHttpRequest();
+  getXhr.open('GET', url + '?t=' + Date.now(), true);
+  getXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  getXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  getXhr.onreadystatechange = function() {
+    if (getXhr.readyState !== 4) return;
+    if (getXhr.status === 404) {
+      _notify('個別ファイル削除：GitHub側に見当たりませんでした（' + path + '）');
+      return;
+    }
+    if (getXhr.status !== 200) {
+      _notify('個別ファイル削除NG：sha取得失敗（status:' + getXhr.status + '）');
+      return;
+    }
+    var sha;
+    try { sha = JSON.parse(getXhr.responseText).sha; } catch(e) {}
+    if (!sha) { _notify('個別ファイル削除NG：sha取得できず'); return; }
+
+    var body = { message: '測定記録削除：' + path, sha: sha, branch: 'main' };
+    var delXhr = new XMLHttpRequest();
+    delXhr.open('DELETE', url, true);
+    delXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+    delXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    delXhr.setRequestHeader('Content-Type', 'application/json');
+    delXhr.onreadystatechange = function() {
+      if (delXhr.readyState !== 4) return;
+      if (delXhr.status === 200 || delXhr.status === 204) {
+        _notify('共有OK：個別ファイルも削除しました（' + path + '）');
+      } else {
+        _notify('共有NG：個別ファイル削除失敗（status:' + delXhr.status + '）');
+      }
+    };
+    delXhr.onerror = function() { _notify('共有NG：個別ファイル削除の通信エラー'); };
+    delXhr.send(JSON.stringify(body));
+  };
+  getXhr.onerror = function() { _notify('個別ファイル削除NG：sha取得の通信エラー'); };
+  getXhr.send();
+}
+
+function _fetchGist(callback) {
+  // 索引ファイルは書き込みと同じ経路（Worker中継→GitHub API）で読む。
+  // 以前は同一オリジンの相対パス（GitHub Pages経由）で読んでいたが、
+  // Pagesのビルド反映待ち・CDNキャッシュのせいで他端末が書いた更新がすぐ見えない
+  // ことがあった（PCで保存してもiPadの一覧に出てこない不具合の原因）。
+  // Worker中継は既にiPad2でも通ることを確認済みなので、書き込み側と統一する。
+  var apiUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME + '/contents/' + MEAS_REPO_PATH;
+  var pat = _getMeasPat();
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', apiUrl + '?t=' + Date.now(), true);
+  xhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  if (pat) xhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    if (xhr.status !== 200) {
+      _notify('索引取得失敗（status:' + xhr.status + '）');
+      return;
+    }
+    try {
+      var meta   = JSON.parse(xhr.responseText);
+      var remote = JSON.parse(_b64DecodeUtf8(meta.content));
+      if (!Array.isArray(remote)) {
+        _notify('索引取得：形式が配列じゃない');
+        return;
+      }
+      // 基本は共有索引ファイル（リモート）を正として採用する。以前はローカル全体を
+      // 足していたため、他端末で削除した記録がこの端末のキャッシュにだけ残り続けて
+      // 一覧から消えない不具合があった。ただしローカル全体ではなく「まだ送信し切れて
+      // いない未送信キューの分」だけは例外として前に足す。これをやらないと、オフライン
+      // 保存直後にLOGを開いたとき、送信(_flushPendingSync)がまだ終わっていない隙間で
+      // リモートにまだ無いオフライン保存分が一覧から消えてしまう（消失バグの本体）。
+      // 未送信キューはこの端末が自分で保存してまだ確定送信できていない分だけなので、
+      // 他端末で削除された記録を復活させる心配はない。
+      var pending = _loadPending();
+      var all = pending.concat(remote);
+      var seen = {}, merged = [], j, kk;
+      for (j = 0; j < all.length; j++) {
+        kk = all[j].date + '|' + all[j].memo;
+        if (!seen[kk]) { seen[kk] = true; merged.push(all[j]); }
+      }
+      merged.sort(function(a, b) { return b.date < a.date ? -1 : 1; });
+      if (merged.length > 50) merged = merged.slice(0, 50);
+      _normalizePendingFlags(merged); // リモートに焼き付いた古いpendingSyncを無視して再計算
+      _saveHistory(merged);
+      _notify('共有OK：最新の索引を取得（件数 ' + merged.length + '）');
+      if (callback) callback();
+    } catch(e) {
+      _notify('索引取得：解析エラー ' + e.message);
+    }
+  };
+  xhr.onerror = function() {
+    _notify('索引取得：通信エラー（オフライン？）');
+  };
+  xhr.send();
+}
+
+// ===== サイドバー（機番・ステータスはキーボードで直接入力） =====
+var _saveRaw      = '';      // 機番の文字列
+var _saveStatus   = '完成時'; // 選択中の状態
+var _setupDone    = false;   // 機番・ステータス確定済み（測定解禁）
+
+// ===== 測定ヘッダー更新 =====
+function _setMhCur(t)  { var el = document.getElementById('mhCur');  if (el) el.textContent = t; }
+function _setMhPrev(t) { var el = document.getElementById('mhPrev'); if (el) el.textContent = t; }
+function _edaLabel(file, status) {
+  if (file === status + '.json') return '枝番なし';
+  var m = file.match(/_(\d+)\.json$/);
+  return m ? ('枝番' + m[1]) : '';
+}
+function _stripMaru(v) { return String(v == null ? '' : v).replace(/^〇+/, ''); }
+function _prevSpanVal(ph, row, col) {
+  var el = document.getElementById('p_m' + ph + '_' + row + '_' + col);
+  return el ? (el.textContent || '') : '';
+}
+
+// ===== 起動時の初期化（機番・ステータス未確定・測定欄ロック） =====
+function initSidebar() {
+  _setupDone = false;
+  _lockMeasInputs(true);
+  _clearPrevValues();
+  _setMhCur('機番未設定');
+  _setMhPrev('前回値: —');
+  _saveRaw   = '';
+  _saveStatus= '完成時';
+  _refreshStatusRow();
+  document.getElementById('kibanInput').value = '';
+  document.getElementById('applyBtn').textContent = '測定開始';
+}
+
+function _refreshStatusRow() {
+  var btns = document.getElementById('statusRow').getElementsByTagName('button');
+  var k;
+  for (k = 0; k < btns.length; k++) {
+    btns[k].className = (btns[k].getAttribute('data-status') === _saveStatus)
+      ? 'bb-status-btn sel' : 'bb-status-btn';
+  }
+}
+
+// サイドバーの「測定開始／機番更新」ボタン：機番・ステータスを確定して測定欄を解禁する
+function applySetup() {
+  _saveRaw = document.getElementById('kibanInput').value.trim();
+  if (_saveRaw === '') { showToast('機番を入力してください'); return; }
+  if (!_saveStatus)    { showToast('ステータスを選んでください'); return; }
+  _setupDone = true;
+  _lockMeasInputs(false);
+  document.getElementById('applyBtn').textContent = '機番更新';
+  _updateKibanBadge();
+  _setMhCur('機番 ' + _saveRaw + '　／　' + _saveStatus + '　測定中');
+  _setMhPrev('前回値: 読込中…');
+  _clearPrevValues();
+  loadPrevValues(_saveRaw);
+  showToast('機番 ' + _saveRaw + '・' + _saveStatus + ' で測定開始');
+}
+
+// ヘッダーの機番表示タップ → サイドバーの機番欄にフォーカス（入力しやすいように）
+function reopenSetup() {
+  var el = document.getElementById('kibanInput');
+  if (el) { el.focus(); el.select(); }
+}
+
+function _updateKibanBadge() {
+  var el = document.getElementById('activeKibanBadge');
+  if (!el) return;
+  el.textContent = _setupDone ? ('機番 ' + _saveRaw + ' / ' + _saveStatus) : '機番未設定';
+}
+
+// ===== 前回値（前段ステータス）の参照表示 =====
+function _prevSpanIds() {
+  var out = [], ph = ['u','v','w'], row = ['on','off'], col = ['b','a','r'], i, j, k;
+  for (i = 0; i < ph.length; i++)
+    for (j = 0; j < row.length; j++)
+      for (k = 0; k < col.length; k++)
+        out.push('p_m' + ph[i] + '_' + row[j] + '_' + col[k]);
+  return out;
+}
+
+function _clearPrevValues() {
+  var ids = _prevSpanIds(), i, el, inp;
+  for (i = 0; i < ids.length; i++) {
+    el = document.getElementById(ids[i]);
+    if (el) el.textContent = '';
+    // 対応する測定欄のグレー表示（プレースホルダー）も一緒にクリアする
+    inp = document.getElementById(ids[i].slice(2));
+    if (inp) inp.placeholder = '';
+  }
+}
+
+// 機番フォルダ内の全記録から、日時(date)が最も新しい1件を前回値として表示（ステータス問わず常に最新）
+function loadPrevValues(kiban) {
+  _clearPrevValues();
+
+  // まずローカル履歴（LOGを開いたとき／自分で保存したときに meas_history へ残る分）から表示。
+  // これでオフライン・PAT未設定でも前回値と〇引き継ぎが使える。
+  var local = _localNewest(kiban);
+  if (local) { _fillPrev(local.rec, _fileFromRec(local.rec), 'ローカル'); }
+  else {
+    _setMhPrev('前回値: 記録なし');
+    for (var pi = 0; pi < PHASES.length; pi++) measCalc(PHASES[pi]); // グレー表示が無くなった分の判定表示をリセット
+  }
+
+  var pat = _getMeasPat();
+  if (!pat || !navigator.onLine) return;   // オフライン／PAT未設定ならローカルのみで確定
+
+  // オンライン＆PATありなら共有(GitHub)の最新も見て、ローカルより新しければ差し替える
+  var localDate = local ? local.date : '';
+  var dirUrl = MEAS_API_BASE + '/repos/' + MEAS_REPO_OWNER + '/' + MEAS_REPO_NAME
+             + '/contents/records/' + encodeURIComponent(kiban);
+  var listXhr = new XMLHttpRequest();
+  listXhr.open('GET', dirUrl + '?t=' + Date.now(), true);
+  listXhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+  listXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  listXhr.onreadystatechange = function() {
+    if (listXhr.readyState !== 4) return;
+    if (listXhr.status !== 200) return;      // 記録フォルダ無し等はローカル表示のまま
+    var files = [];
+    try { var p = JSON.parse(listXhr.responseText); if (Array.isArray(p)) files = p; } catch(e) { return; }
+    var jsons = [], i;
+    for (i = 0; i < files.length; i++) {
+      if (files[i].name && /\.json$/.test(files[i].name)) jsons.push(files[i].name);
+    }
+    if (!jsons.length) return;
+
+    var remaining = jsons.length, newest = null;
+    function done() {
+      if (remaining !== 0) return;
+      if (newest && newest.date > localDate) { _fillPrev(newest.rec, newest.file, '共有'); }
+    }
+    for (i = 0; i < jsons.length; i++) {
+      (function(fname) {
+        var url = dirUrl + '/' + encodeURIComponent(fname);
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url + '?t=' + Date.now(), true);
+        xhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+        xhr.setRequestHeader('Accept', 'application/vnd.github+json');
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState !== 4) return;
+          if (xhr.status === 200) {
+            try {
+              var meta = JSON.parse(xhr.responseText);
+              var rec  = JSON.parse(_b64DecodeUtf8(meta.content));
+              var d    = String(rec.date || '');
+              if (!newest || d > newest.date) { newest = { date: d, rec: rec, file: fname }; }
+            } catch(e) {}
+          }
+          remaining--; done();
+        };
+        xhr.onerror = function() { remaining--; done(); };
+        xhr.send();
+      })(jsons[i]);
+    }
+  };
+  listXhr.onerror = function() {};
+  listXhr.send();
+}
+
+// ローカル履歴(meas_history)から、その機番で日時が最新の1件を返す
+function _localNewest(kiban) {
+  var arr = _loadHistory(), best = null, i, r, d;
+  for (i = 0; i < arr.length; i++) {
+    r = arr[i];
+    if (!r || String(r.kiban) !== String(kiban)) continue;
+    d = String(r.date || '');
+    if (!best || d > best.date) best = { date: d, rec: r };
+  }
+  return best;
+}
+
+// 履歴レコードの recordFile ('records/機番/完成時_2.json') からファイル名だけ取り出す
+function _fileFromRec(rec) {
+  var rf = (rec && rec.recordFile) ? String(rec.recordFile) : '';
+  return rf ? rf.split('/').pop() : '';
+}
+
+function _fillPrev(rec, file, sourceTag) {
+  if (!rec || !rec.phases) return;
+  var ph = ['u','v','w'], row = ['on','off'], col = ['b','a','r'], i, j, k, cell, v, el, inp, diffNum, inRange;
+  for (i = 0; i < ph.length; i++)
+    for (k = 0; k < col.length; k++) {
+      cell = rec.phases[ph[i]] && rec.phases[ph[i]][col[k]];
+      // 前回の判定（差数）が1.80～2.00だった欄は、測定欄そのものに
+      // 「打ち込んだ状態」に見えるグレーのプレースホルダーとして前回値を出す。
+      // 実データ（value）には触れないので、保存時の〇引き継ぎ判定はそのまま動く。
+      diffNum = cell ? parseFloat(cell.diff) : NaN;
+      inRange = !isNaN(diffNum) && diffNum >= 1.80 && diffNum <= 2.00;
+      for (j = 0; j < row.length; j++) {
+        v = cell ? (row[j] === 'on' ? cell.on : cell.off) : '';
+        el = document.getElementById('p_m' + ph[i] + '_' + row[j] + '_' + col[k]);
+        if (el) el.textContent = (v == null ? '' : v);
+        inp = document.getElementById('m' + ph[i] + '_' + row[j] + '_' + col[k]);
+        if (inp) inp.placeholder = (inRange && v) ? _stripMaru(v) : '';
+      }
+    }
+  var st  = rec.status || '';
+  var eda = file ? _edaLabel(file, st) : '';
+  var src = sourceTag ? ('［' + sourceTag + '］ ') : '';
+  _setMhPrev('前回値: ' + src + st + (eda ? '（' + eda + '）' : '') + '　' + (rec.date || ''));
+
+  // グレー表示（プレースホルダー）にした欄も判定を出す
+  for (i = 0; i < ph.length; i++) measCalc(ph[i]);
+}
+
+function saveMeas() {
+  var ph, col, i, ci, onEl, offEl, onV, offV, diff;
+  var data = { date: '', memo: '', phases: {} };
+
+  // 保存前に大小入れ替えを確定させる（OK未確定のまま保存されても正しい並びにする）
+  for (i = 0; i < PHASES.length; i++) measCalc(PHASES[i]);
+
+  // 日時
+  var now = new Date();
+  var yy  = now.getFullYear();
+  var mm  = ('0' + (now.getMonth() + 1)).slice(-2);
+  var dd  = ('0' + now.getDate()).slice(-2);
+  var hh  = ('0' + now.getHours()).slice(-2);
+  var mi  = ('0' + now.getMinutes()).slice(-2);
+  data.date = yy + '/' + mm + '/' + dd + ' ' + hh + ':' + mi;
+
+  // 入力値収集
+  var hasAny = false;
+  for (i = 0; i < PHASES.length; i++) {
+    ph = PHASES[i];
+    data.phases[ph] = {};
+    for (ci = 0; ci < COLS.length; ci++) {
+      col   = COLS[ci];
+      onEl  = document.getElementById('m' + ph + '_on_'  + col);
+      offEl = document.getElementById('m' + ph + '_off_' + col);
+      onV   = onEl  ? onEl.value  : '';
+      offV  = offEl ? offEl.value : '';
+      // 空欄は前回値を引き継ぎ、未変動の印として先頭に〇を付ける
+      var onPrev  = _prevSpanVal(ph, 'on',  col);
+      var offPrev = _prevSpanVal(ph, 'off', col);
+      if (onV  === '' && onPrev  !== '') onV  = '〇' + _stripMaru(onPrev);
+      if (offV === '' && offPrev !== '') offV = '〇' + _stripMaru(offPrev);
+      diff  = '';
+      var onN  = parseFloat(_stripMaru(onV));
+      var offN = parseFloat(_stripMaru(offV));
+      if (onV !== '' && offV !== '' && !isNaN(onN) && !isNaN(offN)) {
+        // 大きい値－小さい値＝差数（〇の前回値も数値化して計算）
+        diff = (Math.round(Math.abs(onN - offN) * 1000) / 1000).toFixed(2);
+        hasAny = true;
+      }
+      data.phases[ph][col] = { on: onV, off: offV, diff: diff };
+    }
+  }
+
+  if (!hasAny) { showToast('入力がありません'); return; }
+  if (!_setupDone) { showToast('先に機番・ステータスを入力してください'); return; }
+
+  // 機番・ステータスはサイドバーの現在値をそのまま使う
+  _saveRaw = document.getElementById('kibanInput').value.trim();
+  if (_saveRaw === '') { showToast('機番を入力してください'); return; }
+
+  data.memo   = '機番 ' + _saveRaw + '　' + _saveStatus;
+  data.kiban  = _saveRaw;
+  data.status = _saveStatus;
+  data.pendingSync = true; // GitHub共有が終わるまで「未同期」表示にする
+
+  var arr = _loadHistory();
+  arr.unshift(data);
+  if (arr.length > 50) arr = arr.slice(0, 50);
+  _saveHistory(arr);       // 即時のローカル反映（オフラインでも一覧に出るように）
+  var recordToSave = data;
+
+  // 端末に実ファイルとしてJSON保存（localStorageとは別に、消えない記録として残す）
+  var dlName = '測定_' + recordToSave.kiban + '_' + recordToSave.status + '_'
+             + recordToSave.date.replace(/[\/: ]/g, '') + '.json';
+  _downloadJson(dlName, recordToSave);
+
+  // GitHub共有はオンライン時だけ試す。オフライン／PAT未設定ならキューに積んでおいて
+  // オンライン復帰時に自動で送る（_flushPendingSync）。
+  if (navigator.onLine && _getMeasPat()) {
+    _syncOneRecord(recordToSave, function(ok) {
+      if (!ok) { _queuePendingSync(recordToSave); }
+      _renderSidebar(); // 成功時も再描画して「未同期」表示を消す
+    });
+  } else {
+    _queuePendingSync(recordToSave);
+    _notify(navigator.onLine ? '共有NG：PAT未設定（あとで同期するにはPATを設定して）' : 'オフライン保存：オンライン復帰時に自動で共有します');
+  }
+
+  _updateKibanBadge();
+  showToast('保存しました');
+  _renderSidebar();
+}
+
+// ===== オプションパネル（PAT入力・強制更新） =====
+function toggleOptionPanel() {
+  var panel = document.getElementById('optionPanel');
+  if (panel.className.indexOf('show') >= 0) {
+    closeOptionPanel();
+  } else {
+    document.getElementById('optPatInput').value = _getMeasPat();
+    panel.className = 'save-panel show';
+  }
+}
+
+function closeOptionPanel() {
+  document.getElementById('optionPanel').className = 'save-panel';
+}
+
+function saveOptionPat() {
+  var v = document.getElementById('optPatInput').value.trim();
+  _setMeasPat(v);
+  showToast(v ? 'PATを保存しました' : 'PATを削除しました');
+  closeOptionPanel();
+}
+
+// テキストファイルからPATを読み込んでそのまま保存
+function loadPatFromFile(fileInput) {
+  var f = fileInput.files && fileInput.files[0];
+  if (!f) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var v = String(e.target.result || '').trim();
+    document.getElementById('optPatInput').value = v;
+    if (v) {
+      _setMeasPat(v);
+      showToast('PATを読み込んで保存しました');
+    } else {
+      showToast('ファイルが空です');
+    }
+  };
+  reader.onerror = function() { showToast('読み込みに失敗しました'); };
+  reader.readAsText(f);
+  fileInput.value = '';
+}
+
+// 履歴画面 ON/OFF
+function toggleHist() {
+  _histMode = !_histMode;
+  var mv   = document.getElementById('histView');
+  var main = document.getElementsByTagName('main')[0];
+  var btn  = document.getElementById('histBtn');
+  if (_histMode) {
+    closeOptionPanel(); // オプション展開中にLOGへ移行したら閉じる
+    main.style.display = 'none';
+    mv.className       = 'hist-view';
+    btn.classList.add('active');
+    _selKiban = null;
+    _renderSidebar();  // まず手元の記録をすぐ表示（オフラインでもここまでは出る）
+    if (navigator.onLine) {
+      // 送信(flush)と索引取得(fetch)を同時に走らせると、送信完了前に返ってきた
+      // fetchがリモート索引でローカルを上書きし、オフライン保存分が一覧から消える。
+      // 送信を先に完了させてから取得する（＋fetch側でも未送信キューを足す二段構え）。
+      _flushPendingSync(function() {
+        _fetchGist(function() { _renderSidebar(); });
+      });
+    } else {
+      _notify('オフライン：手元の記録を表示中です');
+    }
+  } else {
+    mv.className       = 'hist-view hidden';
+    main.style.display = '';
+    btn.classList.remove('active');
+  }
+}
+
+// サイドバー描画（機番ごとにまとめて1行。左は機番のみ表示）
+// LOGリストのタグ表示：どのステータスが保存済みかを機番ごとに示す（この順で並べる）
+var STATUS_TAG_ORDER = ['完成時', 'AG前', 'エイジング途中', 'エイジング後', '出荷前'];
+var STATUS_TAG_LABEL = { '完成時':'完成', 'AG前':'AG前', 'エイジング途中':'AG中', 'エイジング後':'AG後', '出荷前':'出荷前' };
+
+// stObj = { ステータス文字列: true, ... } から、既定の順でタグHTMLを組み立てる。
+// 既定外のステータス文字列（旧データ等）は末尾に回す。
+function _statusTagsHtml(stObj) {
+  var keys = [], k, i, idx, known = [], unknown = [], html = '';
+  for (k in stObj) { if (stObj.hasOwnProperty(k)) keys.push(k); }
+  for (i = 0; i < keys.length; i++) {
+    idx = STATUS_TAG_ORDER.indexOf(keys[i]);
+    if (idx === -1) unknown.push(keys[i]); else known[idx] = keys[i];
+  }
+  var ordered = [];
+  for (i = 0; i < STATUS_TAG_ORDER.length; i++) { if (known[i]) ordered.push(known[i]); }
+  ordered = ordered.concat(unknown);
+  for (i = 0; i < ordered.length; i++) {
+    html += '<span class="hist-item-tag">' + _esc(STATUS_TAG_LABEL[ordered[i]] || ordered[i]) + '</span>';
+  }
+  return html;
+}
+
+function _renderSidebar() {
+  var arr  = _loadHistory();
+  var list = document.getElementById('histList');
+  if (arr.length === 0) {
+    list.innerHTML = '<div class="hist-empty">保存データなし</div>';
+    return;
+  }
+  // 機番ごとにまとめる。ひとつでも未同期の記録があれば、その機番に「未同期」バッジを付ける。
+  // どのステータスが保存済みかも機番ごとに集計してタグ表示する。
+  var order = [], seen = {}, pend = {}, sts = {}, i, kb, st;
+  for (i = 0; i < arr.length; i++) {
+    kb = arr[i].kiban || '未入力';
+    if (!seen[kb]) { seen[kb] = true; order.push(kb); pend[kb] = false; sts[kb] = {}; }
+    if (arr[i].pendingSync) pend[kb] = true;
+    st = arr[i].status || '';
+    if (st) sts[kb][st] = true;
+  }
+  // 機番の番号が大きい順（数値化できない機番は末尾へ）に並べ替える。
+  order.sort(function(a, b) {
+    var na = parseFloat(a), nb = parseFloat(b);
+    var aNum = !isNaN(na) && String(na) !== 'NaN' && /^\s*-?\d+(\.\d+)?\s*$/.test(a);
+    var bNum = !isNaN(nb) && String(nb) !== 'NaN' && /^\s*-?\d+(\.\d+)?\s*$/.test(b);
+    if (aNum && bNum) return nb - na;
+    if (aNum && !bNum) return -1;
+    if (!aNum && bNum) return 1;
+    return a < b ? -1 : (a > b ? 1 : 0);
+  });
+  var html = '';
+  for (i = 0; i < order.length; i++) {
+    kb = order[i];
+    html += '<div class="hist-item' + (kb === _selKiban ? ' selected' : '') + '">'
+          + (pend[kb] ? '<span class="hist-pending">未同期</span>' : '')
+          + '<div class="hist-item-kiban">機番 ' + _esc(kb) + '</div>'
+          + '<div class="hist-item-tags">' + _statusTagsHtml(sts[kb]) + '</div>'
+          + '</div>';
+  }
+  list.innerHTML = html;
+
+  // 機番タップ → その機番の詳細を表示（ontouchend + onclick フォールバック）
+  var items = list.getElementsByClassName('hist-item');
+  var k;
+  for (k = 0; k < items.length; k++) {
+    (function(kban) {
+      items[k].ontouchend = function(e) { e.preventDefault(); _selKiban = kban; _renderSidebar(); _renderDetail(kban); };
+      items[k].onclick    = function()  { _selKiban = kban; _renderSidebar(); _renderDetail(kban); };
+    })(order[k]);
+  }
+
+  // 選択中の機番があれば詳細を維持
+  if (_selKiban != null && seen[_selKiban]) _renderDetail(_selKiban);
+}
+
+// 1件分の記録を削除（詳細画面の各ステータス毎の×から呼ぶ）。
+// 記録の同定は date+memo で行う（配列インデックスは再描画でズレるため使わない）。
+function _deleteRecord(rec, kiban) {
+  if (!confirm('この記録（機番 ' + (rec.kiban || '') + '・' + (rec.status || '') + '）を削除しますか？')) return;
+  var arr = _loadHistory(), i, removed = null;
+  for (i = 0; i < arr.length; i++) {
+    if (arr[i].date === rec.date && arr[i].memo === rec.memo) { removed = arr[i]; arr.splice(i, 1); break; }
+  }
+  _saveHistory(arr);
+  _pushHistoryIndex(arr);            // 削除は最終形が確定済みなので索引ファイルへそのまま上書き
+  if (removed && removed.recordFile) _deleteRecordFile(removed.recordFile); // 個別ファイルもGitHub側から削除
+  _removePending(rec);               // 未送信キューに残っていれば消す（復活防止）
+
+  _renderSidebar();
+  // 同じ機番の記録がまだ残っていれば詳細を再描画、無ければ詳細を空にする
+  var still = false;
+  for (i = 0; i < arr.length; i++) {
+    if ((arr[i].kiban || '未入力') === kiban) { still = true; break; }
+  }
+  if (still) {
+    _renderDetail(kiban);
+  } else {
+    _selKiban = null;
+    document.getElementById('histDetail').innerHTML = '<div class="hist-detail-empty">←機番を選択</div>';
+  }
+}
+
+// 相ごとの結果テーブルHTML生成（詳細画面・印刷プレビュー共用）
+// prevRec = 同じステータスの1つ前の記録（無ければnull＝1回目）。
+// 2回目以降で、ON/OFFの値が前回と同じ（〇引き継ぎ含む）なら水色クラスを付ける。
+function _phaseTablesHtml(rec, prevRec) {
+  var phNames = { u:'U相', v:'V相', w:'W相' };
+  var phColors= { u:'hr-ph-u', v:'hr-ph-v', w:'hr-ph-w' };
+  var html = '', pi, ph, ci, col, ri, row, dv, cls, dNum, rows2, pv, sv, sp;
+  for (pi = 0; pi < PHASES.length; pi++) {
+    ph = PHASES[pi];
+    html += '<div class="hr-ph-hd ' + phColors[ph] + '">' + phNames[ph] + '</div>';
+    html += '<table class="hr-tbl"><thead><tr>'
+          + '<th style="width:20%"></th><th>B</th><th>A</th><th>R</th>'
+          + '</tr></thead><tbody>';
+    rows2 = [['','on'],['','off'],['差数','diff']];
+    for (ri = 0; ri < rows2.length; ri++) {
+      row = rows2[ri];
+      html += '<tr><td class="lbl">' + row[0] + '</td>';
+      for (ci = 0; ci < COLS.length; ci++) {
+        col = COLS[ci];
+        dv  = rec.phases && rec.phases[ph] && rec.phases[ph][col] ? rec.phases[ph][col][row[1]] : '';
+        if (row[1] === 'diff' && dv !== '') {
+          dNum = parseFloat(dv);
+          cls = dNum >= 1.83 && dNum <= 1.97 ? 'diff-ok'
+              : dNum >= 1.80 && dNum <= 2.00 ? 'diff-warn'
+              : 'diff-ng';
+          html += '<td class="' + cls + '">' + _esc(dv) + '</td>';
+        } else {
+          sp = '';
+          if (prevRec && dv !== '' && dv != null) {
+            pv = prevRec.phases && prevRec.phases[ph] && prevRec.phases[ph][col] ? prevRec.phases[ph][col][row[1]] : '';
+            sv = _stripMaru(dv);
+            if (pv !== '' && pv != null && sv !== '' && sv === _stripMaru(pv)) sp = ' class="same-prev"';
+          }
+          html += '<td' + sp + '>' + _esc(dv || '—') + '</td>';
+        }
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+  }
+  return html;
+}
+
+// 印刷対象ステータス（この順で並べる）。
+var PRINT_STATUS_ORDER = ['完成時', 'AG前', 'エイジング途中', 'エイジング後'];
+
+// 機番内の記録から、印刷対象ステータスごとの最終版（最新1件）を拾う。
+// recsは_loadHistory()の並び（新しい順）を前提とするので、先に見つかった方が最新。
+function _pickPrintRecords(recs) {
+  var out = [], i, j, t, found;
+  for (i = 0; i < PRINT_STATUS_ORDER.length; i++) {
+    t = PRINT_STATUS_ORDER[i];
+    found = null;
+    for (j = 0; j < recs.length; j++) {
+      if ((recs[j].status || '') === t) { found = recs[j]; break; }
+    }
+    if (found) out.push(found);
+  }
+  return out;
+}
+
+// 印刷プレビュー画面を開く（機番の各ステータス最終版をA4ページとして並べる）
+// 1ステータス分の結果を、相・項目をまとめたコンパクトな1テーブルに凝縮（印刷用）
+function _compactStatusTableHtml(rec) {
+  var phNames = { u:'U相', v:'V相', w:'W相' };
+  var phColors= { u:'hr-ph-u', v:'hr-ph-v', w:'hr-ph-w' };
+  var rows2 = [['ON','on'],['OFF','off'],['差数','diff']];
+  var html = '<table class="pp-ctbl"><thead><tr>'
+           + '<th class="pp-ctbl-ph"></th><th></th><th>B</th><th>A</th><th>R</th>'
+           + '</tr></thead><tbody>';
+  var pi, ph, ri, row, ci, col, dv, cls, dNum;
+  for (pi = 0; pi < PHASES.length; pi++) {
+    ph = PHASES[pi];
+    for (ri = 0; ri < rows2.length; ri++) {
+      row = rows2[ri];
+      html += '<tr>';
+      if (ri === 0) html += '<td class="pp-ctbl-ph ' + phColors[ph] + '" rowspan="3">' + phNames[ph] + '</td>';
+      html += '<td class="lbl">' + row[0] + '</td>';
+      for (ci = 0; ci < COLS.length; ci++) {
+        col = COLS[ci];
+        dv  = rec.phases && rec.phases[ph] && rec.phases[ph][col] ? rec.phases[ph][col][row[1]] : '';
+        if (row[1] === 'diff' && dv !== '') {
+          dNum = parseFloat(dv);
+          cls = dNum >= 1.83 && dNum <= 1.97 ? 'diff-ok'
+              : dNum >= 1.80 && dNum <= 2.00 ? 'diff-warn'
+              : 'diff-ng';
+          html += '<td class="' + cls + '">' + _esc(dv) + '</td>';
+        } else {
+          html += '<td>' + _esc(dv || '—') + '</td>';
+        }
+      }
+      html += '</tr>';
+    }
+  }
+  html += '</tbody></table>';
+  return html;
+}
+
+function openPrintPreview(kiban) {
+  var arr = _loadHistory(), recs = [], i;
+  for (i = 0; i < arr.length; i++) {
+    if ((arr[i].kiban || '未入力') === kiban) recs.push(arr[i]);
+  }
+  var targets = _pickPrintRecords(recs);
+  if (!targets.length) { showToast('印刷できる記録がないです'); return; }
+  var numOf = _statusOrdinals(recs); // targetsはrecsと同じオブジェクト参照（最終版＝そのステータスの最大回数）
+
+  var html = '<div class="pp-toolbar">'
+           +   '<button class="pp-close-btn" onclick="closePrintPreview()">← 閉じる</button>'
+           +   '<span class="pp-toolbar-info">機番 ' + _esc(kiban) + '　' + targets.length + '件（1枚に集約）</span>'
+           +   '<button class="pp-print-btn" onclick="window.print()">🖨 印刷する（PDFで保存も可）</button>'
+           + '</div><div class="pp-pages">';
+
+  html += '<div class="pp-page pp-page-compact">'
+        +   '<h2 class="pp-title">三相測定結果　機番 ' + _esc(kiban) + '</h2>'
+        +   '<div class="pp-grid">';
+  for (i = 0; i < targets.length; i++) {
+    var r = targets[i], ord = numOf[recs.indexOf(r)];
+    html += '<div class="pp-block">'
+          +   '<div class="pp-block-hd">' + _esc(r.status || '') + '（' + ord + '回目）　　' + _esc(r.date || '') + (r.pendingSync ? '　（未同期）' : '') + '</div>'
+          +   _compactStatusTableHtml(r)
+          + '</div>';
+  }
+  html +=   '</div>'
+        + '</div>';
+  html += '</div>';
+  var pv = document.getElementById('printPreview');
+  pv.innerHTML = html;
+  pv.classList.add('show');
+}
+
+function closePrintPreview() {
+  var pv = document.getElementById('printPreview');
+  pv.classList.remove('show');
+  pv.innerHTML = '';
+}
+
+// 詳細エリア描画：選択機番の各ステータスを縦に並べて表示
+// recs（新しい順の配列）を受け取り、各要素が「そのステータスで何回目の測定か」を
+// 同じ添字の配列で返す（一番古い記録＝1回目、以降その状態で保存するたびに+1）。
+function _statusOrdinals(recs) {
+  var count = {}, numOf = [], si, stt;
+  for (si = recs.length - 1; si >= 0; si--) {
+    stt = recs[si].status || '';
+    count[stt] = (count[stt] || 0) + 1;
+    numOf[si] = count[stt];
+  }
+  return numOf;
+}
+
+function _renderDetail(kiban) {
+  var arr = _loadHistory();
+  var recs = [], i;
+  for (i = 0; i < arr.length; i++) {
+    if ((arr[i].kiban || '未入力') === kiban) recs.push(arr[i]);
+  }
+  var detail = document.getElementById('histDetail');
+  if (!recs.length) {
+    detail.innerHTML = '<div class="hist-detail-empty">←機番を選択</div>';
+    return;
+  }
+  var html = '<div class="hist-detail-hd">'
+           +   '<span class="hist-detail-memo">機番 ' + _esc(kiban) + '</span>'
+           +   '<button class="hist-print-btn" id="histPrintBtn">🖨 印刷用紙</button>'
+           + '</div>';
+
+  // 同じステータスで何回測定したかを番号付け（recsは新しい順なので、古い方から1回目とする）
+  var numOf = _statusOrdinals(recs);
+
+  var r, si;
+  for (si = 0; si < recs.length; si++) {
+    r = recs[si];
+    html += '<div class="hist-rec">';
+    html += '<div class="hist-rec-hd">'
+          +   '<span class="hist-rec-status">' + _esc(r.status || '（状態なし）') + '　' + numOf[si] + '回目</span>'
+          +   (r.pendingSync ? '<span class="hist-rec-pend">未同期</span>' : '')
+          +   '<span class="hist-rec-date">' + _esc(r.date) + '</span>'
+          +   '<button class="hist-rec-del">×</button>'
+          + '</div>';
+    // 同じステータスで1つ古い記録（recsは新しい順なので、後ろ方向に探す）
+    var prevSame = null, pj;
+    for (pj = si + 1; pj < recs.length; pj++) {
+      if ((recs[pj].status || '') === (r.status || '')) { prevSame = recs[pj]; break; }
+    }
+    html += _phaseTablesHtml(r, prevSame);
+    html += '</div>';
+  }
+
+  detail.innerHTML = html;
+
+  var pbtn = document.getElementById('histPrintBtn');
+  if (pbtn) pbtn.onclick = function() { openPrintPreview(kiban); };
+
+  // 各ステータスの×削除（合成clickの二重発火は _delTouchAt でガード。
+  // 起点時刻は confirm 終了後に取り直す＝ログ削除バグと同じ対策）
+  var dels = detail.getElementsByClassName('hist-rec-del');
+  var k;
+  for (k = 0; k < dels.length; k++) {
+    (function(rec) {
+      dels[k].ontouchend = function(e) {
+        e.preventDefault(); e.stopPropagation();
+        _deleteRecord(rec, kiban);
+        _delTouchAt = Date.now();
+      };
+      dels[k].onclick = function(e) {
+        e.stopPropagation();
+        if (Date.now() - _delTouchAt < 1500) return;
+        _deleteRecord(rec, kiban);
+      };
+    })(recs[k]);
+  }
+}
+
+function _esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ===== SW登録 =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('meas_sw.js').catch(function() {});
+}
+
+// ===== オンライン復帰時に未同期分を自動送信 =====
+window.addEventListener('online', function() {
+  _notify('オンラインになったです');
+  _flushPendingSync();
+});
+if (navigator.onLine) { _flushPendingSync(); } // 起動時点で繋がっていれば溜まってる分を送る
+
+// ===== 初期化 =====
+window.onload = function() {
+  var i, allInputs, btns;
+
+  // ① 入力欄を起動時にキャッシュ（meas-in クラスのみ）
+  allInputs = document.getElementsByTagName('input');
+  for (i = 0; i < allInputs.length; i++) {
+    if (allInputs[i].getAttribute('data-ph')) {
+      _inputs.push(allInputs[i]);
+    }
+  }
+
+  // ② 入力欄フォーカス管理（キーパッド廃止・端末のキーボードで直接入力）
+  for (i = 0; i < _inputs.length; i++) {
+    _inputs[i].onfocus = (function(inp) {
+      return function() { focusInp(inp); };
+    })(_inputs[i]);
+    _inputs[i].onblur = (function(inp) {
+      return function() { blurInp(inp); };
+    })(_inputs[i]);
+    // Enterキー（ソフトキーボードの「次へ」／物理キーボード共通）で次の欄へ
+    _inputs[i].onkeydown = (function(inp) {
+      return function(e) { if (e.key === 'Enter') { e.preventDefault(); _measEnter(inp); } };
+    })(_inputs[i]);
+  }
+
+  // ×ボタン → 1.5秒長押しで削除（誤タップ防止）
+  btns = document.getElementsByTagName('button');
+  for (i = 0; i < btns.length; i++) {
+    if (btns[i].getAttribute('data-clear')) {
+      (function(btn) {
+        var id = btn.getAttribute('data-clear');
+        var ph = btn.getAttribute('data-ph');
+        var holdTimer = null;
+        function startHold(e) {
+          e.preventDefault();
+          if (holdTimer) clearTimeout(holdTimer);
+          holdTimer = setTimeout(function() {
+            holdTimer = null;
+            clearOne(id, ph);
+          }, 1500);
+        }
+        function cancelHold(e) {
+          if (e) e.preventDefault();
+          if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+        }
+        btn.ontouchstart  = startHold;
+        btn.ontouchend    = cancelHold;
+        btn.ontouchcancel = cancelHold;
+        btn.onmousedown   = startHold;
+        btn.onmouseup     = cancelHold;
+        btn.onmouseleave  = cancelHold;
+        btn.onclick       = function(e) { e.preventDefault(); };
+      })(btns[i]);
+    }
+    // CLRボタン → 1.5秒長押しで列クリア（誤タップ防止）
+    if (btns[i].getAttribute('data-colclear')) {
+      (function(btn) {
+        var col = btn.getAttribute('data-colclear');
+        var ph  = btn.getAttribute('data-ph');
+        var holdTimer = null;
+        function startHold(e) {
+          e.preventDefault();
+          if (holdTimer) clearTimeout(holdTimer);
+          holdTimer = setTimeout(function() {
+            holdTimer = null;
+            clearCol(ph, col);
+          }, 1500);
+        }
+        function cancelHold(e) {
+          if (e) e.preventDefault();
+          if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+        }
+        btn.ontouchstart  = startHold;
+        btn.ontouchend    = cancelHold;
+        btn.ontouchcancel = cancelHold;
+        btn.onmousedown   = startHold;
+        btn.onmouseup     = cancelHold;
+        btn.onmouseleave  = cancelHold;
+        btn.onclick       = function(e) { e.preventDefault(); };
+      })(btns[i]);
+    }
+  }
+
+  // 機番入力欄：Enterキーで「測定開始／機番更新」を実行
+  document.getElementById('kibanInput').onkeydown = function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); applySetup(); }
+  };
+
+  // 状態選択ボタン（委譲）
+  var srow = document.getElementById('statusRow');
+  srow.ontouchend = function(e) {
+    var b = e.target;
+    if (b.tagName === 'BUTTON') {
+      e.preventDefault();
+      _saveStatus = b.getAttribute('data-status');
+      _refreshStatusRow();
+    }
+  };
+  srow.onclick = function(e) {
+    var b = e.target;
+    if (b.tagName === 'BUTTON') {
+      _saveStatus = b.getAttribute('data-status');
+      _refreshStatusRow();
+    }
+  };
+
+  // 起動時：機番・ステータス入力を必須で表示（測定欄はロック）
+  initSidebar();
+};
+</script>
+</body>
+</html>
