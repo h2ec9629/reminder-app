@@ -57,7 +57,8 @@
     },
     "kiban": "007",
     "status": "完成時",
-    "pendingSync": true
+    "pendingSync": true,
+    "recordFile": "records/007/完成時_1.json"
   },
   {
     "date": "2026/09/30 11:32",
@@ -117,7 +118,7 @@
     },
     "kiban": "007",
     "status": "完成時",
-    "pendingSync": true,
+    "pendingSync": false,
     "recordFile": "records/007/完成時.json"
   },
   {
