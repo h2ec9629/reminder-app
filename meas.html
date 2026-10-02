@@ -54,23 +54,22 @@
       border-radius: 12px;
       overflow: hidden;
     }
-    .phase-hd { font-size: 16px; font-weight: 700; padding: 9px 12px; border-bottom: 2px solid currentColor; }
+    .phase-hd { font-size: 13px; font-weight: 700; padding: 7px 10px; border-bottom: 2px solid currentColor; }
     .th-u { color: #FFEB3B; }
     .th-v { color: #69d469; }
     .th-w { color: #5bc8ff; }
 
     /* ===== TABLE ===== */
-    .meas-tbl { width: 100%; border-collapse: collapse; font-size: 17px; table-layout: fixed; }
+    .meas-tbl { width: 100%; border-collapse: collapse; font-size: 15px; table-layout: fixed; }
     .meas-tbl th {
-      padding: 7px 8px; text-align: left;
+      padding: 5px 6px; text-align: left;
       color: var(--text-sub); font-weight: 600;
       border-bottom: 1px solid var(--border);
       background: var(--bg-2);
-      font-size: 14px;
     }
-    .meas-tbl td { padding: 7px 6px; text-align: center; border-bottom: 1px solid var(--border); }
+    .meas-tbl td { padding: 4px 5px; text-align: center; border-bottom: 1px solid var(--border); }
     .meas-tbl tr:last-child td { border-bottom: none; }
-    .col-lbl { text-align: left !important; color: var(--text-sub); font-size: 14px; white-space: nowrap; width: 14%; padding: 5px 4px !important; }
+    .col-lbl { text-align: left !important; color: var(--text-sub); font-size: 14px; white-space: nowrap; width: 14%; padding: 4px 3px !important; }
 
     /* ===== INPUT CELL ===== */
     .meas-td-wrap {
@@ -86,8 +85,8 @@
       -webkit-flex-shrink: 0; flex-shrink: 0;
       background: none; border: none;
       border-left: 1px solid var(--border);
-      color: #D97757; font-size: 22px;
-      cursor: pointer; padding: 8px 12px;
+      color: #D97757; font-size: 21px;
+      cursor: pointer; padding: 6px 11px;
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-align-items: center; align-items: center;
     }
@@ -95,7 +94,7 @@
     .meas-in {
       width: 100%; border: 1px solid var(--border); border-radius: 4px;
       background: var(--surface-2); color: var(--text);
-      font-size: 18px; padding: 8px 6px;
+      font-size: 16px; padding: 5px 3px;
       text-align: right; font-family: inherit;
       -webkit-appearance: none; appearance: none; outline: none;
     }
@@ -108,8 +107,8 @@
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-align-items: center; align-items: center;
       -webkit-justify-content: flex-end; justify-content: flex-end;
-      min-width: 40px; padding: 0 5px;
-      font-size: 17px; color: #7FB3FF;
+      min-width: 38px; padding: 0 4px;
+      font-size: 16px; color: #7FB3FF;
       background: var(--bg-2); border-right: 1px solid var(--border);
     }
     .meas-prev:empty { display: none; }
@@ -118,28 +117,35 @@
     .meas-header {
       position: -webkit-sticky; position: sticky; top: 0; z-index: 50;
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; padding: 8px 12px; margin-bottom: 9px;
+      border-radius: 10px; padding: 7px 10px; margin-bottom: 10px;
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-flex-wrap: wrap; flex-wrap: wrap;
       -webkit-align-items: baseline; align-items: baseline;
     }
     .mh-cur  {
-      font-family: inherit; font-size: 15px; font-weight: 700;
+      font-family: inherit; font-size: 14px; font-weight: 700;
       color: var(--accent); background: var(--surface-2);
       border: 1px solid var(--border); border-radius: 8px;
-      padding: 5px 12px; cursor: pointer;
+      padding: 3px 10px; cursor: pointer;
     }
+    .kiban-notice {
+      text-align: center; padding: 22px 10px; margin-bottom: 14px;
+      background: var(--surface); border: 2px solid #FF5252; border-radius: 12px;
+    }
+    .kiban-notice.hide { display: none; }
+    .kiban-notice-t1 { font-size: 30px; font-weight: 800; color: #FF5252; line-height: 1.3; }
+    .kiban-notice-t2 { font-size: 20px; font-weight: 700; color: var(--text); margin-top: 8px; line-height: 1.4; }
     .mh-cur::after { content: ' ✎'; font-weight: 400; color: var(--text-sub); }
     .mh-cur:active { background: var(--surface); }
-    .mh-prev { font-size: 14px; color: #7FB3FF; }
+    .mh-prev { font-size: 13px; color: #7FB3FF; }
     .mh-prev::before { content: '｜'; margin: 0 8px; color: var(--text-faint); font-weight: 400; }
 
     /* ===== DIFF CELL ===== */
-    .meas-diff { font-weight: 700; font-size: 16px; line-height: 1.2; vertical-align: middle; padding: 4px; }
+    .meas-diff { font-weight: 700; font-size: 14px; line-height: 1.1; vertical-align: middle; padding: 3px; }
     .d-num { display: block; }
-    .d-lbl { display: block; font-size: 14px; font-weight: 600; }
+    .d-lbl { display: block; font-size: 13px; font-weight: 600; }
     .meas-diff.judge-first { position: relative; }
-    .meas-diff.judge-first::before { content: "判定"; position: absolute; left: 4px; top: 4px; font-size: 11px; font-weight: 600; color: var(--text-sub); }
+    .meas-diff.judge-first::before { content: "判定"; position: absolute; left: 3px; top: 3px; font-size: 10px; font-weight: 600; color: var(--text-sub); }
 
     /* ===== COL HEADER ===== */
     .col-hd-wrap {
@@ -150,7 +156,7 @@
     .col-reset {
       background: none; border: 1px solid var(--border);
       border-radius: 4px; color: #D97757;
-      font-size: 13px; padding: 3px 6px;
+      font-size: 12px; padding: 2px 5px;
       cursor: pointer; font-family: inherit;
     }
 
@@ -175,51 +181,51 @@
       background: var(--surface);
       border-right: 2px solid var(--accent);
       z-index: 200;
-      padding: 12px 9px;
+      padding: 12px 8px;
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-flex-direction: column; flex-direction: column;
-      gap: 8px;
+      gap: 7px;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
     .bb-kiban {
-      font-size: 13px; font-weight: 700; color: var(--accent);
+      font-size: 12px; font-weight: 700; color: var(--accent);
       word-break: break-all;
     }
     .bb-kiban-row {
       display: -webkit-box; display: -webkit-flex; display: flex;
       -webkit-flex-direction: column; flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
-    .bb-kiban-lbl { font-size: 12px; color: var(--text-sub); font-weight: 600; }
+    .bb-kiban-lbl { font-size: 11px; color: var(--text-sub); font-weight: 600; }
     .bb-kiban-input {
       width: 100%;
       background: var(--surface-2); border: 1px solid var(--accent);
       border-radius: 6px; color: #FFB899;
       font-size: 16px; font-weight: 700;
-      padding: 7px 8px; text-align: right;
+      padding: 6px 8px; text-align: right;
       font-family: inherit; outline: none;
       -webkit-appearance: none; appearance: none;
     }
     .bb-status-row {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
     }
     .bb-status-btn {
       background: var(--surface-2); border: 1px solid var(--border);
-      color: var(--text-sub); font-size: 12px; font-weight: 700;
-      padding: 9px 3px; border-radius: 6px;
+      color: var(--text-sub); font-size: 11px; font-weight: 700;
+      padding: 7px 2px; border-radius: 6px;
       cursor: pointer; font-family: inherit; text-align: center;
       -webkit-tap-highlight-color: transparent;
     }
     .bb-status-btn.sel { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .bb-divider { height: 1px; background: var(--border); margin: 3px 0; }
+    .bb-divider { height: 1px; background: var(--border); margin: 2px 0; }
     .bb-btn {
       width: 100%;
       background: var(--surface-2); border: 1px solid var(--border);
-      color: var(--text-sub); font-size: 15px; font-weight: 700;
+      color: var(--text-sub); font-size: 14px; font-weight: 700;
       border-radius: 8px; cursor: pointer; font-family: inherit;
       text-align: center; line-height: 1;
-      padding: 15px 8px;
+      padding: 13px 8px;
       -webkit-tap-highlight-color: transparent;
     }
     .bb-btn:active { background: var(--border); }
@@ -340,6 +346,7 @@
     .hr-tbl td.diff-ok  { color: #4ADE80; font-weight: 700; }
     .hr-tbl td.diff-warn { color: #fff; font-weight: 700; }
     .hr-tbl td.diff-ng  { color: #ff9800; font-weight: 700; }
+    .hr-tbl td.same-prev { color: #4FC3F7; }
     .hr-ph-hd { font-size: 12px; font-weight: 700; padding: 6px 2px 3px; }
     .hr-ph-u  { color: #FFEB3B; }
     .hr-ph-v  { color: #69d469; }
@@ -481,6 +488,12 @@
   <div class="meas-header" id="measHeader">
     <button class="mh-cur" id="mhCur" type="button" onclick="reopenSetup()">機番未設定</button>
     <div class="mh-prev" id="mhPrev">前回値: —</div>
+  </div>
+
+  <!-- 機番未設定の案内（機番確定で非表示） -->
+  <div class="kiban-notice" id="kibanNotice">
+    <div class="kiban-notice-t1">機番未設定です</div>
+    <div class="kiban-notice-t2">左上の設定欄に機番を入力してください</div>
   </div>
 
   <!-- U相 -->
@@ -682,24 +695,6 @@ function blurInp(inp) {
   if (_padTarget === inp) _padTarget = null;
   var ph = inp.getAttribute('data-ph');
   if (ph) measCalc(ph);
-}
-
-// 数字を打つと自動で小数点が挿入される（末尾2桁が小数部）
-// 例：「1」→0.01 「12」→0.12 「123」→1.23 「-123」→-1.23
-function autoDecimalMeas(inp) {
-  var raw = inp.value;
-  var neg = raw.indexOf('-') >= 0;
-  var digits = raw.replace(/[^0-9]/g, '');
-  digits = digits.replace(/^0+(?=\d)/, ''); // 先頭の余分な0は削る
-  var formatted;
-  if (digits === '') {
-    formatted = neg ? '-' : '';
-  } else if (digits.length <= 2) {
-    formatted = (neg ? '-' : '') + '0.' + ('00' + digits).slice(-2);
-  } else {
-    formatted = (neg ? '-' : '') + digits.slice(0, digits.length - 2) + '.' + digits.slice(-2);
-  }
-  inp.value = formatted;
 }
 
 // Enterキーで次の測定欄へ（ソフトキーボードの「次へ」／物理キーボード共通）
@@ -1430,6 +1425,7 @@ function initSidebar() {
   _refreshStatusRow();
   document.getElementById('kibanInput').value = '';
   document.getElementById('applyBtn').textContent = '測定開始';
+  _updateKibanNotice();
 }
 
 function _refreshStatusRow() {
@@ -1467,6 +1463,14 @@ function _updateKibanBadge() {
   var el = document.getElementById('activeKibanBadge');
   if (!el) return;
   el.textContent = _setupDone ? ('機番 ' + _saveRaw + ' / ' + _saveStatus) : '機番未設定';
+  _updateKibanNotice();
+}
+
+// 機番未設定の間だけ入力画面に案内を表示
+function _updateKibanNotice() {
+  var n = document.getElementById('kibanNotice');
+  if (!n) return;
+  n.className = _setupDone ? 'kiban-notice hide' : 'kiban-notice';
 }
 
 // ===== 前回値（前段ステータス）の参照表示 =====
@@ -1863,10 +1867,12 @@ function _deleteRecord(rec, kiban) {
 }
 
 // 相ごとの結果テーブルHTML生成（詳細画面・印刷プレビュー共用）
-function _phaseTablesHtml(rec) {
+// prevRec = 同じステータスの1つ前の記録（無ければnull＝1回目）。
+// 2回目以降で、ON/OFFの値が前回と同じ（〇引き継ぎ含む）なら水色クラスを付ける。
+function _phaseTablesHtml(rec, prevRec) {
   var phNames = { u:'U相', v:'V相', w:'W相' };
   var phColors= { u:'hr-ph-u', v:'hr-ph-v', w:'hr-ph-w' };
-  var html = '', pi, ph, ci, col, ri, row, dv, cls, dNum, rows2;
+  var html = '', pi, ph, ci, col, ri, row, dv, cls, dNum, rows2, pv, sv, sp;
   for (pi = 0; pi < PHASES.length; pi++) {
     ph = PHASES[pi];
     html += '<div class="hr-ph-hd ' + phColors[ph] + '">' + phNames[ph] + '</div>';
@@ -1887,7 +1893,13 @@ function _phaseTablesHtml(rec) {
               : 'diff-ng';
           html += '<td class="' + cls + '">' + _esc(dv) + '</td>';
         } else {
-          html += '<td>' + _esc(dv || '—') + '</td>';
+          sp = '';
+          if (prevRec && dv !== '' && dv != null) {
+            pv = prevRec.phases && prevRec.phases[ph] && prevRec.phases[ph][col] ? prevRec.phases[ph][col][row[1]] : '';
+            sv = _stripMaru(dv);
+            if (pv !== '' && pv != null && sv !== '' && sv === _stripMaru(pv)) sp = ' class="same-prev"';
+          }
+          html += '<td' + sp + '>' + _esc(dv || '—') + '</td>';
         }
       }
       html += '</tr>';
@@ -1897,9 +1909,8 @@ function _phaseTablesHtml(rec) {
   return html;
 }
 
-// 印刷対象ステータス（この順で並べる）。「出荷前」は現行のステータスボタンには無いが、
-// 過去データ（旧運用）に残っている場合のみ拾って印刷対象に含める。
-var PRINT_STATUS_ORDER = ['完成時', '出荷前', 'AG前', 'エイジング後'];
+// 印刷対象ステータス（この順で並べる）。
+var PRINT_STATUS_ORDER = ['完成時', 'AG前', 'エイジング途中', 'エイジング後'];
 
 // 機番内の記録から、印刷対象ステータスごとの最終版（最新1件）を拾う。
 // recsは_loadHistory()の並び（新しい順）を前提とするので、先に見つかった方が最新。
@@ -2034,7 +2045,12 @@ function _renderDetail(kiban) {
           +   '<span class="hist-rec-date">' + _esc(r.date) + '</span>'
           +   '<button class="hist-rec-del">×</button>'
           + '</div>';
-    html += _phaseTablesHtml(r);
+    // 同じステータスで1つ古い記録（recsは新しい順なので、後ろ方向に探す）
+    var prevSame = null, pj;
+    for (pj = si + 1; pj < recs.length; pj++) {
+      if ((recs[pj].status || '') === (r.status || '')) { prevSame = recs[pj]; break; }
+    }
+    html += _phaseTablesHtml(r, prevSame);
     html += '</div>';
   }
 
@@ -2102,10 +2118,6 @@ window.onload = function() {
     // Enterキー（ソフトキーボードの「次へ」／物理キーボード共通）で次の欄へ
     _inputs[i].onkeydown = (function(inp) {
       return function(e) { if (e.key === 'Enter') { e.preventDefault(); _measEnter(inp); } };
-    })(_inputs[i]);
-    // 入力のたびに末尾2桁を小数部として自動で「.」を挿入
-    _inputs[i].oninput = (function(inp) {
-      return function() { autoDecimalMeas(inp); };
     })(_inputs[i]);
   }
 
