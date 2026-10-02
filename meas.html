@@ -218,7 +218,8 @@
       -webkit-tap-highlight-color: transparent;
     }
     .bb-status-btn.sel { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .bb-divider { height: 1px; background: var(--border); margin: 2px 0; }
+    /* 区切り線以降（SAVE/LOG/リセット/オプション）はサイドバー下部に詰める */
+    .bb-divider { height: 1px; background: var(--border); margin: auto 0 2px; -webkit-flex-shrink: 0; flex-shrink: 0; }
     .bb-btn {
       width: 100%;
       background: var(--surface-2); border: 1px solid var(--border);
