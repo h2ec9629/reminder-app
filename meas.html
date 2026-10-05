@@ -222,9 +222,10 @@
     }
     .num-keypad.show { display: block; }
     body.kp-open .main { padding-bottom: 300px; }
-    .nk-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .nk-grid { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin: -3px; }
     .nk-key {
       background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+      width: calc(25% - 6px); margin: 3px; box-sizing: border-box;
       font-size: 22px; font-weight: 700; padding: 12px 0; border-radius: 8px;
       cursor: pointer; font-family: inherit; text-align: center;
       -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
@@ -232,8 +233,9 @@
     .nk-key:active { background: var(--accent); color: #fff; }
     .nk-key.nk-fn { font-size: 14px; color: var(--text-sub); }
     .nk-key.nk-next { background: var(--accent); border-color: var(--accent); color: #fff; font-size: 15px; }
-    .kp-mode-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-bottom: 4px; }
+    .kp-mode-row { display: -webkit-box; display: -webkit-flex; display: flex; margin: 0 -2px 4px; }
     .kp-mode-btn {
+      -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; margin: 0 2px;
       background: var(--surface-2); border: 1px solid var(--border); color: var(--text-sub);
       font-size: 12px; font-weight: 700; padding: 8px 2px; border-radius: 6px;
       cursor: pointer; font-family: inherit; text-align: center;
@@ -423,7 +425,7 @@
     /* ===== 印刷プレビュー（A4紙面） ===== */
     .print-preview {
       display: none;
-      position: fixed; inset: 0; z-index: 500;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 500;
       background: #3a3632; overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
@@ -655,8 +657,8 @@
     <button class="nk-key" data-k="2">2</button>
     <button class="nk-key" data-k="3">3</button>
     <button class="nk-key nk-fn" data-k="CLOSE">閉じる</button>
-    <button class="nk-key" data-k="0" style="grid-column: span 2;">0</button>
-    <button class="nk-key nk-next" data-k="NEXT" style="grid-column: span 2;">次へ ▶</button>
+    <button class="nk-key" data-k="0" style="width: calc(50% - 6px);">0</button>
+    <button class="nk-key nk-next" data-k="NEXT" style="width: calc(50% - 6px);">次へ ▶</button>
   </div>
 </div>
 
@@ -715,11 +717,18 @@ var _padTarget = null; // 現在フォーカス中の測定欄（ハイライト
 var _inputs    = [];  // ① 起動時にキャッシュ
 
 // 測定欄・機番欄を丸ごとロック／解除（機番・ステータス確定前は測定欄に触れない）
+var _measLocked = true; // 機番・ステータス確定前はtrue
 function _lockMeasInputs(lock) {
-  var i;
+  _measLocked = !!lock;
+  _syncReadonly();
+}
+// キーパッド使用中は端末標準キーボードを出さないため readonly を付けたままにする
+// （値の編集はキーパッドが直接行うので入力はできる。inputmode="none"非対応のiOS対策）
+function _syncReadonly() {
+  var i, ro = _measLocked || _keypadEnabled();
   for (i = 0; i < _inputs.length; i++) {
-    if (lock) _inputs[i].setAttribute('readonly', 'readonly');
-    else      _inputs[i].removeAttribute('readonly');
+    if (ro) _inputs[i].setAttribute('readonly', 'readonly');
+    else    _inputs[i].removeAttribute('readonly');
   }
 }
 
@@ -727,8 +736,13 @@ function _lockMeasInputs(lock) {
 // 設定は ojisan_mailbox_cfg_v1 の keypadMode（'auto' | 'on' | 'off'）に保存。
 function _detectTouchDevice() {
   try {
-    if (window.matchMedia) return window.matchMedia('(pointer: coarse)').matches;
-    return (navigator.maxTouchPoints || 0) > 0;
+    var mm = window.matchMedia, ua = navigator.userAgent || '';
+    var hasPointerMQ = !!(mm && mm('(pointer)').matches);   // 古いiPad(iOS9等)はこの機能自体が未対応
+    if (hasPointerMQ && mm('(pointer: coarse)').matches) return true;
+    if (/iPad|iPhone|iPod|Android/i.test(ua)) return true;
+    if (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1) return true; // iPadOS（デスクトップ表示UA）
+    if (!hasPointerMQ) return ('ontouchstart' in window);    // 判定できない古い端末はタッチ有無で
+    return false;
   } catch (e) { return false; }
 }
 function _getKeypadMode() { return _getMeasCfg().keypadMode || 'auto'; }
@@ -748,6 +762,7 @@ function setKeypadMode(mode) {
 function _applyKeypadMode() {
   var on = _keypadEnabled(), i, btns, m = _getKeypadMode();
   for (i = 0; i < _inputs.length; i++) _inputs[i].setAttribute('inputmode', on ? 'none' : 'decimal');
+  _syncReadonly();
   if (!on) _hideKeypad();
   btns = document.getElementById('kpModeRow').getElementsByTagName('button');
   for (i = 0; i < btns.length; i++) {
@@ -799,7 +814,7 @@ function focusInp(inp) {
   }
   _padTarget = inp;
   if (inp.className.indexOf('active-inp') < 0) inp.className += ' active-inp';
-  if (_keypadEnabled() && !inp.readOnly) _showKeypad();
+  if (_keypadEnabled() && !_measLocked) _showKeypad();
 }
 
 // 測定欄フォーカスが外れた時：ハイライト解除＋判定計算（キーパッドは別の測定欄へ移る時は残す）
