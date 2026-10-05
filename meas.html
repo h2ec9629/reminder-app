@@ -128,13 +128,6 @@
       border: 1px solid var(--border); border-radius: 8px;
       padding: 3px 10px; cursor: pointer;
     }
-    .kiban-notice {
-      text-align: center; padding: 22px 10px; margin-bottom: 14px;
-      background: var(--surface); border: 2px solid #FF5252; border-radius: 12px;
-    }
-    .kiban-notice.hide { display: none; }
-    .kiban-notice-t1 { font-size: 30px; font-weight: 800; color: #FF5252; line-height: 1.3; }
-    .kiban-notice-t2 { font-size: 20px; font-weight: 700; color: var(--text); margin-top: 8px; line-height: 1.4; }
     .mh-cur::after { content: ' ✎'; font-weight: 400; color: var(--text-sub); }
     .mh-cur:active { background: var(--surface); }
     .mh-prev { font-size: 13px; color: #7FB3FF; }
@@ -218,8 +211,34 @@
       -webkit-tap-highlight-color: transparent;
     }
     .bb-status-btn.sel { background: var(--accent); border-color: var(--accent); color: #fff; }
-    /* 区切り線以降（SAVE/LOG/リセット/オプション）はサイドバー下部に詰める */
-    .bb-divider { height: 1px; background: var(--border); margin: auto 0 2px; -webkit-flex-shrink: 0; flex-shrink: 0; }
+    .bb-divider { height: 1px; background: var(--border); margin: 2px 0; }
+
+    /* ===== 画面キーパッド（タッチ端末のみ表示） ===== */
+    .num-keypad {
+      display: none;
+      position: fixed; left: var(--side-w); right: 0; bottom: 0; z-index: 300;
+      background: var(--surface); border-top: 2px solid var(--accent);
+      padding: 6px 8px 8px;
+    }
+    .num-keypad.show { display: block; }
+    body.kp-open .main { padding-bottom: 300px; }
+    .nk-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .nk-key {
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+      font-size: 22px; font-weight: 700; padding: 12px 0; border-radius: 8px;
+      cursor: pointer; font-family: inherit; text-align: center;
+      -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
+    }
+    .nk-key:active { background: var(--accent); color: #fff; }
+    .nk-key.nk-fn { font-size: 14px; color: var(--text-sub); }
+    .nk-key.nk-next { background: var(--accent); border-color: var(--accent); color: #fff; font-size: 15px; }
+    .kp-mode-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-bottom: 4px; }
+    .kp-mode-btn {
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--text-sub);
+      font-size: 12px; font-weight: 700; padding: 8px 2px; border-radius: 6px;
+      cursor: pointer; font-family: inherit; text-align: center;
+    }
+    .kp-mode-btn.sel { background: var(--accent); border-color: var(--accent); color: #fff; }
     .bb-btn {
       width: 100%;
       background: var(--surface-2); border: 1px solid var(--border);
@@ -347,7 +366,6 @@
     .hr-tbl td.diff-ok  { color: #4ADE80; font-weight: 700; }
     .hr-tbl td.diff-warn { color: #fff; font-weight: 700; }
     .hr-tbl td.diff-ng  { color: #ff9800; font-weight: 700; }
-    .hr-tbl td.same-prev { color: #4FC3F7; }
     .hr-ph-hd { font-size: 12px; font-weight: 700; padding: 6px 2px 3px; }
     .hr-ph-u  { color: #FFEB3B; }
     .hr-ph-v  { color: #69d469; }
@@ -491,12 +509,6 @@
     <div class="mh-prev" id="mhPrev">前回値: —</div>
   </div>
 
-  <!-- 機番未設定の案内（機番確定で非表示） -->
-  <div class="kiban-notice" id="kibanNotice">
-    <div class="kiban-notice-t1">機番未設定です</div>
-    <div class="kiban-notice-t2">左上の設定欄に機番を入力してください</div>
-  </div>
-
   <!-- U相 -->
   <div class="phase-block">
     <div class="phase-hd th-u">U相</div>
@@ -628,9 +640,39 @@
   <button class="bb-btn" onclick="toggleOptionPanel()">オプション</button>
 </div>
 
+<!-- ===== 画面キーパッド（タッチ端末のみ。ボタンはフォーカスを奪わない） ===== -->
+<div class="num-keypad" id="numKeypad">
+  <div class="nk-grid">
+    <button class="nk-key" data-k="7">7</button>
+    <button class="nk-key" data-k="8">8</button>
+    <button class="nk-key" data-k="9">9</button>
+    <button class="nk-key nk-fn" data-k="BS">⌫</button>
+    <button class="nk-key" data-k="4">4</button>
+    <button class="nk-key" data-k="5">5</button>
+    <button class="nk-key" data-k="6">6</button>
+    <button class="nk-key nk-fn" data-k="C">クリア</button>
+    <button class="nk-key" data-k="1">1</button>
+    <button class="nk-key" data-k="2">2</button>
+    <button class="nk-key" data-k="3">3</button>
+    <button class="nk-key nk-fn" data-k="CLOSE">閉じる</button>
+    <button class="nk-key" data-k="0" style="grid-column: span 2;">0</button>
+    <button class="nk-key nk-next" data-k="NEXT" style="grid-column: span 2;">次へ ▶</button>
+  </div>
+</div>
+
 <!-- ===== オプションパネル（画面下部） ===== -->
 <div class="save-panel" id="optionPanel">
   <div class="save-panel-title">オプション</div>
+  <div class="save-kiban-row" style="margin-bottom:4px;">
+    <span class="save-kiban-label">キーパッド</span>
+    <span id="kpModeInfo" style="font-size:10px;color:var(--text-faint);"></span>
+  </div>
+  <div class="kp-mode-row" id="kpModeRow">
+    <button class="kp-mode-btn" data-mode="auto">自動</button>
+    <button class="kp-mode-btn" data-mode="on">常にON</button>
+    <button class="kp-mode-btn" data-mode="off">常にOFF</button>
+  </div>
+  <div style="font-size:10px;color:var(--text-faint);margin-bottom:10px;">自動＝タブレット／スマホは画面キーパッド、PCは自前のキーボード</div>
   <div style="text-align:center;margin-bottom:10px;">
     <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZoAAAGaAQAAAAAefbjOAAADMklEQVR4nO2c243bOBSGv7Mi4EcKmAKmFKmDlBRsSduBWMoUMID4aIDGnwdSGo03QDBxIt8OH2Tq8kEkRJw7beLLLf3zdQYccsghhxxyyKHHhKy1AMkCNgI2cjIbs7WDmZmNVxmeQztCof4ME0B+AeK7CU4B8osgd6UdANt7eA5dDcpNANiYD7IxByAWSK+FesMsXG94Du0GhfMLw38vCEoQuUfDm/2hNzl0r1AsizERJbPX8tfe5NAtQouMiAIykPr3oGF+KcApiHwQZNhGsm58Tg79ASiZmVkPDG8H2chqUbB4HWZmn6H9hufQ3jLi56HseDTS69GaBLnwTQ7dB4QkiWEGoJOmWDY91bbelSRNNz4nhy6B2jefYoFBzYrUFNWkwjC3gyY6MfiKeHToXEZAlDTRlkU9rI+4jHgWaFkCpfYgSpADVkPZAKnv9Anab3gO7S8jquFA13qagaFKhmY9wGpWuIx4ZGj5yEBTGFVNFKS5a/pj7bkd8fhQ9T4NumLk0EzLNNZr2KB6aoLVS73xOTl0CbTxNZqHEUtzLqpkWLwOTe59PgW0+BoqVJuhxSMAFnezrhKi3Pt8Ami1Iz59/WHjkYI0ezziaaBNNlzJqqUgS/17oNoWdKWaFcPcm9sRTwNVeRBLra+T5q65mx9KJPVdTXzdy5wcukRraO6amqih7NiyGcva2KoT1xoPDX14n6h5l50gGxCFDdPRRA5F5IO8zvLxoTWv0WKW57nPGrCqgUuPWT4DtK2zHHQykQNK32ZseAsYhALxaCL3+w/PoatB8WiQQw1KQA7o39eCpFLLsG1cM+T3MieHfh9qSa5aant0+z7DkvukhSc+Tu9jTg5daFkC0BWlb52Ao0GcsWQAuRbiejziCaA1ir24oDXpPXfbysoqI/CKmWeClj1drRZ7jT1o7kQys6pTxisNz6HdoP/t6Up9h1L/HpSsK1VkAFjdC7rz8By6PjTMJ2N4C2zMSzMzTfmwVNbc25wc+kI739MlEDZMJQgKRiwojV3Zbv+88Tk5dAm01lkCrSBiqZip+zVmWEosPWb5DJDp18+cN/9nMocccsghhxxyCOAHNDg7RXkYZvYAAAAASUVORK5CYII=" alt="アプリURL QRコード" style="width:110px;height:110px;background:#fff;padding:6px;border-radius:8px;">
     <div style="font-size:10px;color:var(--text-faint);margin-top:4px;">h2ec9629.github.io/reminder-app/meas.html</div>
@@ -681,21 +723,92 @@ function _lockMeasInputs(lock) {
   }
 }
 
-// 測定欄フォーカス時：ハイライトのみ（値は端末のキーボードで直接編集）
+// ===== キーパッド有無の切替（PC＝実キーボード／タッチ端末＝画面キーパッド） =====
+// 設定は ojisan_mailbox_cfg_v1 の keypadMode（'auto' | 'on' | 'off'）に保存。
+function _detectTouchDevice() {
+  try {
+    if (window.matchMedia) return window.matchMedia('(pointer: coarse)').matches;
+    return (navigator.maxTouchPoints || 0) > 0;
+  } catch (e) { return false; }
+}
+function _getKeypadMode() { return _getMeasCfg().keypadMode || 'auto'; }
+function _keypadEnabled() {
+  var m = _getKeypadMode();
+  if (m === 'on') return true;
+  if (m === 'off') return false;
+  return _detectTouchDevice();
+}
+function setKeypadMode(mode) {
+  var cfg = _getMeasCfg();
+  cfg.keypadMode = mode;
+  try { localStorage.setItem('ojisan_mailbox_cfg_v1', JSON.stringify(cfg)); } catch (e) {}
+  _applyKeypadMode();
+}
+// キーパッド有効時は inputmode="none" で端末のソフトキーボードを抑止する
+function _applyKeypadMode() {
+  var on = _keypadEnabled(), i, btns, m = _getKeypadMode();
+  for (i = 0; i < _inputs.length; i++) _inputs[i].setAttribute('inputmode', on ? 'none' : 'decimal');
+  if (!on) _hideKeypad();
+  btns = document.getElementById('kpModeRow').getElementsByTagName('button');
+  for (i = 0; i < btns.length; i++) {
+    btns[i].className = 'kp-mode-btn' + (btns[i].getAttribute('data-mode') === m ? ' sel' : '');
+  }
+  document.getElementById('kpModeInfo').textContent =
+    '現在：' + (on ? '画面キーパッド' : '自前キーボード') + (m === 'auto' ? '（自動判定）' : '（手動）');
+}
+function _showKeypad() {
+  document.getElementById('numKeypad').className = 'num-keypad show';
+  document.body.className = (document.body.className + ' kp-open').replace(/^ /,'').replace(/( kp-open)+/,' kp-open');
+  if (_padTarget && _padTarget.scrollIntoView) { try { _padTarget.scrollIntoView({block:'center'}); } catch(e) {} }
+}
+function _hideKeypad() {
+  document.getElementById('numKeypad').className = 'num-keypad';
+  document.body.className = document.body.className.replace(/\s*kp-open/g,'');
+}
+
+// 小数点の自動挿入：数字だけ拾って最大6桁、3桁目以降は「上2桁.残り」に整形（例 8317→83.17）
+function _fmtMeasDigits(d, neg) {
+  var f = d.length <= 2 ? d : d.slice(0, 2) + '.' + d.slice(2);
+  return (neg && f) ? '-' + f : f;
+}
+function _normalizeMeasInput(inp) {
+  var v = inp.value, neg = (v.charAt(0) === '-');
+  var f = _fmtMeasDigits(v.replace(/[^0-9]/g, '').slice(0, 6), neg);
+  if (inp.value !== f) inp.value = f;
+}
+
+// キーパッドの1キー分の処理（測定欄の値を直接編集）
+function _padKey(k) {
+  var t = _padTarget;
+  if (k === 'CLOSE') { if (t) t.blur(); _hideKeypad(); return; }
+  if (!t) return;
+  if (k === 'NEXT') { _measEnter(t); return; }
+  var cur = t.value, neg = (cur.charAt(0) === '-'), d = cur.replace(/[^0-9]/g, '');
+  if (k === 'BS') { if (d.length) d = d.slice(0, -1); else neg = false; }
+  else if (k === 'C') { d = ''; neg = false; }
+  else if (d.length < 6) d += k;
+  t.value = _fmtMeasDigits(d, neg);
+  var ph = t.getAttribute('data-ph');
+  if (ph) measCalc(ph);
+}
+
+// 測定欄フォーカス時：ハイライト（＋タッチ端末ならキーパッド表示）
 function focusInp(inp) {
   if (_padTarget && _padTarget !== inp) {
     _padTarget.className = _padTarget.className.replace(' active-inp','').replace('active-inp','');
   }
   _padTarget = inp;
   if (inp.className.indexOf('active-inp') < 0) inp.className += ' active-inp';
+  if (_keypadEnabled() && !inp.readOnly) _showKeypad();
 }
 
-// 測定欄フォーカスが外れた時：ハイライト解除＋判定計算
+// 測定欄フォーカスが外れた時：ハイライト解除＋判定計算（キーパッドは別の測定欄へ移る時は残す）
 function blurInp(inp) {
   inp.className = inp.className.replace(' active-inp','').replace('active-inp','');
   if (_padTarget === inp) _padTarget = null;
   var ph = inp.getAttribute('data-ph');
   if (ph) measCalc(ph);
+  setTimeout(function() { if (!_padTarget) _hideKeypad(); }, 150);
 }
 
 // Enterキーで次の測定欄へ（ソフトキーボードの「次へ」／物理キーボード共通）
@@ -1426,7 +1539,6 @@ function initSidebar() {
   _refreshStatusRow();
   document.getElementById('kibanInput').value = '';
   document.getElementById('applyBtn').textContent = '測定開始';
-  _updateKibanNotice();
 }
 
 function _refreshStatusRow() {
@@ -1464,14 +1576,6 @@ function _updateKibanBadge() {
   var el = document.getElementById('activeKibanBadge');
   if (!el) return;
   el.textContent = _setupDone ? ('機番 ' + _saveRaw + ' / ' + _saveStatus) : '機番未設定';
-  _updateKibanNotice();
-}
-
-// 機番未設定の間だけ入力画面に案内を表示
-function _updateKibanNotice() {
-  var n = document.getElementById('kibanNotice');
-  if (!n) return;
-  n.className = _setupDone ? 'kiban-notice hide' : 'kiban-notice';
 }
 
 // ===== 前回値（前段ステータス）の参照表示 =====
@@ -1868,12 +1972,10 @@ function _deleteRecord(rec, kiban) {
 }
 
 // 相ごとの結果テーブルHTML生成（詳細画面・印刷プレビュー共用）
-// prevRec = 同じステータスの1つ前の記録（無ければnull＝1回目）。
-// 2回目以降で、ON/OFFの値が前回と同じ（〇引き継ぎ含む）なら水色クラスを付ける。
-function _phaseTablesHtml(rec, prevRec) {
+function _phaseTablesHtml(rec) {
   var phNames = { u:'U相', v:'V相', w:'W相' };
   var phColors= { u:'hr-ph-u', v:'hr-ph-v', w:'hr-ph-w' };
-  var html = '', pi, ph, ci, col, ri, row, dv, cls, dNum, rows2, pv, sv, sp;
+  var html = '', pi, ph, ci, col, ri, row, dv, cls, dNum, rows2;
   for (pi = 0; pi < PHASES.length; pi++) {
     ph = PHASES[pi];
     html += '<div class="hr-ph-hd ' + phColors[ph] + '">' + phNames[ph] + '</div>';
@@ -1894,13 +1996,7 @@ function _phaseTablesHtml(rec, prevRec) {
               : 'diff-ng';
           html += '<td class="' + cls + '">' + _esc(dv) + '</td>';
         } else {
-          sp = '';
-          if (prevRec && dv !== '' && dv != null) {
-            pv = prevRec.phases && prevRec.phases[ph] && prevRec.phases[ph][col] ? prevRec.phases[ph][col][row[1]] : '';
-            sv = _stripMaru(dv);
-            if (pv !== '' && pv != null && sv !== '' && sv === _stripMaru(pv)) sp = ' class="same-prev"';
-          }
-          html += '<td' + sp + '>' + _esc(dv || '—') + '</td>';
+          html += '<td>' + _esc(dv || '—') + '</td>';
         }
       }
       html += '</tr>';
@@ -2046,12 +2142,7 @@ function _renderDetail(kiban) {
           +   '<span class="hist-rec-date">' + _esc(r.date) + '</span>'
           +   '<button class="hist-rec-del">×</button>'
           + '</div>';
-    // 同じステータスで1つ古い記録（recsは新しい順なので、後ろ方向に探す）
-    var prevSame = null, pj;
-    for (pj = si + 1; pj < recs.length; pj++) {
-      if ((recs[pj].status || '') === (r.status || '')) { prevSame = recs[pj]; break; }
-    }
-    html += _phaseTablesHtml(r, prevSame);
+    html += _phaseTablesHtml(r);
     html += '</div>';
   }
 
@@ -2116,11 +2207,39 @@ window.onload = function() {
     _inputs[i].onblur = (function(inp) {
       return function() { blurInp(inp); };
     })(_inputs[i]);
+    // 小数点の自動挿入（物理キーボード・キーパッド共通）
+    _inputs[i].oninput = (function(inp) {
+      return function() { _normalizeMeasInput(inp); };
+    })(_inputs[i]);
     // Enterキー（ソフトキーボードの「次へ」／物理キーボード共通）で次の欄へ
     _inputs[i].onkeydown = (function(inp) {
       return function(e) { if (e.key === 'Enter') { e.preventDefault(); _measEnter(inp); } };
     })(_inputs[i]);
   }
+
+  // キーパッド：ボタン押下で測定欄のフォーカスを奪わない（mousedown/touchstartを止める）
+  var kpBtns = document.getElementById('numKeypad').getElementsByTagName('button');
+  for (i = 0; i < kpBtns.length; i++) {
+    (function(b) {
+      var k = b.getAttribute('data-k'), done = 0;
+      var fire = function(e) {
+        if (e.type === 'click' && Date.now() - done < 500) { e.preventDefault(); return; } // 合成clickの二重発火防止
+        e.preventDefault();
+        if (e.type === 'touchstart') done = Date.now();
+        _padKey(k);
+      };
+      b.addEventListener('touchstart', fire, false);
+      b.addEventListener('mousedown', function(e) { e.preventDefault(); }, false);
+      b.addEventListener('click', fire, false);
+    })(kpBtns[i]);
+  }
+  var kmBtns = document.getElementById('kpModeRow').getElementsByTagName('button');
+  for (i = 0; i < kmBtns.length; i++) {
+    kmBtns[i].onclick = (function(b) {
+      return function() { setKeypadMode(b.getAttribute('data-mode')); };
+    })(kmBtns[i]);
+  }
+  _applyKeypadMode();
 
   // ×ボタン → 1.5秒長押しで削除（誤タップ防止）
   btns = document.getElementsByTagName('button');
