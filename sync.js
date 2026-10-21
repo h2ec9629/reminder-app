@@ -190,6 +190,7 @@ async function syncFromGist(manual=false) {
     if (data.gantt_data) {
       _ganttData = data.gantt_data;
     }
+    _haisoShikyu = data.haiso_shikyu || null;
     const list = data.reminders || [];
     const keys  = new Set(getAll().map(r=>r.title+'|'+r.deadline));
     const grave = getGrave();
