@@ -394,24 +394,21 @@ function renderSchedule() {
     if (!dateMap[item.date]) dateMap[item.date] = { ac: [], ad: [] };
     dateMap[item.date].ad.push(item);
   });
+  // 2026-10-21〜：配送ページの支給依頼。梱包箱は日付指定なので、その日の引取の下に「梱包」(青)で出す
+  //   （hako/qtyを持つacのitemとして混ぜ、下の梱包行の描画にそのまま乗せる）。
+  //   「その他、支給依頼（梱包資材）」は週の末尾に「支給依頼」カードでまとめて表示する。
+  const shikyu = (_haisoShikyu && _haisoShikyu.weeks && _haisoShikyu.weeks[mondayStr]) || null;
+  ((shikyu && shikyu.hako) || []).forEach(item => {
+    if (!item.date || item.date < mondayStr || item.date > fridayStr) return;
+    if (!dateMap[item.date]) dateMap[item.date] = { ac: [], ad: [] };
+    dateMap[item.date].ac.push({ date: item.date, hako: item.name, qty: item.qty });
+  });
   const dates = Object.keys(dateMap).sort();
 
-  // 2026-10-21〜：配送ページの「梱包箱の支給」と「その他、支給依頼（梱包資材）」を週の末尾にまとめて表示する
-  const shikyu = (_haisoShikyu && _haisoShikyu.weeks && _haisoShikyu.weeks[mondayStr]) || null;
   let shikyuHtml = '';
-  if (shikyu && ((shikyu.hako||[]).length || (shikyu.sono||[]).length)) {
+  if (shikyu && (shikyu.sono||[]).length) {
     shikyuHtml += `<div class="sch-day-card">
       <div class="sch-day-hd">支給依頼</div>`;
-    (shikyu.hako||[]).forEach(item => {
-      const sub = [item.date ? fmtDateStr(item.date) : '', `支給数 × ${item.qty}`].filter(Boolean).join(' · ');
-      shikyuHtml += `<div class="sch-row">
-        <span class="sch-tag sch-tag-hako">梱包</span>
-        <div class="sch-row-body">
-          <div class="sch-row-main">${escH(item.name||'')}</div>
-          <div class="sch-row-sub">${escH(sub)}</div>
-        </div>
-      </div>`;
-    });
     (shikyu.sono||[]).forEach(item => {
       const dt  = /^\d{4}-\d{2}-\d{2}$/.test(item.date||'') ? fmtDateStr(item.date) : (item.date||'');
       const sub = [item.qty ? `数量 ${item.qty}` : '', dt ? `希望日 ${dt}` : ''].filter(Boolean).join(' · ');
