@@ -323,6 +323,7 @@ function initRingClock() {
 // === SCHEDULE ===
 let _excelSchedule  = null;
 let _schSyncedAt    = null;
+let _haisoShikyu    = null; // 配送ページの支給依頼。haiso_shikyu.weeks[週の月曜ISO日付] = {hako, sono}（nittei_to_gist.pyが生成）
 let _ganttData      = null;
 let _syncAttempted  = false;
 let _schWeekOffset  = 0; // 0=今週, 1=来週。配送ページ(VFAP haiso.html)の週切替を再現したもの。
@@ -395,8 +396,38 @@ function renderSchedule() {
   });
   const dates = Object.keys(dateMap).sort();
 
+  // 2026-10-21〜：配送ページの「梱包箱の支給」と「その他、支給依頼（梱包資材）」を週の末尾にまとめて表示する
+  const shikyu = (_haisoShikyu && _haisoShikyu.weeks && _haisoShikyu.weeks[mondayStr]) || null;
+  let shikyuHtml = '';
+  if (shikyu && ((shikyu.hako||[]).length || (shikyu.sono||[]).length)) {
+    shikyuHtml += `<div class="sch-day-card">
+      <div class="sch-day-hd">支給依頼</div>`;
+    (shikyu.hako||[]).forEach(item => {
+      const sub = [item.date ? fmtDateStr(item.date) : '', `支給数 × ${item.qty}`].filter(Boolean).join(' · ');
+      shikyuHtml += `<div class="sch-row">
+        <span class="sch-tag sch-tag-hako">梱包</span>
+        <div class="sch-row-body">
+          <div class="sch-row-main">${escH(item.name||'')}</div>
+          <div class="sch-row-sub">${escH(sub)}</div>
+        </div>
+      </div>`;
+    });
+    (shikyu.sono||[]).forEach(item => {
+      const dt  = /^\d{4}-\d{2}-\d{2}$/.test(item.date||'') ? fmtDateStr(item.date) : (item.date||'');
+      const sub = [item.qty ? `数量 ${item.qty}` : '', dt ? `希望日 ${dt}` : ''].filter(Boolean).join(' · ');
+      shikyuHtml += `<div class="sch-row">
+        <span class="sch-tag sch-tag-hako">資材</span>
+        <div class="sch-row-body">
+          <div class="sch-row-main">${escH(item.name||'')}</div>
+          ${sub ? `<div class="sch-row-sub">${escH(sub)}</div>` : ''}
+        </div>
+      </div>`;
+    });
+    shikyuHtml += '</div>';
+  }
+
   if (dates.length === 0) {
-    grid.innerHTML = `<div class="sch-empty-msg">${weekLabelText}の日程はありません</div>`;
+    grid.innerHTML = `<div class="sch-empty-msg">${weekLabelText}の日程はありません</div>` + shikyuHtml;
   } else {
     let html = '';
     dates.forEach(date => {
@@ -485,7 +516,7 @@ function renderSchedule() {
       });
       html += '</div>';
     });
-    grid.innerHTML = html;
+    grid.innerHTML = html + shikyuHtml;
   }
 
   if (_schSyncedAt) {
