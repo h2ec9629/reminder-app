@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1A1614">
+  <title>配送日程</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ドライバー用：リマインダーアプリの配送タブ(ui.js:renderSchedule)だけを単独ページにしたもの */
+    html, body { height: auto; overflow-y: auto; }
+    .drv-wrap { max-width: 640px; margin: 0 auto; padding: 14px 12px 24px; }
+    .drv-reload { display: block; margin: 14px auto 0; }
+  </style>
+</head>
+<body>
+  <div class="drv-wrap">
+    <div class="sch-title-bar">引取・配送日程</div>
+    <div class="sch-week-nav">
+      <button type="button" class="sch-week-btn" id="schPrevBtn" onclick="schPrevWeek()">◀ 前週</button>
+      <span class="sch-week-label" id="schWeekLabel">今週</span>
+      <button type="button" class="sch-week-btn" id="schNextBtn" onclick="schNextWeek()">来週 ▶</button>
+    </div>
+    <div id="scheduleGrid"></div>
+    <div id="schSynced" class="sch-synced"></div>
+    <button type="button" class="sch-week-btn drv-reload" onclick="loadDriver()">最新に更新</button>
+  </div>
+<script>
+// 以下は ui.js の配送タブ部分（escH / circledNum / renderSchedule / 週切替 / fmtDateStr）の写し。
+// ui.js の配送タブを直したら、ここも同じように直すこと。
+const escH=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const CIRCLED_NUMS = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'];
+const circledNum = n => CIRCLED_NUMS[n-1] || `(${n})`;
+const todayStr = () => new Date().toISOString().split('T')[0];
+
+// === SCHEDULE ===
+let _excelSchedule  = null;
+let _schSyncedAt    = null;
+let _haisoShikyu    = null; // 配送ページの支給依頼。haiso_shikyu.weeks[週の月曜ISO日付] = {hako, sono}（nittei_to_gist.pyが生成）
+let _ganttData      = null;
+let _syncAttempted  = false;
+let _schWeekOffset  = 0; // 0=今週, 1=来週。配送ページ(VFAP haiso.html)の週切替を再現したもの。
+                         // Gistにはnittei_to_gist.pyが今週・来週の2週分しか送ってこないので、
+                         // 切替できる範囲もこの2つだけ（switchTabで毎回0にリセットされる）。
+
+// ▼日程タブ＝日付ごとのカードリスト（引取/納品）。データは excel_schedule.weeks[週の月曜ISO日付]
+//   .ac_side/ad_side（nittei_to_gist.pyが生成）。2026-08-15〜：配送ページ(VFAP haiso.html)の表示を
+//   そのまま再現する方式に変更されたのに合わせ、表示窓も「週(月〜金)単位」に変更（以前は基準日から
+//   14日分のローリング表示だった）。さらに同日、配送ページと同じ週切替（今週/来週の2週分）にも対応。
+//   引取(ac)のitemには材料名(ag)に加えて梱包箱名(hako)・支給数(qty)が付くようになった
+//   （付かない＝配送ページ側で今週まだその箱の初出扱いになっていない「隠れ」行）。
+//   完了フィルタは無し＝来た納品行は全部出す。完了で消す挙動はこの関数には無い。
+//   ※横棒の「ガントタブ」は別ファイル calendar.js:renderGantt()。同じGistの別データを使う。混同注意。
+function renderSchedule() {
+  const grid    = document.getElementById('scheduleGrid');
+  const syncd   = document.getElementById('schSynced');
+  const label   = document.getElementById('schWeekLabel');
+  const prevBtn = document.getElementById('schPrevBtn');
+  const nextBtn = document.getElementById('schNextBtn');
+  if (!_excelSchedule) {
+    grid.innerHTML = '<div class="sch-empty-msg">同期中...</div>';
+    return;
+  }
+
+  // 起点（基準日）：エクセルのbase_date（デイライン）をミラーする。
+  // PCの今日(new Date)には依存しない＝日を跨いでもエクセルがpushするまで窓は動かない。
+  const anchorStr = (_ganttData && typeof _ganttData.base_date === 'string'
+                     && /^\d{4}-\d{2}-\d{2}$/.test(_ganttData.base_date))
+                    ? _ganttData.base_date
+                    : todayStr();
+
+  // 配送ページと同じ「週（月〜金）」窓。日曜だけ-6、それ以外は1-dayでその週の月曜へ。
+  const toIso   = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const anchorD = new Date(anchorStr + 'T00:00:00');
+  const wday    = anchorD.getDay();
+  const thisMonD = new Date(anchorD);
+  thisMonD.setDate(thisMonD.getDate() + (wday === 0 ? -6 : 1 - wday));
+
+  const selMonD = new Date(thisMonD); selMonD.setDate(selMonD.getDate() + _schWeekOffset * 7);
+  const selFriD = new Date(selMonD);  selFriD.setDate(selFriD.getDate() + 4);
+  const mondayStr = toIso(selMonD);
+  const fridayStr = toIso(selFriD);
+
+  // Python側はexcel_schedule.weeks[週の月曜ISO日付]に週ごとのac_side/ad_sideを入れて送ってくる。
+  // 万一古い形式（weeksが無くac_side/ad_sideが直下にある版）のGistが来ても今週分として拾えるよう
+  // フォールバックしておく。
+  const weeks = _excelSchedule.weeks;
+  const weekData = weeks ? (weeks[mondayStr] || { ac_side: [], ad_side: [] })
+                         : { ac_side: _excelSchedule.ac_side || [], ad_side: _excelSchedule.ad_side || [] };
+  const ac = weekData.ac_side || [];
+  const ad = weekData.ad_side || [];
+
+  const weekLabelText = _schWeekOffset === 0 ? '今週' : '来週';
+  if (label)   label.textContent = weekLabelText;
+  if (prevBtn) prevBtn.disabled  = (_schWeekOffset <= 0);
+  if (nextBtn) nextBtn.disabled  = (_schWeekOffset >= 1);
+
+  // 日付でグルーピング（Python側で既に選択週ぶんに絞られているが、保険で範囲チェックもしておく）
+  const dateMap = {};
+  ac.forEach(item => {
+    if (item.date < mondayStr || item.date > fridayStr) return;
+    if (!dateMap[item.date]) dateMap[item.date] = { ac: [], ad: [] };
+    dateMap[item.date].ac.push(item);
+  });
+  ad.forEach(item => {
+    if (item.date < mondayStr || item.date > fridayStr) return;
+    if (!dateMap[item.date]) dateMap[item.date] = { ac: [], ad: [] };
+    dateMap[item.date].ad.push(item);
+  });
+  // 2026-10-21〜：配送ページの支給依頼。梱包箱は日付指定なので、その日の引取の下に「梱包」(青)で出す
+  //   （hako/qtyを持つacのitemとして混ぜ、下の梱包行の描画にそのまま乗せる）。
+  //   「その他、支給依頼（梱包資材）」は週の末尾に「支給依頼」カードでまとめて表示する。
+  const shikyu = (_haisoShikyu && _haisoShikyu.weeks && _haisoShikyu.weeks[mondayStr]) || null;
+  ((shikyu && shikyu.hako) || []).forEach(item => {
+    if (!item.date || item.date < mondayStr || item.date > fridayStr) return;
+    if (!dateMap[item.date]) dateMap[item.date] = { ac: [], ad: [] };
+    dateMap[item.date].ac.push({ date: item.date, hako: item.name, qty: item.qty });
+  });
+  const dates = Object.keys(dateMap).sort();
+
+  let shikyuHtml = '';
+  if (shikyu && (shikyu.sono||[]).length) {
+    shikyuHtml += `<div class="sch-day-card">
+      <div class="sch-day-hd">支給依頼</div>`;
+    (shikyu.sono||[]).forEach(item => {
+      const dt  = /^\d{4}-\d{2}-\d{2}$/.test(item.date||'') ? fmtDateStr(item.date) : (item.date||'');
+      const sub = [item.qty ? `数量 ${item.qty}` : '', dt ? `希望日 ${dt}` : ''].filter(Boolean).join(' · ');
+      shikyuHtml += `<div class="sch-row">
+        <span class="sch-tag sch-tag-hako">資材</span>
+        <div class="sch-row-body">
+          <div class="sch-row-main">${escH(item.name||'')}</div>
+          ${sub ? `<div class="sch-row-sub">${escH(sub)}</div>` : ''}
+        </div>
+      </div>`;
+    });
+    shikyuHtml += '</div>';
+  }
+
+  if (dates.length === 0) {
+    grid.innerHTML = `<div class="sch-empty-msg">${weekLabelText}の日程はありません</div>` + shikyuHtml;
+  } else {
+    let html = '';
+    dates.forEach(date => {
+      const { ac: acItems, ad: adItems } = dateMap[date];
+      const hasAc = acItems.length > 0;
+      const hasAd = adItems.length > 0;
+      const dotColor = (hasAc && hasAd) ? 'var(--warning)'
+                     : hasAc ? 'var(--warning)'
+                     : 'var(--success)';
+      html += `<div class="sch-day-card">
+        <div class="sch-day-hd">
+          <span class="sch-day-hd-dot" style="background:${dotColor}"></span>
+          ${fmtDateStr(date)}
+        </div>`;
+      // ag=材料名、hako=梱包箱名、qty=支給数（配送ページと同じ「箱は週内で初出日だけ表示」
+      // 仕様のため、hakoが付かない行もある＝その材料の箱は別の日にまとめて表示済み）。
+      // 1つのitemがag・hakoを両方持つケースもあるため、以前は1回のforEachでitem単位に
+      // 引取→梱包の順に出力しており、item同士の並び次第で引取/梱包が交互に見えていた。
+      // 2026-08-18〜：おじさんの要望により「引取→梱包→納品」で完全にまとめて表示するよう、
+      // 2回に分けたforEachでまず全ての引取行、続けて全ての梱包行を出力する形に変更。
+      acItems.forEach(item => {
+        if (!item.ag) return;
+        // mqty=材料自体の数量表示（配送ページの「品名（材料）」列の隣にある「数量」列の
+        // 再現。梱包箱側のqty＝「支給数」とは別物。大半は固定文言「要数」、ショーケース系は
+        // 急数の数字、灯具カバー系はその日の合算を100単位切り上げした数字。2026-08-16追加）
+        const mqtySub = item.mqty ? `数量 ${item.mqty}` : '';
+        html += `<div class="sch-row">
+          <span class="sch-tag sch-tag-ac">引取</span>
+          <div class="sch-row-body">
+            <div class="sch-row-main">${escH(item.ag)}</div>
+            ${mqtySub ? `<div class="sch-row-sub">${escH(mqtySub)}</div>` : ''}
+          </div>
+        </div>`;
+      });
+      acItems.forEach(item => {
+        if (!item.hako) return;
+        const hasQty = item.qty !== null && item.qty !== undefined && item.qty !== '';
+        const sub = hasQty ? `支給数 × ${item.qty}` : '';
+        html += `<div class="sch-row">
+          <span class="sch-tag sch-tag-hako">梱包</span>
+          <div class="sch-row-body">
+            <div class="sch-row-main">${escH(item.hako)}</div>
+            ${sub ? `<div class="sch-row-sub">${escH(sub)}</div>` : ''}
+          </div>
+        </div>`;
+      });
+      // 2026-08-18〜：同一品名(d)の納品行が複数ある場合（同じ材料で明細Noが複数）、
+      // 品名を1行にまとめ、明細No・依頼数/進捗数(s/u)だけを2列グリッドでコンパクト表示する。
+      // 1件しか無い品名は今まで通りの単純な1行表示のまま。
+      const adGroups = [];
+      const adGroupIndex = {};
+      adItems.forEach(item => {
+        const key = item.d || '';
+        if (!(key in adGroupIndex)) {
+          adGroupIndex[key] = adGroups.length;
+          adGroups.push({ name: key, items: [] });
+        }
+        adGroups[adGroupIndex[key]].items.push(item);
+      });
+      adGroups.forEach(group => {
+        if (group.items.length <= 1) {
+          const item = group.items[0];
+          const sub = [item.s, item.u].filter(Boolean).join(' · ');
+          html += `<div class="sch-row">
+            <span class="sch-tag sch-tag-ad">納品</span>
+            <div class="sch-row-body">
+              <div class="sch-row-main">${escH(group.name)}</div>
+              ${sub ? `<div class="sch-row-sub">${escH(sub)}</div>` : ''}
+            </div>
+          </div>`;
+        } else {
+          // 2026-08-18〜：まとめ表示された各明細に①②③…と付番し、どれが何番目か分かりやすくする。
+          const cells = group.items.map((item, idx) => {
+            const num = circledNum(idx + 1);
+            const parts = [item.s, item.u].filter(Boolean).join('　');
+            return `<span class="sch-row-detail-item">${num} ${escH(parts)}</span>`;
+          }).join('');
+          html += `<div class="sch-row">
+            <span class="sch-tag sch-tag-ad">納品</span>
+            <div class="sch-row-body">
+              <div class="sch-row-main">${escH(group.name)}</div>
+              <div class="sch-row-detail-grid">${cells}</div>
+            </div>
+          </div>`;
+        }
+      });
+      html += '</div>';
+    });
+    grid.innerHTML = html + shikyuHtml;
+  }
+
+  if (_schSyncedAt) {
+    const d = new Date(_schSyncedAt);
+    syncd.textContent = `最終同期: ${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+}
+
+// 配送タブの週切替（今週/来週の2週のみ。Gist側もこの2週分しか持っていない）
+function schPrevWeek() {
+  if (_schWeekOffset <= 0) return;
+  _schWeekOffset--;
+  renderSchedule();
+}
+function schNextWeek() {
+  if (_schWeekOffset >= 1) return;
+  _schWeekOffset++;
+  renderSchedule();
+}
+
+function fmtDateStr(s) {
+  if (!s) return '';
+  const d = new Date(s + 'T00:00:00');
+  return `${d.getMonth()+1}/${d.getDate()}(${'日月火水木金土'[d.getDay()]})`;
+}
+
+// === Gist読込（sync.js:syncFromGist の日程部分だけ。リマインダー取込は無し）===
+const GIST_RAW_URL = 'https://gist.githubusercontent.com/H2EC9629/34f07c829b92ea7141367874f8777512/raw/reminder_sync.json';
+async function loadDriver() {
+  try {
+    const res = await fetch(GIST_RAW_URL + '?t=' + Date.now());
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    if (data.excel_schedule) {
+      _excelSchedule = data.excel_schedule;
+      _schSyncedAt   = data.synced_at || null;
+    }
+    if (data.gantt_data) {
+      _ganttData = data.gantt_data;
+    }
+    _haisoShikyu = data.haiso_shikyu || null;
+  } catch(e) {
+    if (!_excelSchedule) document.getElementById('scheduleGrid').innerHTML = '<div class="sch-empty-msg">読み込みに失敗しました</div>';
+    return;
+  }
+  renderSchedule();
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadDriver(); });
+renderSchedule();
+loadDriver();
+</script>
+</body>
+</html>
