@@ -57,7 +57,7 @@
     },
     "kiban": "003",
     "status": "AG前",
-    "pendingSync": true,
+    "pendingSync": false,
     "recordFile": "records/003/AG前.json"
   },
   {
