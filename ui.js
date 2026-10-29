@@ -17,6 +17,7 @@ function renderHome() {
   const homeDot=document.getElementById('homeDot'); // 2026-08-16：リングの予定アイコンに移設。念のためnullガード
   if(uc>0){ badge.textContent=`${uc}件`; badge.classList.add('show'); if(homeDot) homeDot.classList.add('show'); }
   else    { badge.classList.remove('show'); if(homeDot) homeDot.classList.remove('show'); }
+  if (typeof lnSetBadge === 'function') lnSetBadge(uc); // 常駐ドック/ホーム画面の「予定」キーの件数バッジ
 
   // notif banner
   document.getElementById('notifBanner').style.display =
@@ -709,11 +710,14 @@ function launchApp(id) {
 function openLauncher() {
   renderLauncher();
   document.getElementById('launcher').classList.remove('hide');
+  document.body.classList.add('ln-home');
   clearInterval(_lnClockTimer);
   _lnClockTimer = setInterval(lnClockTick, 15000);
 }
 function closeLauncher() {
   document.getElementById('launcher').classList.add('hide');
+  document.body.classList.remove('ln-home');
+  lnSetEditing(false);
   clearInterval(_lnClockTimer); _lnClockTimer = null;
 }
 function lnClockTick() {
@@ -731,7 +735,7 @@ function renderLauncher() {
   const od  = act.filter(r => daysUntil(r.deadline) < 0).length;
   const urg = act.filter(r => daysUntil(r.deadline) <= 3).length;
   document.getElementById('lnOverdue').textContent = od ? `期限切れ ${od}` : '';
-  document.getElementById('lnBadge').textContent   = urg || '';
+  lnSetBadge(urg);
   const dueLabel = n => n < 0 ? `${-n}日超過` : n === 0 ? '今日' : n === 1 ? '明日' : `${n}日後`;
   document.getElementById('lnRemList').innerHTML = act.length
     ? act.slice(0,3).map(r => {

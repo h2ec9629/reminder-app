@@ -495,149 +495,32 @@
     <div class="ln-head">
       <button class="ln-logo" onclick="forceUpdate()">Wm2B</button>
       <span class="ln-headdate" id="lnHeadDate"></span>
-    </div>
-    <div class="ln-clock">
-      <span class="ln-time" id="lnTime">--:--</span>
-      <span class="ln-date" id="lnDateLong"></span>
+      <span class="ln-editbar">
+        <button class="ln-key ln-edit-btn" onclick="lnResetLayout()">初期配置</button>
+        <button class="ln-key accent ln-edit-btn" onclick="lnSetEditing(false)">完了</button>
+      </span>
     </div>
 
-    <!-- 横スワイプでページ切替（1ページ目＝ウィジェット＋アプリ、2ページ目＝外部アプリ） -->
+    <!-- 横スワイプでページ切替。中のウィジェット・キーは並び順を保存しているので launcher.js の renderLnLayout() が描く -->
     <div class="ln-pages" id="lnPages" onscroll="lnPageDots()">
-    <div class="ln-page">
-    <button class="ln-panel" onclick="launchApp('home')" aria-label="予定を開く">
-      <span class="ln-panel-hd"><span>直近の予定</span><span class="ln-chip" id="lnOverdue"></span></span>
-      <span id="lnRemList"></span>
-    </button>
-
-    <div class="ln-row2">
-      <button class="ln-panel" onclick="launchApp('schedule')" aria-label="配送を開く">
-        <span class="ln-w-label" style="color:#4FB07A">今日の配送</span>
-        <span class="ln-w-main" id="lnDelMain">—</span>
-        <span class="ln-w-sub" id="lnDelSub"></span>
-      </button>
-      <button class="ln-panel" onclick="launchApp('meas')" aria-label="測定を開く">
-        <span class="ln-w-label" style="color:#6FB3C9">最新の測定</span>
-        <span class="ln-w-main sm" id="lnMeasMain">—</span>
-        <span class="ln-w-sub" id="lnMeasSub"></span>
-      </button>
-    </div>
-
-    <div class="ln-grid">
-      <button class="ln-key" onclick="launchApp('gantt')">
-        <span class="ln-led" style="background:#D9963F"></span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16"/><path d="M7 7h8M10 12h10M7 17h6"/></svg>
-        <span class="ln-key-label">日程</span>
-      </button>
-      <button class="ln-key" onclick="launchApp('calc')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg>
-        <span class="ln-key-label">電卓</span>
-      </button>
-      <button class="ln-key" onclick="launchApp('meas')">
-        <span class="ln-led" style="background:#6FB3C9"></span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></svg>
-        <span class="ln-key-label">測定</span>
-      </button>
-      <button class="ln-key" onclick="launchApp('driver')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.5-6-10a6 6 0 0 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>
-        <span class="ln-key-label">ドライバー</span>
-      </button>
-      <button class="ln-key" onclick="launchApp('vdeck')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="4" width="13" height="16" rx="2"/><path d="M4 7v11a2 2 0 0 0 2 2"/></svg>
-        <span class="ln-key-label">VDECK</span>
-      </button>
-      <button class="ln-key" onclick="launchApp('game')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="11" rx="4"/><path d="M7 11v3M5.5 12.5h3M15.5 12h.01M18 14h.01"/></svg>
-        <span class="ln-key-label">GAME</span>
-      </button>
-      <button class="ln-key" onclick="launchApp('settings')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
-        <span class="ln-key-label">設定</span>
-      </button>
-      <button class="ln-key dim" onclick="openLnDrawer()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="6" r="1.2"/><circle cx="12" cy="6" r="1.2"/><circle cx="18" cy="6" r="1.2"/><circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/><circle cx="6" cy="18" r="1.2"/><circle cx="12" cy="18" r="1.2"/><circle cx="18" cy="18" r="1.2"/></svg>
-        <span class="ln-key-label">すべて</span>
-      </button>
-    </div>
-    </div>
-
-    <!-- 2ページ目：外部アプリ。起動方法(直接/ショートカット経由)はui.jsのLN_APPSで管理 -->
-    <div class="ln-page">
-      <div class="ln-sec">外部アプリ</div>
-      <div class="ln-grid">
-        <button class="ln-key" onclick="launchApp('x-line')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>
-          <span class="ln-key-label">LINE</span>
-        </button>
-        <button class="ln-key" onclick="launchApp('x-youtube')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="3"/><path d="M10.5 9.5v5l4-2.5z"/></svg>
-          <span class="ln-key-label">YouTube</span>
-        </button>
-        <button class="ln-key" onclick="launchApp('x-gmail')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 7l9 6 9-6"/></svg>
-          <span class="ln-key-label">Gmail</span>
-        </button>
-        <button class="ln-key" onclick="launchApp('x-x')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l14 16M19 4L5 20"/></svg>
-          <span class="ln-key-label">X</span>
-        </button>
-        <button class="ln-key" onclick="launchApp('x-chrome')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
-          <span class="ln-key-label">Chrome</span>
-        </button>
-        <button class="ln-key" onclick="launchApp('x-safari')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>
-          <span class="ln-key-label">Safari</span>
-        </button>
-        <button class="ln-key" onclick="launchApp('x-claude')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M4 12h16M6.3 6.3l11.4 11.4M17.7 6.3L6.3 17.7"/></svg>
-          <span class="ln-key-label">Claude</span>
-        </button>
-        <button class="ln-key" onclick="launchApp('x-chatgpt')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg>
-          <span class="ln-key-label">ChatGPT</span>
-        </button>
-        <button class="ln-key" onclick="launchApp('x-note')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>
-          <span class="ln-key-label">note</span>
-        </button>
-        <button class="ln-key" onclick="launchApp('x-yahoo')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="15" height="14" rx="1"/><path d="M18 9h3v8a2 2 0 0 1-2 2M6 9h9M6 13h9M6 16h6"/></svg>
-          <span class="ln-key-label">ヤフーニュース</span>
-        </button>
-        <button class="ln-key" onclick="launchApp('camera')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg>
-          <span class="ln-key-label">カメラ</span>
-        </button>
-        <button class="ln-key" onclick="launchApp('x-family')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.2"/><path d="M15.5 14.2A4.5 4.5 0 0 1 21 18.5"/></svg>
-          <span class="ln-key-label">ファミリー</span>
-        </button>
-      </div>
-    </div>
+      <div class="ln-page"><div class="ln-zone" id="lnZoneP1" data-lzone="p1"></div></div>
+      <div class="ln-page"><div class="ln-zone" id="lnZoneP2" data-lzone="p2"></div></div>
     </div>
     <div class="ln-dots" id="lnDots">
       <button class="on" onclick="lnGoPage(0)" aria-label="1ページ目"></button>
-      <button onclick="lnGoPage(1)" aria-label="2ページ目（外部アプリ）"></button>
+      <button onclick="lnGoPage(1)" aria-label="2ページ目"></button>
     </div>
+  </div>
+</div>
 
-    <div class="ln-spacer"></div>
-
-    <div class="ln-dock">
-      <button class="ln-key" onclick="launchApp('home')" aria-label="予定">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>
-        <span class="ln-badge" id="lnBadge"></span>
-      </button>
-      <button class="ln-key" onclick="launchApp('schedule')" aria-label="配送">
-        <span class="ln-led" style="background:#4FB07A"></span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.5"/><circle cx="17" cy="17.5" r="1.5"/></svg>
-      </button>
-      <button class="ln-key" onclick="launchApp('calendar')" aria-label="カレンダー">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
-      </button>
-      <button class="ln-key accent" onclick="launchApp('add')" aria-label="予定を追加">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-      </button>
-    </div>
+<!-- 下部ドック。ホーム画面だけでなく、どの画面を開いていても表示する（横向きでは隠して右下のホームバーを使う）。
+     左端のホームキーは固定、右側のキーは長押しで並べ替え・ホーム画面との出し入れができる -->
+<div class="ln-dock-wrap" id="lnDockWrap">
+  <div class="ln-dock">
+    <button class="ln-key dim ln-home-key" onclick="lnHomeKey()" aria-label="ホーム">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/></svg>
+    </button>
+    <div class="ln-dock-zone" id="lnDock" data-lzone="dock"></div>
   </div>
 </div>
 
@@ -818,6 +701,7 @@
 <script src="quiz.js"></script>
 <script src="mahjong.js"></script>
 <script src="camera.js"></script>
+<script src="launcher.js"></script>
 <script src="main.js"></script>
 </body>
 </html>

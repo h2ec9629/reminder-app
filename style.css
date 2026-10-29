@@ -21,8 +21,8 @@
       --danger-dim:  #2A1010;
       --purple:      #7255A8;
       --purple-dim:  #1E1530;
-      --nav-h:       0px; /* 旧.bottom-nav廃止済み。ボタンはオーバーレイで被って良い方針のため余白ゼロ、iOSセーフエリア分だけ別途確保 */
-      --fab-clear:   76px; /* 電卓・Vdeckなど操作系ページ専用：menu-fab(56px+12pxオフセット+余白8px)を避ける高さ */
+      --nav-h:       78px; /* 2026-10-29：常駐ドック(.ln-dock-wrap)の高さ。iOSセーフエリア分は各所で別途足している */
+      --fab-clear:   78px; /* 電卓・Vdeckなど操作系ページ専用：常駐ドックを避ける高さ（--nav-hと同じ） */
       --header-h:    28px;
     }
 
@@ -348,14 +348,14 @@
     /* ===== EDIT PANEL ===== */
     .edit-overlay {
       display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.55); z-index: 100;
+      background: rgba(0,0,0,0.55); z-index: 290; /* 常駐ドック(280)より手前 */
     }
     .edit-overlay.show { display: block; }
     .edit-panel {
       display: none; position: fixed;
       top: 50%; left: 50%; transform: translate(-50%, -50%);
       background: var(--surface); border: 2px solid var(--accent);
-      border-radius: 16px; z-index: 101;
+      border-radius: 16px; z-index: 291;
       padding: 20px; width: 92%; max-width: 480px;
       max-height: 85vh; overflow-y: auto;
       box-shadow: 0 8px 32px rgba(0,0,0,0.5);
@@ -1543,7 +1543,7 @@
    起動時と、どの画面からでも下のホームバー(#menuFab)・ヘッダーの戻るキーで開く。
    アイコンやボタンはノートPCの薄いキー風（角は直角、影を重ねて浮かせる）。 */
 .launcher {
-  position: fixed; inset: 0; z-index: 400;
+  position: fixed; inset: 0; z-index: 270; /* 常駐ドック(280)の下 */
   background: var(--bg); overflow-y: auto; overscroll-behavior: contain;
   transition: opacity .18s ease;
 }
@@ -1551,7 +1551,7 @@
 .ln-inner {
   max-width: 480px; min-height: 100%; margin: 0 auto;
   display: flex; flex-direction: column; gap: 16px;
-  padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px calc(max(env(safe-area-inset-bottom, 0px), 8px) + 14px);
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px calc(var(--nav-h) + max(env(safe-area-inset-bottom, 0px), 8px) + 14px);
 }
 .ln-head { display: flex; align-items: center; justify-content: space-between; height: 28px; }
 .ln-logo {
@@ -1620,15 +1620,6 @@
 }
 .ln-key-label { font-size: 11px; color: var(--text-sub); }
 .ln-led { position: absolute; top: 8px; right: 8px; width: 5px; height: 5px; border-radius: 50%; }
-.ln-spacer { flex: 1; }
-.ln-dock {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;
-  background: #161719; border: 1px solid #0E0F10; padding: 10px 10px 14px;
-  box-shadow: inset 0 3px 8px rgba(0,0,0,.65), inset 0 1px 2px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.05);
-}
-.ln-dock .ln-key { height: 56px; }
-.ln-dock .ln-key svg { width: 24px; height: 24px; }
-.ln-dock .ln-led { top: 7px; right: 7px; }
 .ln-badge {
   position: absolute; top: 6px; right: 6px; min-width: 16px; height: 16px; padding: 0 3px;
   background: #E57373; color: #1C1D1F; font-size: 10px; font-weight: 700;
@@ -1752,3 +1743,53 @@
 .cam-shutter { width: 84px; height: 64px; }
 .cam-shutter svg { width: 28px; height: 28px; }
 .cam-act { flex: 1; max-width: 180px; height: 52px; font-size: 15px; font-weight: 700; }
+
+/* ===== ホーム画面の並べ替え・常駐ドック（2026-10-29追加。処理はlauncher.js） ===== */
+.ln-zone {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 10px;
+  align-content: start; min-height: 84px;
+}
+.ln-w4 { grid-column: span 4; }
+.ln-w2 { grid-column: span 2; }
+.launcher, .ln-dock-wrap, .ln-ghost { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+
+/* 下部ドック：どの画面でも最前面寄りに常駐。高さ(余白8px+ドック70px)は:rootの--nav-hと揃える */
+.ln-dock-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 280;
+  background: var(--bg); border-top: 1px solid #2A2B2E;
+  padding: 8px 12px max(env(safe-area-inset-bottom, 0px), 8px);
+}
+.ln-dock {
+  max-width: 480px; margin: 0 auto; display: flex; gap: 8px; padding: 8px 8px 10px;
+  background: #161719; border: 1px solid #0E0F10;
+  box-shadow: inset 0 3px 8px rgba(0,0,0,.65), inset 0 1px 2px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.05);
+}
+.ln-dock-zone { flex: 1; min-width: 0; display: flex; gap: 8px; min-height: 50px; }
+.ln-dock .ln-key { flex: 1 1 0; min-width: 0; height: 50px; }
+.ln-dock .ln-home-key { flex: 0 0 50px; }
+.ln-dock .ln-key-label { display: none; }
+.ln-dock .ln-led { top: 6px; right: 6px; }
+body.ln-home .ln-home-key { color: #E07A58; } /* ホーム表示中はホームキーを点灯 */
+
+/* 編集モード（長押しで開始） */
+.ln-editbar { display: none; gap: 8px; }
+.ln-edit-btn { height: 28px; padding: 0 12px; font-size: 12px; font-weight: 700; flex-direction: row; }
+body.ln-editing .ln-editbar { display: flex; }
+body.ln-editing .ln-headdate { display: none; }
+body.ln-editing [data-lid] { animation: lnJiggle .28s ease-in-out infinite alternate; }
+body.ln-editing .ln-widget { animation: none; outline: 1px dashed #5A5B5F; outline-offset: 3px; }
+@keyframes lnJiggle { from { transform: rotate(-1deg); } to { transform: rotate(1deg); } }
+.ln-placeholder { opacity: .25; animation: none !important; }
+.ln-ghost {
+  position: fixed; z-index: 500; margin: 0; pointer-events: none; opacity: .95;
+  animation: none !important; transform: scale(1.06);
+  box-shadow: 0 18px 36px rgba(0,0,0,.55) !important;
+}
+.ln-ghost.ln-clock { background: var(--surface); }
+
+/* 旧ホームバー(#menuFab)は縦向きでは不要（ドックのホームキーを使う）。横向きはドックを隠してこちらを出す */
+.menu-fab.home-bar { display: none; }
+@media (orientation: landscape) and (max-height: 500px) {
+  .ln-dock-wrap { display: none; }
+  .menu-fab.home-bar { display: flex; }
+}
