@@ -677,6 +677,21 @@ const LN_APPS = [
   { id:'vdeck',    name:'VDECK',      desc:'動画プレイヤー',             color:'#9C82D0' },
   { id:'game',     name:'GAME',       desc:'クイズ・麻雀ほか',           color:'#9C82D0' },
   { id:'settings', name:'設定',       desc:'通知・同期・PAT',            color:'#A3A4A8' },
+  // 外部アプリ（2026-10-29追加、iPhone想定）。hrefはアプリ公式の呼び出しアドレス。
+  // scはiPhoneの「ショートカット」アプリ経由（呼び出しアドレスが無い/非公開のアプリ用）。
+  // ショートカット側に「Appを開く」だけのショートカットを、scと全く同じ名前で作っておく必要がある。
+  { id:'x-line',    name:'LINE',           desc:'外部アプリ',                     color:'#4FB07A', href:'line://' },
+  { id:'x-youtube', name:'YouTube',        desc:'外部アプリ',                     color:'#E57373', href:'youtube://' },
+  { id:'x-gmail',   name:'Gmail',          desc:'外部アプリ',                     color:'#E57373', href:'googlegmail://' },
+  { id:'x-x',       name:'X',              desc:'外部アプリ',                     color:'#C9CACD', href:'twitter://' },
+  { id:'x-chrome',  name:'Chrome',         desc:'外部アプリ',                     color:'#6FB3C9', href:'googlechrome://' },
+  { id:'x-safari',  name:'Safari',         desc:'外部アプリ（ショートカット経由）', color:'#6FB3C9', sc:'Safari' },
+  { id:'x-claude',  name:'Claude',         desc:'外部アプリ（ショートカット経由）', color:'#E07A58', sc:'Claude' },
+  { id:'x-chatgpt', name:'ChatGPT',        desc:'外部アプリ（ショートカット経由）', color:'#C9CACD', sc:'ChatGPT' },
+  { id:'x-note',    name:'note',           desc:'外部アプリ（ショートカット経由）', color:'#4FB07A', sc:'note' },
+  { id:'x-yahoo',   name:'ヤフーニュース', desc:'外部アプリ（ショートカット経由）', color:'#E57373', sc:'ヤフーニュース' },
+  { id:'camera',    name:'カメラ',         desc:'アプリ内カメラ（camera.js）',      color:'#C9CACD' },
+  { id:'x-family',  name:'ファミリーリンク', desc:'外部アプリ（ショートカット経由）', color:'#6FB3C9', sc:'ファミリーリンク' },
 ];
 let _lnClockTimer = null; // ホーム表示中だけ時計を更新する（閉じたら止める）
 
@@ -684,6 +699,8 @@ function launchApp(id) {
   const app = LN_APPS.find(a => a.id === id);
   if (!app) return;
   closeLnDrawer();
+  if (id === 'camera') { openCamera(); return; } // ホーム画面の上に重ねて開き、閉じたらホームに戻る
+  if (app.sc)  { location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(app.sc); return; }
   if (app.href) { location.href = app.href; return; }
   if (id === 'game') openGameMode();
   else switchTab(id, document.createElement('button'));
@@ -754,6 +771,17 @@ function renderLauncher() {
   } catch(e) {}
   document.getElementById('lnMeasMain').textContent = mMain;
   document.getElementById('lnMeasSub').textContent  = mSub;
+}
+
+// --- ページ切替（横スワイプはCSSのscroll-snap。ここは下の点の表示と、点タップでの移動だけ） ---
+function lnPageDots() {
+  const p = document.getElementById('lnPages');
+  const i = Math.round(p.scrollLeft / p.clientWidth);
+  document.querySelectorAll('#lnDots button').forEach((d,k) => d.classList.toggle('on', k === i));
+}
+function lnGoPage(i) {
+  const p = document.getElementById('lnPages');
+  p.scrollTo({ left: i * p.clientWidth, behavior: 'smooth' });
 }
 
 // --- アプリ一覧（下から出るシート。名前・説明で絞り込み） ---

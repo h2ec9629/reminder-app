@@ -501,6 +501,9 @@
       <span class="ln-date" id="lnDateLong"></span>
     </div>
 
+    <!-- 横スワイプでページ切替（1ページ目＝ウィジェット＋アプリ、2ページ目＝外部アプリ） -->
+    <div class="ln-pages" id="lnPages" onscroll="lnPageDots()">
+    <div class="ln-page">
     <button class="ln-panel" onclick="launchApp('home')" aria-label="予定を開く">
       <span class="ln-panel-hd"><span>直近の予定</span><span class="ln-chip" id="lnOverdue"></span></span>
       <span id="lnRemList"></span>
@@ -555,6 +558,67 @@
         <span class="ln-key-label">すべて</span>
       </button>
     </div>
+    </div>
+
+    <!-- 2ページ目：外部アプリ。起動方法(直接/ショートカット経由)はui.jsのLN_APPSで管理 -->
+    <div class="ln-page">
+      <div class="ln-sec">外部アプリ</div>
+      <div class="ln-grid">
+        <button class="ln-key" onclick="launchApp('x-line')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>
+          <span class="ln-key-label">LINE</span>
+        </button>
+        <button class="ln-key" onclick="launchApp('x-youtube')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="3"/><path d="M10.5 9.5v5l4-2.5z"/></svg>
+          <span class="ln-key-label">YouTube</span>
+        </button>
+        <button class="ln-key" onclick="launchApp('x-gmail')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 7l9 6 9-6"/></svg>
+          <span class="ln-key-label">Gmail</span>
+        </button>
+        <button class="ln-key" onclick="launchApp('x-x')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l14 16M19 4L5 20"/></svg>
+          <span class="ln-key-label">X</span>
+        </button>
+        <button class="ln-key" onclick="launchApp('x-chrome')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+          <span class="ln-key-label">Chrome</span>
+        </button>
+        <button class="ln-key" onclick="launchApp('x-safari')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>
+          <span class="ln-key-label">Safari</span>
+        </button>
+        <button class="ln-key" onclick="launchApp('x-claude')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M4 12h16M6.3 6.3l11.4 11.4M17.7 6.3L6.3 17.7"/></svg>
+          <span class="ln-key-label">Claude</span>
+        </button>
+        <button class="ln-key" onclick="launchApp('x-chatgpt')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg>
+          <span class="ln-key-label">ChatGPT</span>
+        </button>
+        <button class="ln-key" onclick="launchApp('x-note')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>
+          <span class="ln-key-label">note</span>
+        </button>
+        <button class="ln-key" onclick="launchApp('x-yahoo')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="15" height="14" rx="1"/><path d="M18 9h3v8a2 2 0 0 1-2 2M6 9h9M6 13h9M6 16h6"/></svg>
+          <span class="ln-key-label">ヤフーニュース</span>
+        </button>
+        <button class="ln-key" onclick="launchApp('camera')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          <span class="ln-key-label">カメラ</span>
+        </button>
+        <button class="ln-key" onclick="launchApp('x-family')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.2"/><path d="M15.5 14.2A4.5 4.5 0 0 1 21 18.5"/></svg>
+          <span class="ln-key-label">ファミリー</span>
+        </button>
+      </div>
+    </div>
+    </div>
+    <div class="ln-dots" id="lnDots">
+      <button class="on" onclick="lnGoPage(0)" aria-label="1ページ目"></button>
+      <button onclick="lnGoPage(1)" aria-label="2ページ目（外部アプリ）"></button>
+    </div>
 
     <div class="ln-spacer"></div>
 
@@ -585,6 +649,31 @@
       <input type="search" id="lnSearch" placeholder="アプリを検索" aria-label="アプリを検索" oninput="renderLnAppList()" autocomplete="off">
     </label>
     <div class="ln-list" id="lnAppList"></div>
+  </div>
+</div>
+
+<!-- ========== CAMERA（アプリ内カメラ。2026-10-29追加。処理はcamera.js） ========== -->
+<div class="cam hide" id="camView">
+  <video class="cam-video" id="camVideo" autoplay playsinline muted></video>
+  <img class="cam-shot" id="camShot" alt="撮影した写真">
+  <div class="cam-msg" id="camMsg"></div>
+  <div class="cam-flash" id="camFlash"></div>
+  <div class="cam-top">
+    <button class="ln-key cam-btn" onclick="closeCamera()" aria-label="カメラを閉じる">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <button class="ln-key cam-btn cam-live-only" onclick="flipCamera()" aria-label="前面・背面カメラを切替">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9a8 8 0 0 1 14.5-3M20 4v4h-4"/><path d="M20 15a8 8 0 0 1-14.5 3M4 20v-4h4"/></svg>
+    </button>
+  </div>
+  <div class="cam-bottom cam-live-only">
+    <button class="ln-key accent cam-shutter" onclick="takePhoto()" aria-label="撮影">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg>
+    </button>
+  </div>
+  <div class="cam-bottom cam-review-only">
+    <button class="ln-key cam-act" onclick="retakePhoto()">撮り直す</button>
+    <button class="ln-key accent cam-act" onclick="savePhoto()">保存・共有</button>
   </div>
 </div>
 
@@ -728,6 +817,7 @@
 <script src="game.js"></script>
 <script src="quiz.js"></script>
 <script src="mahjong.js"></script>
+<script src="camera.js"></script>
 <script src="main.js"></script>
 </body>
 </html>

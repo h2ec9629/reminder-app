@@ -1698,3 +1698,57 @@
   width: 112px; height: 5px; border-radius: 3px;
   background: #A3A4A8; box-shadow: 0 1px 3px rgba(0,0,0,.6);
 }
+
+/* --- ホーム画面のページ切替（横スワイプ。2026-10-29追加：2ページ目＝外部アプリ） ---
+   左右の余白(20px)ぶん外へはみ出させ、キーの影が切れないよう各ページ内側に余白を取り直している */
+.ln-pages {
+  display: flex; overflow-x: auto; overflow-y: hidden; margin: 0 -20px;
+  scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.ln-pages::-webkit-scrollbar { display: none; }
+.ln-page {
+  flex: 0 0 100%; min-width: 0; scroll-snap-align: start;
+  display: flex; flex-direction: column; gap: 16px; padding: 2px 20px 22px;
+}
+.ln-sec { font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--text-sub); }
+.ln-dots { display: flex; justify-content: center; gap: 2px; margin-top: -14px; }
+.ln-dots button {
+  width: 24px; height: 20px; padding: 0; background: none; border: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.ln-dots button::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #4A4B4F; }
+.ln-dots button.on::before { background: #C9CACD; }
+
+/* ===== CAMERA（アプリ内カメラ。2026-10-29追加：iPhoneの純正カメラは外から呼べないため自作） =====
+   .review＝撮影後の確認中。ライブ映像用/確認用のボタンを出し分ける */
+.cam { position: fixed; inset: 0; z-index: 420; background: #000; }
+.cam.hide { display: none; }
+.cam-video, .cam-shot { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cam-video { object-fit: cover; }
+.cam-video.mirror { transform: scaleX(-1); } /* 前面カメラは鏡写しで表示（保存される写真は反転しない） */
+.cam-shot { object-fit: contain; display: none; }
+.cam.review .cam-shot { display: block; }
+.cam.review .cam-video, .cam.review .cam-live-only { visibility: hidden; }
+.cam:not(.review) .cam-review-only { display: none; }
+.cam-msg {
+  position: absolute; left: 24px; right: 24px; top: 40%;
+  text-align: center; color: var(--text-sub); font-size: 14px; line-height: 1.7; white-space: pre-line;
+}
+.cam-msg:empty { display: none; }
+.cam-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+.cam-flash.on { opacity: .8; transition: none; }
+.cam-top {
+  position: absolute; top: calc(env(safe-area-inset-top, 0px) + 14px); left: 16px; right: 16px;
+  display: flex; justify-content: space-between;
+}
+.cam-btn { width: 48px; height: 44px; }
+.cam-btn svg { width: 22px; height: 22px; }
+.cam-bottom {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center; gap: 12px;
+  padding: 18px 20px calc(max(env(safe-area-inset-bottom, 0px), 8px) + 18px);
+  background: rgba(22,23,25,.85);
+}
+.cam-shutter { width: 84px; height: 64px; }
+.cam-shutter svg { width: 28px; height: 28px; }
+.cam-act { flex: 1; max-width: 180px; height: 52px; font-size: 15px; font-weight: 700; }
