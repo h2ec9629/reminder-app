@@ -554,7 +554,7 @@ function snooze(id, days) {
   if (!r || !r.deadline) return;
   const d = new Date(r.deadline + 'T00:00:00');
   d.setDate(d.getDate() + days);
-  updateReminder(id, { deadline: d.toISOString().split('T')[0] });
+  updateReminder(id, { deadline: isoDate(d) });
   renderHome();
   showToast(`${days}日延ばしました`);
 }
@@ -563,7 +563,7 @@ function snoozeEdit(days) {
   if (!inp.value) return;
   const d = new Date(inp.value + 'T00:00:00');
   d.setDate(d.getDate() + days);
-  inp.value = d.toISOString().split('T')[0];
+  inp.value = isoDate(d);
 }
 
 // === EDIT ===
@@ -745,9 +745,7 @@ function renderLauncher() {
     : '<span class="ln-empty">期限のある予定はありません</span>';
 
   // 今日の配送：excel_schedule.weeks の全週から今日の日付の引取(ac)・納品(ad)を数える。
-  // todayStr()はUTC基準で朝9時前に前日になるため、ここではローカル日付を使う。
-  const p = n => String(n).padStart(2,'0'), t = new Date();
-  const iso = `${t.getFullYear()}-${p(t.getMonth()+1)}-${p(t.getDate())}`;
+  const iso = todayStr();
   const delMain = document.getElementById('lnDelMain'), delSub = document.getElementById('lnDelSub');
   if (_excelSchedule) {
     const weeks = _excelSchedule.weeks ? Object.values(_excelSchedule.weeks) : [_excelSchedule];

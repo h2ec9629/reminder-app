@@ -6,7 +6,9 @@ const KEY = 'ojisan_reminders_v1';
 const getAll  = () => { try { return JSON.parse(localStorage.getItem(KEY)||'[]'); } catch{return[];} };
 const saveAll = a => localStorage.setItem(KEY, JSON.stringify(a));
 const genId   = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-const todayStr= () => new Date().toISOString().split('T')[0];
+// 端末のローカル日付で YYYY-MM-DD を返す（toISOString()はUTCなので日本時間の朝9時前に前日になる）
+const isoDate = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const todayStr= () => isoDate(new Date());
 
 function addReminder(r) {
   const a = getAll();
