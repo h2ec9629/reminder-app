@@ -1,16 +1,16 @@
     /* ===== RESET ===== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ===== CLAUDE DARK PALETTE ===== */
+    /* ===== DARK GRAY PALETTE（2026-10-29：焦げ茶系から暗いグレーに変更。ホーム画面刷新に合わせた） ===== */
     :root {
-      --bg:          #1A1614;
-      --bg-2:        #141210;
-      --surface:     #262220;
-      --surface-2:   #302C2A;
-      --border:      #3A3532;
-      --text:        #F0EBE6;
-      --text-sub:    #9E9691;
-      --text-faint:  #615D5A;
+      --bg:          #1C1D1F;
+      --bg-2:        #161719;
+      --surface:     #252628;
+      --surface-2:   #2F3033;
+      --border:      #323336;
+      --text:        #ECECEE;
+      --text-sub:    #A3A4A8;
+      --text-faint:  #5A5B5F;
       --accent:      #C85C3A;
       --accent-dim:  #3A1E12;
       --success:     #2A7A4E;
@@ -1537,4 +1537,164 @@
        圧迫するので、横向きでは横幅の取り分を控えめにする */
     width: min(46vw, 78dvh, 300px);
   }
+}
+
+/* ===== LAUNCHER（ホーム画面。2026-10-29：回転リングメニューから置き換え） =====
+   起動時と、どの画面からでも下のホームバー(#menuFab)・ヘッダーの戻るキーで開く。
+   アイコンやボタンはノートPCの薄いキー風（角は直角、影を重ねて浮かせる）。 */
+.launcher {
+  position: fixed; inset: 0; z-index: 400;
+  background: var(--bg); overflow-y: auto; overscroll-behavior: contain;
+  transition: opacity .18s ease;
+}
+.launcher.hide { opacity: 0; pointer-events: none; visibility: hidden; }
+.ln-inner {
+  max-width: 480px; min-height: 100%; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 16px;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px calc(max(env(safe-area-inset-bottom, 0px), 8px) + 14px);
+}
+.ln-head { display: flex; align-items: center; justify-content: space-between; height: 28px; }
+.ln-logo {
+  font-size: 14px; font-weight: 700; letter-spacing: .08em; color: #E07A58;
+  background: none; border: 0; padding: 0; font-family: inherit; cursor: pointer;
+}
+.ln-headdate { font-size: 12px; color: var(--text-sub); }
+.ln-clock { display: flex; flex-direction: column; gap: 2px; padding: 4px 4px 0; }
+.ln-time { font-size: 64px; font-weight: 500; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.ln-date { font-size: 14px; color: var(--text-sub); }
+
+.ln-panel {
+  display: flex; flex-direction: column; gap: 4px; width: 100%; text-align: left;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 0;
+  padding: 14px 16px; color: var(--text); font-family: inherit; cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 2px 3px rgba(0,0,0,.35), 0 10px 22px rgba(0,0,0,.28);
+}
+.ln-panel-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 13px; font-weight: 700; color: #C9CACD; margin-bottom: 6px;
+}
+.ln-chip { font-size: 11px; font-weight: 700; color: #F08A8A; background: #3A2224; padding: 3px 8px; }
+.ln-chip:empty { display: none; }
+.ln-rem-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+.ln-rem-bar { width: 3px; height: 26px; border-radius: 2px; background: #3E3F43; flex-shrink: 0; }
+.ln-rem-title { flex: 1; min-width: 0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ln-rem-due { font-size: 12px; color: var(--text-sub); flex-shrink: 0; }
+.ln-rem-row.od .ln-rem-bar { background: #E57373; }
+.ln-rem-row.od .ln-rem-due { color: #F08A8A; }
+.ln-rem-row.td .ln-rem-bar { background: var(--accent); }
+.ln-rem-row.td .ln-rem-due { color: #E07A58; }
+.ln-empty { font-size: 13px; color: var(--text-sub); padding: 4px 0; }
+
+.ln-row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ln-w-label { font-size: 12px; font-weight: 700; }
+.ln-w-main { font-size: 28px; font-weight: 500; line-height: 1.1; }
+.ln-w-main small { font-size: 14px; font-weight: 400; color: var(--text-sub); }
+.ln-w-main.sm { font-size: 18px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ln-w-sub { font-size: 12px; color: var(--text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- 薄型キー --- */
+.ln-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding-top: 2px; }
+.ln-key {
+  position: relative; height: 74px; border: 0; padding: 0; border-radius: 0;
+  background: linear-gradient(180deg, #343538 0%, #2B2C2F 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10), inset 0 -1px 0 rgba(0,0,0,.35),
+              inset 1px 0 0 rgba(255,255,255,.03), inset -1px 0 0 rgba(0,0,0,.18),
+              0 1px 0 #0F1011, 0 2px 0 #0B0C0D, 0 3px 2px rgba(0,0,0,.5),
+              0 6px 10px rgba(0,0,0,.32), 0 14px 24px rgba(0,0,0,.18);
+  color: #E6E6E8; font-family: inherit; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  transition: transform 60ms ease, box-shadow 60ms ease;
+}
+.ln-key svg { width: 22px; height: 22px; }
+.ln-key.dim { background: linear-gradient(180deg, #2A2B2E 0%, #232427 100%); color: var(--text-sub); }
+.ln-key.accent {
+  background: var(--accent); color: #FFFFFF;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.25), inset 0 -1px 0 rgba(0,0,0,.25),
+              0 1px 0 #7A3420, 0 2px 0 #5A2516, 0 3px 2px rgba(0,0,0,.5),
+              0 6px 10px rgba(0,0,0,.32), 0 14px 24px rgba(0,0,0,.18);
+}
+.ln-key:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.45), inset 0 -1px 0 rgba(255,255,255,.04),
+              0 1px 1px rgba(0,0,0,.55), 0 2px 4px rgba(0,0,0,.25);
+}
+.ln-key-label { font-size: 11px; color: var(--text-sub); }
+.ln-led { position: absolute; top: 8px; right: 8px; width: 5px; height: 5px; border-radius: 50%; }
+.ln-spacer { flex: 1; }
+.ln-dock {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;
+  background: #161719; border: 1px solid #0E0F10; padding: 10px 10px 14px;
+  box-shadow: inset 0 3px 8px rgba(0,0,0,.65), inset 0 1px 2px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.05);
+}
+.ln-dock .ln-key { height: 56px; }
+.ln-dock .ln-key svg { width: 24px; height: 24px; }
+.ln-dock .ln-led { top: 7px; right: 7px; }
+.ln-badge {
+  position: absolute; top: 6px; right: 6px; min-width: 16px; height: 16px; padding: 0 3px;
+  background: #E57373; color: #1C1D1F; font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.ln-badge:empty { display: none; }
+
+/* --- アプリ一覧（下から出るシート） --- */
+.ln-drawer {
+  position: fixed; inset: 0; z-index: 410; background: rgba(10,10,11,.6);
+  display: flex; flex-direction: column; justify-content: flex-end;
+  opacity: 0; pointer-events: none; transition: opacity .18s ease;
+}
+.ln-drawer.open { opacity: 1; pointer-events: auto; }
+.ln-sheet {
+  width: 100%; max-width: 480px; margin: 0 auto; height: min(640px, 82dvh);
+  background: #222325; border-top: 1px solid var(--border); border-radius: 20px 20px 0 0;
+  padding: 12px 20px calc(max(env(safe-area-inset-bottom, 0px), 8px) + 12px);
+  display: flex; flex-direction: column; gap: 14px;
+  transform: translateY(24px); transition: transform .22s ease;
+}
+.ln-drawer.open .ln-sheet { transform: none; }
+.ln-handle {
+  align-self: center; width: 64px; height: 24px; background: none; border: 0; padding: 0;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.ln-handle span { width: 40px; height: 4px; border-radius: 2px; background: #5A5B5F; }
+.ln-search {
+  display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 14px;
+  background: #18191B; border: 1px solid #2A2B2E; box-shadow: inset 0 2px 4px rgba(0,0,0,.4);
+}
+.ln-search svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--text-sub); }
+.ln-search input {
+  flex: 1; min-width: 0; background: none; border: 0; outline: none;
+  color: var(--text); font: inherit; font-size: 16px; /* 16px未満だとiOSが入力時に拡大する */
+}
+.ln-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
+.ln-item {
+  display: flex; align-items: center; gap: 14px; padding: 8px 6px;
+  background: none; border: 0; text-align: left; color: var(--text); font-family: inherit; cursor: pointer;
+}
+.ln-item-ic {
+  width: 40px; height: 40px; flex-shrink: 0; font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #343538 0%, #2B2C2F 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10), inset 0 -1px 0 rgba(0,0,0,.35),
+              0 1px 0 #0F1011, 0 2px 0 #0B0C0D, 0 3px 2px rgba(0,0,0,.5), 0 6px 10px rgba(0,0,0,.3);
+}
+.ln-item-name { display: block; font-size: 15px; }
+.ln-item-desc { display: block; font-size: 12px; color: var(--text-sub); }
+
+/* --- 各画面からホームへ戻る導線 --- */
+.hdr-home {
+  width: 26px; height: 20px; margin-right: 8px; padding: 0; border: 0; border-radius: 0;
+  display: flex; align-items: center; justify-content: center; color: var(--text); cursor: pointer;
+  background: linear-gradient(180deg, #343538 0%, #2B2C2F 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 1px 0 #0F1011, 0 2px 3px rgba(0,0,0,.45);
+}
+.hdr-home:active { transform: translateY(1px); box-shadow: inset 0 1px 2px rgba(0,0,0,.45); }
+.hdr-home svg { width: 14px; height: 14px; }
+/* 旧・三本線の丸ボタン(#menuFab)をホームバーに作り替え。位置(下部中央／横向きは右下)は.menu-fabの既存ルールのまま */
+.menu-fab.home-bar {
+  width: 132px; height: 30px; border-radius: 0;
+  background: transparent; border: 0; box-shadow: none;
+}
+.menu-fab.home-bar span {
+  width: 112px; height: 5px; border-radius: 3px;
+  background: #A3A4A8; box-shadow: 0 1px 3px rgba(0,0,0,.6);
 }

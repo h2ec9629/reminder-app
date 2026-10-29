@@ -23,7 +23,7 @@ async function forceUpdate() {
 
 // === INIT ===
 (function(){
-  syncFromGist();
+  syncFromGist().then(renderLauncher); // 配送データが届いたらホームの「今日の配送」を更新
   updateNotifStatus();
   updateMailboxStatus();
   checkPatStatus();
@@ -43,18 +43,14 @@ async function forceUpdate() {
   // 起動パスに関わらず常に一度だけ行う（ループの開始/停止は下のif/elseで個別に制御）。
   initRingWheel();
 
+  // 2026-10-29：リングメニューはホーム画面(#launcher)に置き換えたので、リングの回転/時計は起動しない
+  _ringLoopStopped = true;
   if (_lastTab && _lastTab !== 'home' && document.getElementById('tab-' + _lastTab)) {
-    // 同一セッション内でのリロード＝リングは今回出さないので、回転アニメ/時計の
-    // タイマー類もそもそも起動しない（起動してから止めるのではなく、最初から
-    // 起動しない方が確実かつ無駄がない。2026-08-15、二重ループ負荷対策の一環）。
-    _ringLoopStopped = true;
-    const ringScreen = document.getElementById('topRingScreen');
-    if (ringScreen) ringScreen.classList.add('hide');
+    // 同一セッション内でのリロード＝ホーム画面は出さず、直前のタブへ黙って復帰する
     switchTab(_lastTab, document.getElementById('nav-' + _lastTab) || document.createElement('button'));
   } else {
     switchTab('home', document.getElementById('nav-home') || document.createElement('button'));
-    _ringStartLoop();
-    initRingClock();
+    openLauncher();
   }
 
   document.getElementById('deadlineInput').value = todayStr();

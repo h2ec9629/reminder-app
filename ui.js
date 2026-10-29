@@ -662,3 +662,117 @@ function clearFormInput(btn) {
   if(inp){ inp.value = ''; inp.focus(); }
 }
 
+// === LAUNCHER（ホーム画面。2026-10-29：回転リングメニューから置き換え） ===
+// アプリ＝既存のタブ(tab-<id>)。hrefがあるものは別ページへ移動、gameはオーバーレイ表示。
+// どの画面からでも下部のホームバー(#menuFab)かヘッダーの戻るキーでopenLauncher()に戻る。
+const LN_APPS = [
+  { id:'home',     name:'予定',       desc:'リマインダー一覧・期限管理', color:'#E07A58' },
+  { id:'add',      name:'追加',       desc:'新しい予定を登録',           color:'#E07A58' },
+  { id:'schedule', name:'配送',       desc:'引取・納品の週間予定',       color:'#4FB07A' },
+  { id:'gantt',    name:'日程',       desc:'ガントチャート',             color:'#D9963F' },
+  { id:'calendar', name:'カレンダー', desc:'月表示カレンダー',           color:'#D9963F' },
+  { id:'calc',     name:'電卓',       desc:'電卓・計算',                 color:'#C9CACD' },
+  { id:'meas',     name:'測定',       desc:'機番ごとの測定記録',         color:'#6FB3C9', href:'meas.html' },
+  { id:'driver',   name:'ドライバー', desc:'配送ドライバー用ページ',     color:'#4FB07A', href:'driver.html' },
+  { id:'vdeck',    name:'VDECK',      desc:'動画プレイヤー',             color:'#9C82D0' },
+  { id:'game',     name:'GAME',       desc:'クイズ・麻雀ほか',           color:'#9C82D0' },
+  { id:'settings', name:'設定',       desc:'通知・同期・PAT',            color:'#A3A4A8' },
+];
+let _lnClockTimer = null; // ホーム表示中だけ時計を更新する（閉じたら止める）
+
+function launchApp(id) {
+  const app = LN_APPS.find(a => a.id === id);
+  if (!app) return;
+  closeLnDrawer();
+  if (app.href) { location.href = app.href; return; }
+  if (id === 'game') openGameMode();
+  else switchTab(id, document.createElement('button'));
+  closeLauncher();
+}
+function openLauncher() {
+  renderLauncher();
+  document.getElementById('launcher').classList.remove('hide');
+  clearInterval(_lnClockTimer);
+  _lnClockTimer = setInterval(lnClockTick, 15000);
+}
+function closeLauncher() {
+  document.getElementById('launcher').classList.add('hide');
+  clearInterval(_lnClockTimer); _lnClockTimer = null;
+}
+function lnClockTick() {
+  const d = new Date(), wd = '日月火水木金土'[d.getDay()], p = n => String(n).padStart(2,'0');
+  document.getElementById('lnTime').textContent     = `${p(d.getHours())}:${p(d.getMinutes())}`;
+  document.getElementById('lnDateLong').textContent = `${d.getMonth()+1}月${d.getDate()}日 ${wd}曜日`;
+  document.getElementById('lnHeadDate').textContent = `${d.getMonth()+1}/${d.getDate()}（${wd}）`;
+}
+function renderLauncher() {
+  lnClockTick();
+
+  // 直近の予定：未完了・期限ありを期限順に3件。バッジ件数はヘッダーのurgentBadgeと同じ（超過＋3日以内）
+  const act = getAll().filter(r => !r.completed && r.deadline)
+                      .sort((a,b) => daysUntil(a.deadline) - daysUntil(b.deadline));
+  const od  = act.filter(r => daysUntil(r.deadline) < 0).length;
+  const urg = act.filter(r => daysUntil(r.deadline) <= 3).length;
+  document.getElementById('lnOverdue').textContent = od ? `期限切れ ${od}` : '';
+  document.getElementById('lnBadge').textContent   = urg || '';
+  const dueLabel = n => n < 0 ? `${-n}日超過` : n === 0 ? '今日' : n === 1 ? '明日' : `${n}日後`;
+  document.getElementById('lnRemList').innerHTML = act.length
+    ? act.slice(0,3).map(r => {
+        const n = daysUntil(r.deadline), cls = n < 0 ? ' od' : n === 0 ? ' td' : '';
+        return `<span class="ln-rem-row${cls}"><span class="ln-rem-bar"></span><span class="ln-rem-title">${escH(r.title)}</span><span class="ln-rem-due">${dueLabel(n)}</span></span>`;
+      }).join('')
+    : '<span class="ln-empty">期限のある予定はありません</span>';
+
+  // 今日の配送：excel_schedule.weeks の全週から今日の日付の引取(ac)・納品(ad)を数える。
+  // todayStr()はUTC基準で朝9時前に前日になるため、ここではローカル日付を使う。
+  const p = n => String(n).padStart(2,'0'), t = new Date();
+  const iso = `${t.getFullYear()}-${p(t.getMonth()+1)}-${p(t.getDate())}`;
+  const delMain = document.getElementById('lnDelMain'), delSub = document.getElementById('lnDelSub');
+  if (_excelSchedule) {
+    const weeks = _excelSchedule.weeks ? Object.values(_excelSchedule.weeks) : [_excelSchedule];
+    let ac = 0, ad = 0;
+    weeks.forEach(w => {
+      (w.ac_side||[]).forEach(i => { if (i.date === iso) ac++; });
+      (w.ad_side||[]).forEach(i => { if (i.date === iso) ad++; });
+    });
+    delMain.innerHTML  = `${ac+ad}<small> 件</small>`;
+    delSub.textContent = `引取 ${ac} · 納品 ${ad}`;
+  } else {
+    delMain.textContent = '—';
+    delSub.textContent  = '同期中...';
+  }
+
+  // 最新の測定：電卓タブの測定履歴(localStorage)から日付が最も新しい1件
+  let mMain = '—', mSub = '記録なし';
+  try {
+    const h = JSON.parse(localStorage.getItem('meas_history') || '[]');
+    if (Array.isArray(h) && h.length) {
+      const last = h.reduce((a,b) => (b.date||'') > (a.date||'') ? b : a);
+      mMain = (last.memo||'').trim() || '(メモなし)';
+      mSub  = last.date || '';
+    }
+  } catch(e) {}
+  document.getElementById('lnMeasMain').textContent = mMain;
+  document.getElementById('lnMeasSub').textContent  = mSub;
+}
+
+// --- アプリ一覧（下から出るシート。名前・説明で絞り込み） ---
+function openLnDrawer() {
+  document.getElementById('lnSearch').value = '';
+  renderLnAppList();
+  document.getElementById('lnDrawer').classList.add('open');
+}
+function closeLnDrawer() {
+  document.getElementById('lnDrawer').classList.remove('open');
+}
+function renderLnAppList() {
+  const q = document.getElementById('lnSearch').value.trim().toLowerCase();
+  const list = LN_APPS.filter(a => !q || a.name.toLowerCase().includes(q) || a.desc.includes(q));
+  document.getElementById('lnAppList').innerHTML = list.length
+    ? list.map(a => `<button class="ln-item" onclick="launchApp('${a.id}')">
+        <span class="ln-item-ic" style="color:${a.color}">${a.name.slice(0,1)}</span>
+        <span><span class="ln-item-name">${a.name}</span><span class="ln-item-desc">${a.desc}</span></span>
+      </button>`).join('')
+    : '<div class="ln-empty">見つかりません</div>';
+}
+

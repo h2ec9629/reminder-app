@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#1A1614">
+  <meta name="theme-color" content="#1C1D1F">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Wm2B">
@@ -30,6 +30,9 @@
 
 <!-- ========== HEADER ========== -->
 <header class="header">
+  <button class="hdr-home" onclick="openLauncher()" aria-label="ホームへ戻る">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+  </button>
   <span class="header-title" onclick="forceUpdate()" style="cursor:pointer;">Wm2B</span>
   <span class="urgent-badge" id="urgentBadge"></span>
   <span class="header-date" id="headerDate"></span>
@@ -448,11 +451,8 @@
 
   <!-- メニューを開く丸ボタン（下部中央）。リング表示中はこのボタン自体がリングの裏に隠れるため、
        閉じる操作はリング側に重ねて表示する#ringCloseFab（同じ見た目のボタン）が担う -->
-  <button class="menu-fab" id="menuFab" onclick="toggleRingOverlay()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-      <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>
-    </svg>
-  </button>
+  <!-- 2026-10-29：三本線の丸ボタンからホームバーに変更。タップでホーム画面(#launcher)を開く -->
+  <button class="menu-fab home-bar" id="menuFab" onclick="openLauncher()" aria-label="ホーム"><span></span></button>
 
 </nav>
 
@@ -489,8 +489,108 @@
 <div class="game-overlay" id="gameOverlay" onclick="closeGame()"></div>
 <div class="game-panel" id="gamePanel"></div>
 
-<!-- ========== TOP RING SCREEN（起動時トップページ・リングメニュー） ========== -->
-<div class="top-ring-screen" id="topRingScreen">
+<!-- ========== LAUNCHER（ホーム画面。2026-10-29：リングメニューから置き換え） ========== -->
+<div class="launcher hide" id="launcher">
+  <div class="ln-inner">
+    <div class="ln-head">
+      <button class="ln-logo" onclick="forceUpdate()">Wm2B</button>
+      <span class="ln-headdate" id="lnHeadDate"></span>
+    </div>
+    <div class="ln-clock">
+      <span class="ln-time" id="lnTime">--:--</span>
+      <span class="ln-date" id="lnDateLong"></span>
+    </div>
+
+    <button class="ln-panel" onclick="launchApp('home')" aria-label="予定を開く">
+      <span class="ln-panel-hd"><span>直近の予定</span><span class="ln-chip" id="lnOverdue"></span></span>
+      <span id="lnRemList"></span>
+    </button>
+
+    <div class="ln-row2">
+      <button class="ln-panel" onclick="launchApp('schedule')" aria-label="配送を開く">
+        <span class="ln-w-label" style="color:#4FB07A">今日の配送</span>
+        <span class="ln-w-main" id="lnDelMain">—</span>
+        <span class="ln-w-sub" id="lnDelSub"></span>
+      </button>
+      <button class="ln-panel" onclick="launchApp('meas')" aria-label="測定を開く">
+        <span class="ln-w-label" style="color:#6FB3C9">最新の測定</span>
+        <span class="ln-w-main sm" id="lnMeasMain">—</span>
+        <span class="ln-w-sub" id="lnMeasSub"></span>
+      </button>
+    </div>
+
+    <div class="ln-grid">
+      <button class="ln-key" onclick="launchApp('gantt')">
+        <span class="ln-led" style="background:#D9963F"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16"/><path d="M7 7h8M10 12h10M7 17h6"/></svg>
+        <span class="ln-key-label">日程</span>
+      </button>
+      <button class="ln-key" onclick="launchApp('calc')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg>
+        <span class="ln-key-label">電卓</span>
+      </button>
+      <button class="ln-key" onclick="launchApp('meas')">
+        <span class="ln-led" style="background:#6FB3C9"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></svg>
+        <span class="ln-key-label">測定</span>
+      </button>
+      <button class="ln-key" onclick="launchApp('driver')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.5-6-10a6 6 0 0 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>
+        <span class="ln-key-label">ドライバー</span>
+      </button>
+      <button class="ln-key" onclick="launchApp('vdeck')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="4" width="13" height="16" rx="2"/><path d="M4 7v11a2 2 0 0 0 2 2"/></svg>
+        <span class="ln-key-label">VDECK</span>
+      </button>
+      <button class="ln-key" onclick="launchApp('game')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="11" rx="4"/><path d="M7 11v3M5.5 12.5h3M15.5 12h.01M18 14h.01"/></svg>
+        <span class="ln-key-label">GAME</span>
+      </button>
+      <button class="ln-key" onclick="launchApp('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+        <span class="ln-key-label">設定</span>
+      </button>
+      <button class="ln-key dim" onclick="openLnDrawer()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="6" r="1.2"/><circle cx="12" cy="6" r="1.2"/><circle cx="18" cy="6" r="1.2"/><circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/><circle cx="6" cy="18" r="1.2"/><circle cx="12" cy="18" r="1.2"/><circle cx="18" cy="18" r="1.2"/></svg>
+        <span class="ln-key-label">すべて</span>
+      </button>
+    </div>
+
+    <div class="ln-spacer"></div>
+
+    <div class="ln-dock">
+      <button class="ln-key" onclick="launchApp('home')" aria-label="予定">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>
+        <span class="ln-badge" id="lnBadge"></span>
+      </button>
+      <button class="ln-key" onclick="launchApp('schedule')" aria-label="配送">
+        <span class="ln-led" style="background:#4FB07A"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.5"/><circle cx="17" cy="17.5" r="1.5"/></svg>
+      </button>
+      <button class="ln-key" onclick="launchApp('calendar')" aria-label="カレンダー">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+      </button>
+      <button class="ln-key accent" onclick="launchApp('add')" aria-label="予定を追加">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="ln-drawer" id="lnDrawer" onclick="if(event.target===this) closeLnDrawer()">
+  <div class="ln-sheet">
+    <button class="ln-handle" onclick="closeLnDrawer()" aria-label="アプリ一覧を閉じる"><span></span></button>
+    <label class="ln-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
+      <input type="search" id="lnSearch" placeholder="アプリを検索" aria-label="アプリを検索" oninput="renderLnAppList()" autocomplete="off">
+    </label>
+    <div class="ln-list" id="lnAppList"></div>
+  </div>
+</div>
+
+<!-- ========== TOP RING SCREEN（旧・起動時トップページ・リングメニュー） ========== -->
+<!-- 2026-10-29：ホーム画面(#launcher)に置き換えたため常に非表示。ui.jsのリング処理が要素を参照するのでDOMは残している -->
+<div class="top-ring-screen hide" id="topRingScreen">
 
   <!-- リング表示中は本物の.menu-fabがこの画面の下に隠れて押せなくなるため、見た目が同じボタンを
        ここに重ねて表示し、同じ場所をもう一度タップすればリングを閉じられるようにしている（2026-08-16） -->
