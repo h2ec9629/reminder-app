@@ -86,7 +86,7 @@ function switchTab(name,btn) {
   btn.classList.add('active');
   try{ sessionStorage.setItem('ojisan_last_tab_v1', name); }catch(e){}
   if(name==='home')     renderHome();
-  if(name==='settings') updateNotifStatus();
+  if(name==='settings') { updateNotifStatus(); lnRenderHiddenList(); }
   if(name==='schedule') { _schWeekOffset = 0; renderSchedule(); }
   if(name==='calendar') renderCalendar();
   if(name==='gantt')    renderGantt();
@@ -720,10 +720,19 @@ function closeLauncher() {
   lnSetEditing(false);
   clearInterval(_lnClockTimer); _lnClockTimer = null;
 }
+// 品種名：サイズ違いの製品は品種名にまとめる（例「灯具カバーPC IN 2050　L=1183.5」→「灯具カバー」）。
+// 一覧にない品名は寸法(L=…)だけ取り除く。品種が増えたらLN_KINDSに足す。
+const LN_KINDS = [[/灯具/, '灯具カバー'], [/^8FL/, '8FL'], [/ルーバー/, 'ルーバー']];
+function lnKind(n) {
+  const k = LN_KINDS.find(([re]) => re.test(n));
+  return k ? k[1] : n.replace(/[\s　]*L=.*$/, '').trim();
+}
+// ウィジェットは非表示にされると要素ごと無くなるので、中身の更新は要素がある時だけ行う
+const lnPut = (id, prop, v) => { const el = document.getElementById(id); if (el) el[prop] = v; };
 function lnClockTick() {
   const d = new Date(), wd = '日月火水木金土'[d.getDay()], p = n => String(n).padStart(2,'0');
-  document.getElementById('lnTime').textContent     = `${p(d.getHours())}:${p(d.getMinutes())}`;
-  document.getElementById('lnDateLong').textContent = `${d.getMonth()+1}月${d.getDate()}日 ${wd}曜日`;
+  lnPut('lnTime', 'textContent', `${p(d.getHours())}:${p(d.getMinutes())}`);
+  lnPut('lnDateLong', 'textContent', `${d.getMonth()+1}月${d.getDate()}日 ${wd}曜日`);
   document.getElementById('lnHeadDate').textContent = `${d.getMonth()+1}/${d.getDate()}（${wd}）`;
 }
 function renderLauncher() {
@@ -734,21 +743,20 @@ function renderLauncher() {
                       .sort((a,b) => daysUntil(a.deadline) - daysUntil(b.deadline));
   const od  = act.filter(r => daysUntil(r.deadline) < 0).length;
   const urg = act.filter(r => daysUntil(r.deadline) <= 3).length;
-  document.getElementById('lnOverdue').textContent = od ? `期限切れ ${od}` : '';
+  lnPut('lnOverdue', 'textContent', od ? `期限切れ ${od}` : '');
   lnSetBadge(urg);
   const dueLabel = n => n < 0 ? `${-n}日超過` : n === 0 ? '今日' : n === 1 ? '明日' : `${n}日後`;
-  document.getElementById('lnRemList').innerHTML = act.length
+  lnPut('lnRemList', 'innerHTML', act.length
     ? act.slice(0,3).map(r => {
         const n = daysUntil(r.deadline), cls = n < 0 ? ' od' : n === 0 ? ' td' : '';
         return `<span class="ln-rem-row${cls}"><span class="ln-rem-bar"></span><span class="ln-rem-title">${escH(r.title)}</span><span class="ln-rem-due">${dueLabel(n)}</span></span>`;
       }).join('')
-    : '<span class="ln-empty">期限のある予定はありません</span>';
+    : '<span class="ln-empty">期限のある予定はありません</span>');
 
   // 今日の配送：excel_schedule.weeks の全週から今日の日付の引取(ac)・納品(ad)を拾い、品種ごとに数量を出す。
   //   引取＝材料名(ag)・数量(mqty。大半は文言「要数」)、納品＝品名(d)・依頼数(u)。
-  //   同じ品種が複数行（明細No違い）ある場合は1行にまとめ、数量が全部数字なら合計する。
+  //   サイズ違いの製品は品種名(lnKind)にまとめて1行にし、数量が全部数字なら合計する。
   const iso = todayStr();
-  const delList = document.getElementById('lnDelList'), delSub = document.getElementById('lnDelSub');
   if (_excelSchedule) {
     const weeks = _excelSchedule.weeks ? Object.values(_excelSchedule.weeks) : [_excelSchedule];
     const groups = new Map();
@@ -758,8 +766,8 @@ function renderLauncher() {
       if (qty !== null && qty !== undefined && qty !== '') groups.get(key).qtys.push(qty);
     };
     weeks.forEach(w => {
-      (w.ac_side||[]).forEach(i => { if (i.date === iso && i.ag) put('ac', i.ag, i.mqty); });
-      (w.ad_side||[]).forEach(i => { if (i.date === iso) put('ad', i.d || '', i.u); });
+      (w.ac_side||[]).forEach(i => { if (i.date === iso && i.ag) put('ac', lnKind(i.ag), i.mqty); });
+      (w.ad_side||[]).forEach(i => { if (i.date === iso) put('ad', lnKind(i.d || ''), i.u); });
     });
     const rows = [...groups.values()].sort((a,b) => (a.kind === b.kind ? 0 : a.kind === 'ac' ? -1 : 1));
     const qtyText = g => {
@@ -768,14 +776,14 @@ function renderLauncher() {
       return nums.every(n => isFinite(n)) ? nums.reduce((s,n) => s+n, 0).toLocaleString() : String(g.qtys[0]);
     };
     const MAX = 4;
-    delList.innerHTML = rows.length
+    lnPut('lnDelList', 'innerHTML', rows.length
       ? rows.slice(0, MAX).map(g => `<span class="ln-del-row"><span class="ln-del-tag ${g.kind}">${g.kind === 'ac' ? '引取' : '納品'}</span><span class="ln-rem-title">${escH(g.name)}</span><span class="ln-del-qty">${escH(qtyText(g))}</span></span>`).join('')
         + (rows.length > MAX ? `<span class="ln-empty">ほか ${rows.length - MAX} 品種</span>` : '')
-      : '<span class="ln-empty">今日の配送はありません</span>';
-    delSub.textContent = rows.length ? `${rows.length} 品種` : '';
+      : '<span class="ln-empty">今日の配送はありません</span>');
+    lnPut('lnDelSub', 'textContent', rows.length ? `${rows.length} 品種` : '');
   } else {
-    delList.innerHTML  = '<span class="ln-empty">同期中...</span>';
-    delSub.textContent = '';
+    lnPut('lnDelList', 'innerHTML', '<span class="ln-empty">同期中...</span>');
+    lnPut('lnDelSub', 'textContent', '');
   }
 
   // 最新の測定：電卓タブの測定履歴(localStorage)から日付が最も新しい1件
@@ -788,8 +796,8 @@ function renderLauncher() {
       mSub  = last.date || '';
     }
   } catch(e) {}
-  document.getElementById('lnMeasMain').textContent = mMain;
-  document.getElementById('lnMeasSub').textContent  = mSub;
+  lnPut('lnMeasMain', 'textContent', mMain);
+  lnPut('lnMeasSub', 'textContent', mSub);
 }
 
 // --- ページ切替（横スワイプはCSSのscroll-snap。ここは下の点の表示と、点タップでの移動だけ） ---

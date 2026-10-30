@@ -4,6 +4,7 @@
 // ここで描画する。長押しで編集モードに入り、そのままドラッグで並べ替え（ページ間・ドックとの出し入れも可）。
 // アプリ本体の定義(LN_APPS)・起動(launchApp)・中身の数字の更新(renderLauncher)はui.js側。
 // ドック(#lnDockWrap)はホーム画面の外に置いてあり、どの画面を開いていても表示される。
+// 編集モードで各項目の左上「−」を押すと非表示(hidden)に移り、設定画面の「ホーム画面」から戻せる。
 const LN_LAYOUT_KEY = 'ojisan_launcher_layout_v1';
 const LN_DOCK_MAX   = 5; // ドックに置けるキーの数（左端の固定ホームキーは別）
 
@@ -36,17 +37,17 @@ const LN_ICONS = {
 const LN_LED   = { gantt:'#D9963F', meas:'#6FB3C9', schedule:'#4FB07A' }; // キー右上の色ランプ
 const LN_LABEL = { 'x-family':'ファミリー' };                              // キーに収まらない名前の短縮
 
-// ウィジェット（中の数字はui.jsのrenderLauncher()がidで埋める）。openはタップで開くアプリ
+// ウィジェット（中の数字はui.jsのrenderLauncher()がidで埋める）。openはタップで開くアプリ、nameは設定画面での表示名
 const LN_WIDGETS = {
-  'w-clock': { html: `<div class="ln-widget ln-w4 ln-clock" data-lid="w-clock">
+  'w-clock': { name: '時計',  html: `<div class="ln-widget ln-w4 ln-clock" data-lid="w-clock">
       <span class="ln-time" id="lnTime">--:--</span><span class="ln-date" id="lnDateLong"></span></div>` },
-  'w-rem':   { open: 'home', html: `<button class="ln-widget ln-w4 ln-panel" data-lid="w-rem" aria-label="予定を開く">
+  'w-rem':   { name: '直近の予定', open: 'home', html: `<button class="ln-widget ln-w4 ln-panel" data-lid="w-rem" aria-label="予定を開く">
       <span class="ln-panel-hd"><span>直近の予定</span><span class="ln-chip" id="lnOverdue"></span></span>
       <span id="lnRemList"></span></button>` },
-  'w-del':   { open: 'schedule', html: `<button class="ln-widget ln-w4 ln-panel" data-lid="w-del" aria-label="配送を開く">
+  'w-del':   { name: '今日の配送', open: 'schedule', html: `<button class="ln-widget ln-w4 ln-panel" data-lid="w-del" aria-label="配送を開く">
       <span class="ln-panel-hd"><span style="color:#4FB07A">今日の配送</span><span class="ln-w-sub" id="lnDelSub"></span></span>
       <span id="lnDelList"><span class="ln-empty">—</span></span></button>` },
-  'w-meas':  { open: 'meas', html: `<button class="ln-widget ln-w2 ln-panel" data-lid="w-meas" aria-label="測定を開く">
+  'w-meas':  { name: '最新の測定', open: 'meas', html: `<button class="ln-widget ln-w2 ln-panel" data-lid="w-meas" aria-label="測定を開く">
       <span class="ln-w-label" style="color:#6FB3C9">最新の測定</span>
       <span class="ln-w-main sm" id="lnMeasMain">—</span><span class="ln-w-sub" id="lnMeasSub"></span></button>` },
 };
@@ -55,6 +56,7 @@ const LN_DEFAULT = {
   p1:   ['w-clock','w-rem','w-del','w-meas','gantt','calc','meas','driver','vdeck','game','settings','all'],
   p2:   ['x-line','x-youtube','x-gmail','x-x','x-chrome','x-safari','x-claude','x-chatgpt','x-note','x-yahoo','camera','x-family'],
   dock: ['home','schedule','calendar','add'],
+  hidden: [],
 };
 const LN_ZONES = { p1:'lnZoneP1', p2:'lnZoneP2', dock:'lnDock' };
 
@@ -67,7 +69,7 @@ function loadLnLayout() {
   try { saved = JSON.parse(localStorage.getItem(LN_LAYOUT_KEY)); } catch(e) {}
   if (!saved) return JSON.parse(JSON.stringify(LN_DEFAULT));
   const known = id => !!LN_WIDGETS[id] || id === 'all' || LN_APPS.some(a => a.id === id);
-  const out = { p1:[], p2:[], dock:[] }, seen = new Set();
+  const out = { hidden:[], p1:[], p2:[], dock:[] }, seen = new Set(); // hiddenを先に読み、ページ側に重複させない
   Object.keys(out).forEach(z => (saved[z] || []).forEach(id => {
     if (!known(id) || seen.has(id)) return;
     if (z === 'dock' && (LN_WIDGETS[id] || out.dock.length >= LN_DOCK_MAX)) return;
@@ -95,9 +97,55 @@ function lnKeyHtml(id) {
 }
 function renderLnLayout() {
   Object.keys(LN_ZONES).forEach(z => {
-    document.getElementById(LN_ZONES[z]).innerHTML =
-      _lnLayout[z].map(id => LN_WIDGETS[id] ? LN_WIDGETS[id].html : lnKeyHtml(id)).join('');
+    const zone = document.getElementById(LN_ZONES[z]);
+    zone.innerHTML = _lnLayout[z].map(id => LN_WIDGETS[id] ? LN_WIDGETS[id].html : lnKeyHtml(id)).join('');
+    // 編集モードの時だけ見える「−」（非表示にする）。キーは<button>なので中にはspanで入れる
+    zone.querySelectorAll(':scope > [data-lid]').forEach(n =>
+      n.insertAdjacentHTML('beforeend', '<span class="ln-hide" aria-label="非表示にする">−</span>'));
   });
+}
+function lnItemName(id) {
+  if (LN_WIDGETS[id]) return LN_WIDGETS[id].name;
+  if (id === 'all') return 'すべて';
+  const a = LN_APPS.find(x => x.id === id);
+  return a ? a.name : id;
+}
+// 「設定」と「すべて」(アプリ一覧)を両方隠すと設定画面に行けなくなるので、片方は必ず残す
+function lnHideItem(id) {
+  const h = _lnLayout.hidden;
+  if ((id === 'all' && h.includes('settings')) || (id === 'settings' && h.includes('all'))) {
+    showToast('「設定」と「すべて」は両方は隠せません');
+    return;
+  }
+  Object.keys(LN_ZONES).forEach(z => { _lnLayout[z] = _lnLayout[z].filter(x => x !== id); });
+  h.push(id);
+  saveLnLayout();
+  renderLnLayout();
+  renderLauncher();
+}
+// 非表示から戻す：初期配置で置いてあった場所の末尾へ（ドックが満杯なら2ページ目）
+function lnShowItem(id) {
+  _lnLayout.hidden = _lnLayout.hidden.filter(x => x !== id);
+  const z = Object.keys(LN_ZONES).find(k => LN_DEFAULT[k].includes(id)) || 'p1';
+  _lnLayout[z === 'dock' && _lnLayout.dock.length >= LN_DOCK_MAX ? 'p2' : z].push(id);
+  saveLnLayout();
+  renderLnLayout();
+  renderLauncher();
+  lnRenderHiddenList();
+  showToast(`${lnItemName(id)}を表示しました`);
+}
+// 設定画面の「ホーム画面」グループ：非表示中の項目と「表示する」ボタン
+function lnRenderHiddenList() {
+  const el = document.getElementById('lnHiddenList');
+  if (!el) return;
+  const h = _lnLayout.hidden;
+  const pos = i => h.length === 1 ? ' set-only' : i === 0 ? ' set-first' : i === h.length - 1 ? ' set-last' : '';
+  el.innerHTML = h.length
+    ? h.map((id, i) => `<div class="set-item${pos(i)}">
+        <div class="set-info"><div class="set-label">${escH(lnItemName(id))}</div><div class="set-sub">${LN_WIDGETS[id] ? 'ウィジェット' : 'アプリ'}・非表示中</div></div>
+        <div class="set-act"><button class="sm-btn sm-btn-accent" onclick="lnShowItem('${id}')">表示する</button></div></div>`).join('')
+    : `<div class="set-item set-only"><div class="set-info"><div class="set-label">非表示の項目はありません</div>
+        <div class="set-sub">ホーム画面を長押しして「−」を押すと隠せます</div></div></div>`;
 }
 function lnResetLayout() {
   if (!confirm('ホーム画面とドックを初期配置に戻しますか？')) return;
@@ -123,6 +171,12 @@ function lnHomeKey() {
 // --- タップ：キー・ウィジェットはクリックを一括で拾う（並べ替え直後と編集中は起動しない） ---
 let _lnSuppressClick = false;
 document.addEventListener('click', e => {
+  const hideBtn = e.target.closest('.ln-hide');
+  if (hideBtn) {
+    e.preventDefault(); e.stopPropagation();
+    lnHideItem(hideBtn.parentNode.dataset.lid);
+    return;
+  }
   const el = e.target.closest('[data-lid]');
   if (_lnSuppressClick) {
     _lnSuppressClick = false;
@@ -150,7 +204,7 @@ let _lnPress = null, _lnDrag = null, _lnEdgeTimer = null, _lnEdgeDir = 0;
 
 document.addEventListener('pointerdown', e => {
   _lnSuppressClick = false;
-  if (e.button) return;
+  if (e.button || e.target.closest('.ln-hide')) return;
   const el = e.target.closest('[data-lid]');
   if (!el || !el.closest('#launcher, #lnDockWrap')) return;
   const press = { el, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY };
