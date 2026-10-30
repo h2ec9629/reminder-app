@@ -43,9 +43,9 @@ const LN_WIDGETS = {
   'w-rem':   { open: 'home', html: `<button class="ln-widget ln-w4 ln-panel" data-lid="w-rem" aria-label="予定を開く">
       <span class="ln-panel-hd"><span>直近の予定</span><span class="ln-chip" id="lnOverdue"></span></span>
       <span id="lnRemList"></span></button>` },
-  'w-del':   { open: 'schedule', html: `<button class="ln-widget ln-w2 ln-panel" data-lid="w-del" aria-label="配送を開く">
-      <span class="ln-w-label" style="color:#4FB07A">今日の配送</span>
-      <span class="ln-w-main" id="lnDelMain">—</span><span class="ln-w-sub" id="lnDelSub"></span></button>` },
+  'w-del':   { open: 'schedule', html: `<button class="ln-widget ln-w4 ln-panel" data-lid="w-del" aria-label="配送を開く">
+      <span class="ln-panel-hd"><span style="color:#4FB07A">今日の配送</span><span class="ln-w-sub" id="lnDelSub"></span></span>
+      <span id="lnDelList"><span class="ln-empty">—</span></span></button>` },
   'w-meas':  { open: 'meas', html: `<button class="ln-widget ln-w2 ln-panel" data-lid="w-meas" aria-label="測定を開く">
       <span class="ln-w-label" style="color:#6FB3C9">最新の測定</span>
       <span class="ln-w-main sm" id="lnMeasMain">—</span><span class="ln-w-sub" id="lnMeasSub"></span></button>` },

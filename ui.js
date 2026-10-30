@@ -744,21 +744,38 @@ function renderLauncher() {
       }).join('')
     : '<span class="ln-empty">期限のある予定はありません</span>';
 
-  // 今日の配送：excel_schedule.weeks の全週から今日の日付の引取(ac)・納品(ad)を数える。
+  // 今日の配送：excel_schedule.weeks の全週から今日の日付の引取(ac)・納品(ad)を拾い、品種ごとに数量を出す。
+  //   引取＝材料名(ag)・数量(mqty。大半は文言「要数」)、納品＝品名(d)・依頼数(u)。
+  //   同じ品種が複数行（明細No違い）ある場合は1行にまとめ、数量が全部数字なら合計する。
   const iso = todayStr();
-  const delMain = document.getElementById('lnDelMain'), delSub = document.getElementById('lnDelSub');
+  const delList = document.getElementById('lnDelList'), delSub = document.getElementById('lnDelSub');
   if (_excelSchedule) {
     const weeks = _excelSchedule.weeks ? Object.values(_excelSchedule.weeks) : [_excelSchedule];
-    let ac = 0, ad = 0;
+    const groups = new Map();
+    const put = (kind, name, qty) => {
+      const key = kind + '|' + name;
+      if (!groups.has(key)) groups.set(key, { kind, name, qtys: [] });
+      if (qty !== null && qty !== undefined && qty !== '') groups.get(key).qtys.push(qty);
+    };
     weeks.forEach(w => {
-      (w.ac_side||[]).forEach(i => { if (i.date === iso) ac++; });
-      (w.ad_side||[]).forEach(i => { if (i.date === iso) ad++; });
+      (w.ac_side||[]).forEach(i => { if (i.date === iso && i.ag) put('ac', i.ag, i.mqty); });
+      (w.ad_side||[]).forEach(i => { if (i.date === iso) put('ad', i.d || '', i.u); });
     });
-    delMain.innerHTML  = `${ac+ad}<small> 件</small>`;
-    delSub.textContent = `引取 ${ac} · 納品 ${ad}`;
+    const rows = [...groups.values()].sort((a,b) => (a.kind === b.kind ? 0 : a.kind === 'ac' ? -1 : 1));
+    const qtyText = g => {
+      if (!g.qtys.length) return '';
+      const nums = g.qtys.map(q => Number(String(q).replace(/,/g,'')));
+      return nums.every(n => isFinite(n)) ? nums.reduce((s,n) => s+n, 0).toLocaleString() : String(g.qtys[0]);
+    };
+    const MAX = 4;
+    delList.innerHTML = rows.length
+      ? rows.slice(0, MAX).map(g => `<span class="ln-del-row"><span class="ln-del-tag ${g.kind}">${g.kind === 'ac' ? '引取' : '納品'}</span><span class="ln-rem-title">${escH(g.name)}</span><span class="ln-del-qty">${escH(qtyText(g))}</span></span>`).join('')
+        + (rows.length > MAX ? `<span class="ln-empty">ほか ${rows.length - MAX} 品種</span>` : '')
+      : '<span class="ln-empty">今日の配送はありません</span>';
+    delSub.textContent = rows.length ? `${rows.length} 品種` : '';
   } else {
-    delMain.textContent = '—';
-    delSub.textContent  = '同期中...';
+    delList.innerHTML  = '<span class="ln-empty">同期中...</span>';
+    delSub.textContent = '';
   }
 
   // 最新の測定：電卓タブの測定履歴(localStorage)から日付が最も新しい1件

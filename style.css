@@ -1584,6 +1584,11 @@
 .ln-rem-row.td .ln-rem-bar { background: var(--accent); }
 .ln-rem-row.td .ln-rem-due { color: #E07A58; }
 .ln-empty { font-size: 13px; color: var(--text-sub); padding: 4px 0; }
+.ln-del-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+.ln-del-tag { font-size: 11px; font-weight: 700; padding: 2px 6px; flex-shrink: 0; }
+.ln-del-tag.ac { color: #E0A85A; background: #3A2E1E; }
+.ln-del-tag.ad { color: #6FCB95; background: #1E3428; }
+.ln-del-qty { font-size: 15px; font-weight: 500; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 
 .ln-row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .ln-w-label { font-size: 12px; font-weight: 700; }
