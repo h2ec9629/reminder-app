@@ -913,20 +913,31 @@
       padding: 2px 6px; border-radius: 5px; flex-shrink: 0; margin-top: 1px;
     }
     .cal-detail-row.tap { cursor: pointer; }
-    /* この月の予定（カレンダー下の一覧） */
-    .cal-detail-hd .cal-ml-count { float: right; font-size: 12px; font-weight: 600; color: var(--text-sub); }
+    /* この月の予定（カレンダー下の一覧）：日付見出しで区切り、イベントは1件ずつカード */
+    .cal-month { margin-bottom: 14px; }
+    .cal-ml-hd { font-size: 14px; font-weight: 700; color: var(--text); padding: 0 2px 4px; }
+    .cal-ml-count { float: right; font-size: 12px; font-weight: 600; color: var(--text-sub); }
+    .cal-ml-group { margin-top: 14px; }
     .cal-ml-day {
-      font-size: 12px; font-weight: 700; color: var(--text-sub);
-      padding: 10px 0 4px; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 14px; font-weight: 700; color: var(--text);
+      padding: 0 2px 6px; margin-bottom: 6px; border-bottom: 2px solid var(--border-strong, #4A4B4F);
+      cursor: pointer;
     }
-    .cal-detail-hd + .cal-ml-day { padding-top: 0; }
-    .cal-ml-day.today { color: var(--accent); }
-    .cal-ml-today { margin-left: 6px; font-size: 10px; padding: 1px 5px; background: var(--accent-dim); color: var(--accent); }
+    .cal-ml-day.sat { color: #60A5FA; }
+    .cal-ml-day.hol { color: #F87171; }
+    .cal-ml-day.today { color: var(--accent); border-bottom-color: var(--accent); }
+    .cal-ml-today { font-size: 10px; padding: 1px 5px; background: var(--accent-dim); color: var(--accent); }
     .cal-ml-row {
-      display: flex; align-items: center; gap: 8px; width: 100%;
-      padding: 7px 0; border: 0; border-bottom: 1px solid var(--border);
-      background: none; color: var(--text); font-family: inherit; font-size: 13px; text-align: left;
+      display: flex; align-items: center; gap: 8px; width: 100%; margin-bottom: 6px;
+      padding: 11px 12px; border: 1px solid var(--border); border-left: 3px solid var(--border);
+      background: var(--surface); color: var(--text); font-family: inherit; font-size: 13px; text-align: left;
+      box-shadow: 0 1px 2px rgba(0,0,0,.35);
     }
+    .cal-ml-row.ev-hol { border-left-color: #A78BFA; }
+    .cal-ml-row.ev-rem { border-left-color: var(--accent); }
+    .cal-ml-row.ev-ac  { border-left-color: #FBB040; }
+    .cal-ml-row.ev-ad  { border-left-color: #4ADE80; }
     .cal-ml-row.tap { cursor: pointer; }
     .cal-ml-row.tap:active { background: var(--surface-2); }
     .cal-ml-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

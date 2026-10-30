@@ -89,23 +89,26 @@ function renderCalMonthList(reminders, todayISO) {
   dates.forEach(iso => {
     const d = days[iso];
     let rows = '';
-    if (d.hol) rows += `<div class="cal-ml-row"><span class="cal-detail-tag" style="background:var(--purple-dim);color:#A78BFA;">祝日</span><span class="cal-ml-title">${escH(d.hol)}</span></div>`;
+    if (d.hol) rows += `<div class="cal-ml-row ev-hol"><span class="cal-detail-tag" style="background:var(--purple-dim);color:#A78BFA;">祝日</span><span class="cal-ml-title">${escH(d.hol)}</span></div>`;
     d.rems.forEach(r => {
-      rows += `<button type="button" class="cal-ml-row tap" onclick="openEdit('${r.id}')">`
+      rows += `<button type="button" class="cal-ml-row tap ev-rem" onclick="openEdit('${r.id}')">`
             + `<span class="cal-detail-tag" style="${calRemTagStyle(r)}">期限</span>`
             + `<span class="cal-ml-title">${escH(r.title)}${r.notes ? `<span class="cal-ml-sub">${escH(r.notes)}</span>` : ''}</span>`
             + `<span class="cal-ml-go">›</span></button>`;
     });
     d.del.forEach(g => {
-      rows += `<div class="cal-ml-row"><span class="cal-detail-tag" style="${g.kind === 'ac' ? 'background:var(--warning-dim);color:#FBB040;' : 'background:var(--success-dim);color:#4ADE80;'}">${g.kind === 'ac' ? '引取' : '納品'}</span>`
+      rows += `<div class="cal-ml-row ev-${g.kind}"><span class="cal-detail-tag" style="${g.kind === 'ac' ? 'background:var(--warning-dim);color:#FBB040;' : 'background:var(--success-dim);color:#4ADE80;'}">${g.kind === 'ac' ? '引取' : '納品'}</span>`
             + `<span class="cal-ml-title">${escH(g.name)}</span><span class="cal-ml-qty">${escH(g.qty)}</span></div>`;
     });
     count += (d.hol ? 1 : 0) + d.rems.length + d.del.length;
-    body += `<div class="cal-ml-day${iso === todayISO ? ' today' : ''}" onclick="if(!event.target.closest('.tap')) calSelectDate('${iso}')">${fmtDateStr(iso)}${iso === todayISO ? '<span class="cal-ml-today">今日</span>' : ''}</div>${rows}`;
+    // 日付ごとに見出し＋イベントカードの塊にする（見出しは土=青・日祝=赤）
+    const dow = new Date(iso + 'T00:00:00').getDay();
+    const dayCls = d.hol || dow === 0 ? ' hol' : dow === 6 ? ' sat' : '';
+    body += `<div class="cal-ml-group"><div class="cal-ml-day${dayCls}${iso === todayISO ? ' today' : ''}" onclick="calSelectDate('${iso}')">${fmtDateStr(iso)}${iso === todayISO ? '<span class="cal-ml-today">今日</span>' : ''}</div>${rows}</div>`;
   });
 
-  document.getElementById('calMonthList').innerHTML = `<div class="cal-detail cal-month">
-    <div class="cal-detail-hd">${_calMonth+1}月の予定<span class="cal-ml-count">${count ? count + '件' : ''}</span></div>
+  document.getElementById('calMonthList').innerHTML = `<div class="cal-month">
+    <div class="cal-ml-hd">${_calMonth+1}月の予定<span class="cal-ml-count">${count ? count + '件' : ''}</span></div>
     ${count ? body : '<div class="cal-detail-empty">この月の予定はありません</div>'}
   </div>`;
 }
