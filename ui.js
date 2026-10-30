@@ -674,7 +674,7 @@ const LN_APPS = [
   { id:'gantt',    name:'日程',       desc:'ガントチャート',             color:'#D9963F' },
   { id:'calendar', name:'カレンダー', desc:'月表示カレンダー',           color:'#D9963F' },
   { id:'calc',     name:'電卓',       desc:'電卓・計算',                 color:'#C9CACD' },
-  { id:'meas',     name:'測定',       desc:'機番ごとの測定記録',         color:'#6FB3C9', href:'meas.html' },
+  { id:'meas',     name:'測定',       desc:'機番ごとの測定記録',         color:'#6FB3C9' }, // 電卓タブ2ページ目（meas.html埋め込み）を開く
   { id:'driver',   name:'ドライバー', desc:'配送ドライバー用ページ',     color:'#4FB07A', href:'driver.html' },
   { id:'vdeck',    name:'VDECK',      desc:'動画プレイヤー',             color:'#9C82D0' },
   { id:'game',     name:'GAME',       desc:'クイズ・麻雀ほか',           color:'#9C82D0' },
@@ -702,6 +702,9 @@ function launchApp(id) {
   if (!app) return;
   closeLnDrawer();
   if (id === 'camera') { openCamera(); return; } // ホーム画面の上に重ねて開き、閉じたらホームに戻る
+  // 測定は meas.html へ画面ごと移動せず、電卓タブに埋め込んだ測定ページを開く。
+  // 移動すると本体（ドック）から抜けてしまい、iPhoneでアプリを開き直した時も測定ページのまま戻れなくなるため
+  if (id === 'meas') { switchTab('calc', document.createElement('button')); calcPgGoto(1); closeLauncher(); return; }
   if (app.sc)  { location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(app.sc); return; }
   if (app.href) { location.href = app.href; return; }
   if (id === 'game') openGameMode();

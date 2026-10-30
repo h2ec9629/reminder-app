@@ -131,6 +131,14 @@
     .mh-cur::after { content: ' ✎'; font-weight: 400; color: var(--text-sub); }
     .mh-cur:active { background: var(--surface); }
     .mh-prev { font-size: 13px; color: #7FB3FF; }
+    /* Wm2Bのホームへ戻るボタン：スマホ表示で、本体に埋め込まれず単独で開いている時だけ出す
+       （以前の「測定」キーやアプリの開き直しで meas.html 単独の画面に来ると、ドックが無く戻れなかった） */
+    .mh-home { display: none; }
+    html.ph.solo .mh-home {
+      display: inline-block; margin-right: 8px; padding: 3px 10px;
+      font-size: 13px; font-weight: 700; color: var(--text); text-decoration: none;
+      background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+    }
     .mh-prev::before { content: '｜'; margin: 0 8px; color: var(--text-faint); font-weight: 400; }
 
     /* ===== DIFF CELL ===== */
@@ -576,6 +584,7 @@
 <main class="main">
 
   <div class="meas-header" id="measHeader">
+    <a class="mh-home" href="./" aria-label="Wm2Bのホームへ">⌂ Wm2B</a>
     <button class="mh-cur" id="mhCur" type="button" onclick="reopenSetup()">機番未設定</button>
     <div class="mh-prev" id="mhPrev">前回値: —</div>
   </div>
@@ -2365,6 +2374,9 @@ function _histShowList() {
 function _esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+
+// 本体(Wm2B)に埋め込まれず単独で開いているか（ホームへ戻るボタンの表示に使う）
+if (window.top === window) document.documentElement.classList.add('solo');
 
 // ===== SW登録 =====
 // Wm2B本体の電卓タブに埋め込まれている時（iframe）は登録しない（本体の画面までこのSWの管理下に入るため）
