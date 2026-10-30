@@ -2315,7 +2315,8 @@ function _esc(s) {
 }
 
 // ===== SW登録 =====
-if ('serviceWorker' in navigator) {
+// Wm2B本体の電卓タブに埋め込まれている時（iframe）は登録しない（本体の画面までこのSWの管理下に入るため）
+if ('serviceWorker' in navigator && window.top === window) {
   navigator.serviceWorker.register('meas_sw.js').catch(function() {});
 }
 
