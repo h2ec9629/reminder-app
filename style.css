@@ -1772,6 +1772,7 @@
 .ln-dock-zone { flex: 1; min-width: 0; display: flex; gap: 8px; min-height: 50px; }
 .ln-dock .ln-key { flex: 1 1 0; min-width: 0; height: 50px; }
 .ln-dock .ln-home-key { flex: 0 0 50px; }
+.ln-home-key svg { width: 24px; height: 24px; }
 .ln-dock .ln-key-label { display: none; }
 .ln-dock .ln-led { top: 6px; right: 6px; }
 body.ln-home .ln-home-key { color: #E07A58; } /* ホーム表示中はホームキーを点灯 */

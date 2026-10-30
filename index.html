@@ -520,12 +520,9 @@
 </div>
 
 <!-- 下部ドック。ホーム画面だけでなく、どの画面を開いていても表示する（横向きでは隠して右下のホームバーを使う）。
-     左端のホームキーは固定、右側のキーは長押しで並べ替え・ホーム画面との出し入れができる -->
+     キーは長押しで並べ替え・ホーム画面との出し入れができる（ホームキー(hk)はドックの中だけで動かせる） -->
 <div class="ln-dock-wrap" id="lnDockWrap">
   <div class="ln-dock">
-    <button class="ln-key dim ln-home-key" onclick="lnHomeKey()" aria-label="ホーム">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/></svg>
-    </button>
     <div class="ln-dock-zone" id="lnDock" data-lzone="dock"></div>
   </div>
 </div>

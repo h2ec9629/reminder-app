@@ -5,10 +5,12 @@
 // アプリ本体の定義(LN_APPS)・起動(launchApp)・中身の数字の更新(renderLauncher)はui.js側。
 // ドック(#lnDockWrap)はホーム画面の外に置いてあり、どの画面を開いていても表示される。
 // 編集モードで各項目の左上「−」を押すと非表示(hidden)に移り、設定画面の「ホーム画面」から戻せる。
+// ホームキー(hk)は他の画面から戻る唯一の手段なので、ドックの中でだけ動かせて、隠せない。
 const LN_LAYOUT_KEY = 'ojisan_launcher_layout_v1';
-const LN_DOCK_MAX   = 5; // ドックに置けるキーの数（左端の固定ホームキーは別）
+const LN_DOCK_MAX   = 6; // ドックに置けるキーの数（ホームキーを含む）
 
 const LN_ICONS = {
+  hk:         '<circle cx="12" cy="12" r="7.5"/>', // Android風のホームボタン（丸）
   home:       '<path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>',
   add:        '<path d="M12 5v14M5 12h14"/>',
   schedule:   '<path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.5"/><circle cx="17" cy="17.5" r="1.5"/>',
@@ -55,7 +57,7 @@ const LN_WIDGETS = {
 const LN_DEFAULT = {
   p1:   ['w-clock','w-rem','w-del','w-meas','gantt','calc','meas','driver','vdeck','game','settings','all'],
   p2:   ['x-line','x-youtube','x-gmail','x-x','x-chrome','x-safari','x-claude','x-chatgpt','x-note','x-yahoo','camera','x-family'],
-  dock: ['home','schedule','calendar','add'],
+  dock: ['hk','home','schedule','calendar','add'],
   hidden: [],
 };
 const LN_ZONES = { p1:'lnZoneP1', p2:'lnZoneP2', dock:'lnDock' };
@@ -68,13 +70,16 @@ function loadLnLayout() {
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(LN_LAYOUT_KEY)); } catch(e) {}
   if (!saved) return JSON.parse(JSON.stringify(LN_DEFAULT));
-  const known = id => !!LN_WIDGETS[id] || id === 'all' || LN_APPS.some(a => a.id === id);
+  const known = id => !!LN_WIDGETS[id] || id === 'all' || id === 'hk' || LN_APPS.some(a => a.id === id);
   const out = { hidden:[], p1:[], p2:[], dock:[] }, seen = new Set(); // hiddenを先に読み、ページ側に重複させない
   Object.keys(out).forEach(z => (saved[z] || []).forEach(id => {
     if (!known(id) || seen.has(id)) return;
     if (z === 'dock' && (LN_WIDGETS[id] || out.dock.length >= LN_DOCK_MAX)) return;
+    if (id === 'hk' && z !== 'dock') return;
     out[z].push(id); seen.add(id);
   }));
+  if (!seen.has('hk')) { out.dock.unshift('hk'); seen.add('hk'); } // 以前の保存（ホームキー固定時代）には無いので左端に足す
+  if (out.dock.length > LN_DOCK_MAX) out.p2.push(...out.dock.splice(LN_DOCK_MAX));
   Object.keys(out).forEach(z => LN_DEFAULT[z].forEach(id => {
     if (seen.has(id)) return;
     out[z === 'dock' && out.dock.length >= LN_DOCK_MAX ? 'p2' : z].push(id); seen.add(id);
@@ -86,9 +91,9 @@ function saveLnLayout() {
 }
 
 function lnKeyHtml(id) {
-  const a = id === 'all' ? { name:'すべて' } : LN_APPS.find(x => x.id === id);
+  const a = id === 'all' ? { name:'すべて' } : id === 'hk' ? { name:'ホーム' } : LN_APPS.find(x => x.id === id);
   if (!a) return '';
-  const cls   = id === 'add' ? ' accent' : id === 'all' ? ' dim' : '';
+  const cls   = id === 'add' ? ' accent' : id === 'all' ? ' dim' : id === 'hk' ? ' dim ln-home-key' : '';
   const led   = LN_LED[id] ? `<span class="ln-led" style="background:${LN_LED[id]}"></span>` : '';
   const badge = id === 'home' ? '<span class="ln-badge" id="lnBadge"></span>' : '';
   return `<button class="ln-key${cls}" data-lid="${id}" aria-label="${a.name}">${led}`
@@ -100,7 +105,7 @@ function renderLnLayout() {
     const zone = document.getElementById(LN_ZONES[z]);
     zone.innerHTML = _lnLayout[z].map(id => LN_WIDGETS[id] ? LN_WIDGETS[id].html : lnKeyHtml(id)).join('');
     // 編集モードの時だけ見える「−」（非表示にする）。キーは<button>なので中にはspanで入れる
-    zone.querySelectorAll(':scope > [data-lid]').forEach(n =>
+    zone.querySelectorAll(':scope > [data-lid]:not([data-lid="hk"])').forEach(n =>
       n.insertAdjacentHTML('beforeend', '<span class="ln-hide" aria-label="非表示にする">−</span>'));
   });
 }
@@ -162,7 +167,7 @@ function lnSetEditing(on) {
   _lnEditing = on;
   document.body.classList.toggle('ln-editing', on);
 }
-// ドック左端の固定ホームキー：ホーム以外ならホームへ、ホームなら1ページ目へ
+// ドックのホームキー(hk)：ホーム以外ならホームへ、ホームなら1ページ目へ
 function lnHomeKey() {
   if (document.getElementById('launcher').classList.contains('hide')) openLauncher();
   else lnGoPage(0);
@@ -193,6 +198,7 @@ document.addEventListener('click', e => {
   const id = el.dataset.lid;
   if (LN_WIDGETS[id]) { if (LN_WIDGETS[id].open) launchApp(LN_WIDGETS[id].open); }
   else if (id === 'all') openLnDrawer();
+  else if (id === 'hk') lnHomeKey();
   else launchApp(id);
 }, true);
 
@@ -262,6 +268,7 @@ function lnDragMove(x, y) {
               : under.closest('[data-lzone]') || (under.closest('#lnDockWrap') ? dock : page && page.querySelector('[data-lzone]'));
   lnEdgeCheck(x, y, !!(under && under.closest('#lnDockWrap')));
   if (!zone) return;
+  if (d.el.dataset.lid === 'hk' && zone !== dock) return; // ホームキーはドックから出さない
   if (zone === dock) {
     if (d.widget) return; // ウィジェットはドックに置けない
     if (d.el.parentNode !== dock && dock.children.length >= LN_DOCK_MAX) return; // 満杯なら入れない
