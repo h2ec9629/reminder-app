@@ -388,6 +388,11 @@
     }
     .save-panel.show { display: block; }
     .save-panel-title { font-size: 12px; font-weight: 700; color: var(--text-faint); margin-bottom: 8px; }
+    .opt-title { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; }
+    .opt-x {
+      background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-size: 13px; font-weight: 700; padding: 6px 12px; cursor: pointer; font-family: inherit;
+    }
     /* 機番行 */
     .save-kiban-row {
       display: -webkit-box; display: -webkit-flex; display: flex;
@@ -530,6 +535,12 @@
     body.ph .mh-prev { font-size: 12px; }
     body.ph .mh-prev::before { margin: 0 4px; }
     body.ph .toast { bottom: calc(var(--ph-bar, 0px) + 12px); }
+    /* オプションは下部バーの上に出し、画面より長い時はパネルの中でスクロール（バーのボタンを隠さない） */
+    body.ph .save-panel {
+      bottom: var(--ph-bar, 0px); max-height: calc(100vh - var(--ph-bar, 0px));
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+    }
+    body.ph .opt-title { position: -webkit-sticky; position: sticky; top: -10px; z-index: 1; background: var(--surface); padding: 4px 0; margin-top: -4px; }
     /* 履歴：機番一覧を全件出し、機番をタップしたら一覧と入れ替えで詳細を出す（「◀ 機番一覧へ」で戻る） */
     body.ph .hist-view { height: auto; min-height: 100vh; -webkit-flex-direction: column; flex-direction: column; padding-bottom: var(--ph-bar, 0px); }
     body.ph .hist-sidebar { width: auto; max-width: none; min-width: 0; overflow-y: visible; border-right: none; }
@@ -722,7 +733,7 @@
 
 <!-- ===== オプションパネル（画面下部） ===== -->
 <div class="save-panel" id="optionPanel">
-  <div class="save-panel-title">オプション</div>
+  <div class="save-panel-title opt-title">オプション<button class="opt-x" type="button" onclick="closeOptionPanel()">✕ 閉じる</button></div>
   <div class="save-kiban-row" style="margin-bottom:4px;">
     <span class="save-kiban-label">キーパッド</span>
     <span id="kpModeInfo" style="font-size:10px;color:var(--text-faint);"></span>
@@ -2011,6 +2022,7 @@ function toggleHist() {
     mv.className       = 'hist-view hidden';
     main.style.display = '';
     btn.classList.remove('active');
+    closeOptionPanel(); // LOG中にオプションを開いたまま測定へ戻った時も閉じる
     _setBodyClass('hist-open', false); _phPad();
   }
 }
