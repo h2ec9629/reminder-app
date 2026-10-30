@@ -92,6 +92,7 @@ function switchTab(name,btn) {
   if(name==='gantt')    renderGantt();
   if(name==='calc')     calcDisplay();
   if(name==='vdeck')    loadVdeckFrame();
+  if(name==='news')     newsShow();
 
 
   window.scrollTo(0,0);
@@ -678,6 +679,7 @@ const LN_APPS = [
   { id:'driver',   name:'ドライバー', desc:'配送ドライバー用ページ',     color:'#4FB07A', href:'driver.html' },
   { id:'vdeck',    name:'VDECK',      desc:'動画プレイヤー',             color:'#9C82D0' },
   { id:'game',     name:'GAME',       desc:'クイズ・麻雀ほか',           color:'#9C82D0' },
+  { id:'news',     name:'ニュース',   desc:'Yahoo!ニュース 主要（アプリ内で読む）', color:'#E57373' },
   { id:'settings', name:'設定',       desc:'通知・同期・PAT',            color:'#A3A4A8' },
   // 外部アプリ（2026-10-29追加、iPhone想定）。hrefはアプリ公式の呼び出しアドレス。
   // scはiPhoneの「ショートカット」アプリ経由（呼び出しアドレスが無い/非公開のアプリ用）。
@@ -810,6 +812,9 @@ function renderLauncher() {
   } catch(e) {}
   lnPut('lnMeasMain', 'textContent', mMain);
   lnPut('lnMeasSub', 'textContent', mSub);
+
+  // ニュース：見出し4件（news.js。古ければ裏で取り直して描き直す）
+  newsWidget();
 }
 
 // --- ページ切替（横スワイプはCSSのscroll-snap。ここは下の点の表示と、点タップでの移動だけ） ---

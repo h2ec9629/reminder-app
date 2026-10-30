@@ -211,6 +211,18 @@
     <div id="calMonthList"></div>
   </div>
 
+  <!-- NEWS（news.js。一覧と、タップで開く記事本文をこのタブの中で切り替える） -->
+  <div id="tab-news" class="tab-content">
+    <div id="newsListView">
+      <div class="news-bar">
+        <div><div class="news-hd">ニュース</div><div class="news-src">Yahoo!ニュース 主要 · <span id="newsStatus"></span></div></div>
+        <button type="button" class="sm-btn sm-btn-sec" onclick="newsRefresh()">更新</button>
+      </div>
+      <div id="newsList"></div>
+    </div>
+    <div id="newsReader" class="news-reader hide"></div>
+  </div>
+
   <!-- SCHEDULE -->
   <div id="tab-schedule" class="tab-content">
     <div class="sch-title-bar">引取・配送日程</div>
@@ -609,6 +621,7 @@
 <script src="quiz.js"></script>
 <script src="mahjong.js"></script>
 <script src="camera.js"></script>
+<script src="news.js"></script>
 <script src="launcher.js"></script>
 <script src="main.js"></script>
 </body>

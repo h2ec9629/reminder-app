@@ -34,9 +34,10 @@ const LN_ICONS = {
   'x-chatgpt':'<circle cx="12" cy="12" r="9"/><path d="M8 12h.01M12 12h.01M16 12h.01"/>',
   'x-note':   '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>',
   'x-yahoo':  '<rect x="3" y="5" width="15" height="14" rx="1"/><path d="M18 9h3v8a2 2 0 0 1-2 2M6 9h9M6 13h9M6 16h6"/>',
+  news:       '<path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 8h3v9a2 2 0 0 1-2 2"/><path d="M7 9h7M7 12h7M7 15h4"/>',
   'x-family': '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.2"/><path d="M15.5 14.2A4.5 4.5 0 0 1 21 18.5"/>',
 };
-const LN_LED   = { gantt:'#D9963F', meas:'#6FB3C9', schedule:'#4FB07A' }; // キー右上の色ランプ
+const LN_LED   = { gantt:'#D9963F', meas:'#6FB3C9', schedule:'#4FB07A', news:'#E57373' }; // キー右上の色ランプ
 const LN_LABEL = { 'x-family':'ファミリー' };                              // キーに収まらない名前の短縮
 
 // ウィジェット（中の数字はui.jsのrenderLauncher()がidで埋める）。openはタップで開くアプリ、nameは設定画面での表示名
@@ -49,13 +50,18 @@ const LN_WIDGETS = {
   'w-del':   { name: '今日の配送', open: 'schedule', html: `<button class="ln-widget ln-w4 ln-panel" data-lid="w-del" aria-label="配送を開く">
       <span class="ln-panel-hd"><span style="color:#4FB07A">今日の配送</span><span class="ln-w-sub" id="lnDelSub"></span></span>
       <span id="lnDelList"><span class="ln-empty">—</span></span></button>` },
+  // ニュースは見出しの行をタップするとその記事を、それ以外をタップすると一覧を開く（tap）
+  'w-news':  { name: 'ニュース', tap: e => { const r = e.target.closest('[data-news-i]'); launchApp('news'); if (r) newsOpen(+r.dataset.newsI); },
+    html: `<button class="ln-widget ln-w4 ln-panel" data-lid="w-news" aria-label="ニュースを開く">
+      <span class="ln-panel-hd"><span style="color:#E57373">ニュース</span><span class="ln-w-sub">Yahoo!ニュース 主要</span></span>
+      <span id="lnNewsList"><span class="ln-empty">読み込み中...</span></span></button>` },
   'w-meas':  { name: '最新の測定', open: 'meas', html: `<button class="ln-widget ln-w2 ln-panel" data-lid="w-meas" aria-label="測定を開く">
       <span class="ln-w-label" style="color:#6FB3C9">最新の測定</span>
       <span class="ln-w-main sm" id="lnMeasMain">—</span><span class="ln-w-sub" id="lnMeasSub"></span></button>` },
 };
 
 const LN_DEFAULT = {
-  p1:   ['w-clock','w-rem','w-del','w-meas','gantt','calc','meas','driver','vdeck','game','settings','all'],
+  p1:   ['w-clock','w-rem','w-del','w-news','w-meas','gantt','calc','meas','news','driver','vdeck','game','settings','all'],
   p2:   ['x-line','x-youtube','x-gmail','x-x','x-chrome','x-safari','x-claude','x-chatgpt','x-note','x-yahoo','camera','x-family'],
   dock: ['hk','home','schedule','calendar','add'],
   hidden: [],
@@ -196,7 +202,7 @@ document.addEventListener('click', e => {
   }
   if (!el || !el.closest('#launcher, #lnDockWrap')) return;
   const id = el.dataset.lid;
-  if (LN_WIDGETS[id]) { if (LN_WIDGETS[id].open) launchApp(LN_WIDGETS[id].open); }
+  if (LN_WIDGETS[id]) { if (LN_WIDGETS[id].tap) LN_WIDGETS[id].tap(e); else if (LN_WIDGETS[id].open) launchApp(LN_WIDGETS[id].open); }
   else if (id === 'all') openLnDrawer();
   else if (id === 'hk') lnHomeKey();
   else launchApp(id);
