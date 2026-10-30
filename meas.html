@@ -493,6 +493,9 @@
        切替は オプション →「画面レイアウト」。自動＝画面幅600px未満でスマホ扱い（_applyLayout）。
        --ph-bar は下部バーの高さ（JSの _phPad が実測して入れる）。 */
     body.ph { --side-w: 0px; }
+    /* スマホ表示は body をスクロール枠にせず、画面（iframe内なら iframe の画面）ごとスクロールさせる。
+       body が枠だと、電卓タブに埋め込んだ iPhone で一覧が指でスクロールできず数件しか見えなかった */
+    html.ph body { height: auto; min-height: 100%; overflow: visible; }
     body.ph .main { padding: 8px 6px calc(var(--ph-bar, 0px) + 12px); }
     body.ph .bb-side {
       top: auto; right: 0; width: auto;
@@ -862,6 +865,7 @@ function _setBodyClass(name, on) {
 function _applyLayout() {
   var ph = _isPhoneLayout(), m = _getLayoutMode(), i, btns;
   _setBodyClass('ph', ph);
+  if (ph) document.documentElement.classList.add('ph'); else document.documentElement.classList.remove('ph');
   _setBodyClass('ph-setup', ph && (!_setupDone || _phSetupOpen));
   btns = document.getElementById('lyModeRow').getElementsByTagName('button');
   for (i = 0; i < btns.length; i++) {
@@ -2077,7 +2081,7 @@ function _renderSidebar() {
   var k;
   for (k = 0; k < items.length; k++) {
     (function(kban) {
-      items[k].ontouchend = function(e) { e.preventDefault(); _selKiban = kban; _renderSidebar(); _renderDetail(kban); };
+      items[k].ontouchend = function(e) { if (!_isTap(e)) return; e.preventDefault(); _selKiban = kban; _renderSidebar(); _renderDetail(kban); };
       items[k].onclick    = function()  { _selKiban = kban; _renderSidebar(); _renderDetail(kban); };
     })(order[k]);
   }
@@ -2314,6 +2318,7 @@ function _renderDetail(kiban) {
   for (k = 0; k < dels.length; k++) {
     (function(rec) {
       dels[k].ontouchend = function(e) {
+        if (!_isTap(e)) return;
         e.preventDefault(); e.stopPropagation();
         _deleteRecord(rec, kiban);
         _delTouchAt = Date.now();
@@ -2325,6 +2330,17 @@ function _renderDetail(kiban) {
       };
     })(recs[k]);
   }
+}
+
+// タッチの「タップ」判定：指を置いた所から10px以上動いていたらスクロール操作とみなす。
+// ontouchend で即反応させている所（LOGの機番・記録の×）で、スクロールの指離れを誤ってタップ扱いしないため
+var _touchX = 0, _touchY = 0;
+document.addEventListener('touchstart', function(e) {
+  if (e.touches && e.touches[0]) { _touchX = e.touches[0].clientX; _touchY = e.touches[0].clientY; }
+}, { passive: true });
+function _isTap(e) {
+  var t = e.changedTouches && e.changedTouches[0];
+  return !t || (Math.abs(t.clientX - _touchX) < 10 && Math.abs(t.clientY - _touchY) < 10);
 }
 
 // スマホ表示のLOG：詳細を閉じて機番一覧に戻す
