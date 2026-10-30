@@ -27,8 +27,7 @@ function renderCalendar() {
   label.textContent = `${_calYear}年${_calMonth+1}月`;
 
   const reminders   = getAll().filter(r => !r.completed && r.deadline);
-  const acItems     = (_excelSchedule&&_excelSchedule.ac_side)||[];
-  const adItems     = (_excelSchedule&&_excelSchedule.ad_side)||[];
+  const { ac: acItems, ad: adItems } = schAllItems(); // 配送データは週ごと(weeks)に入っているので全週分を平らにする
   const todayISO    = todayStr();
 
   // 月の最初・最後
@@ -59,6 +58,56 @@ function renderCalendar() {
   document.getElementById('calGrid').innerHTML = html;
   if(_calSelected) renderCalDetail(_calSelected, reminders, acItems, adItems);
   else document.getElementById('calDetail').innerHTML = '';
+  renderCalMonthList(reminders, todayISO);
+}
+
+// 期限タグの色（超過＝紫、2日以内＝赤、7日以内＝黄、それ以降＝グレー）
+function calRemTagStyle(r) {
+  const n = daysUntil(r.deadline);
+  return n<0 ? 'background:var(--purple-dim);color:#A78BFA;'
+       : n<=2 ? 'background:var(--danger-dim);color:#F87171;'
+       : n<=7 ? 'background:var(--warning-dim);color:#FBB040;'
+       : 'background:var(--surface-2);color:var(--text-sub);';
+}
+
+// ▼カレンダー下の「この月の予定」一覧（2026-10-30追加）。表示中の月の祝日・期限(リマインダー)・引取/納品を日付順に並べる。
+//   リマインダーの行はタップで編集パネル(openEdit)を開き、内容(タイトル・期限・メモ)を確認・変更できる。
+//   引取・納品は日ごとに品種でまとめる（schKindRows。配送データは今週・来週の2週分しか無い）。
+function renderCalMonthList(reminders, todayISO) {
+  const ym    = `${_calYear}-${String(_calMonth+1).padStart(2,'0')}-`;
+  const items = schAllItems();
+  const days  = {};
+  const day   = iso => days[iso] || (days[iso] = { hol: null, rems: [], del: [] });
+  Object.keys(JP_HOLIDAYS).forEach(iso => { if (iso.startsWith(ym)) day(iso).hol = JP_HOLIDAYS[iso]; });
+  reminders.forEach(r => { if (r.deadline.startsWith(ym)) day(r.deadline).rems.push(r); });
+  [...items.ac, ...items.ad].forEach(i => { if (i.date && i.date.startsWith(ym)) day(i.date); });
+  Object.keys(days).forEach(iso => { days[iso].del = schKindRows(iso, items); });
+
+  const dates = Object.keys(days).sort();
+  let count = 0;
+  let body = '';
+  dates.forEach(iso => {
+    const d = days[iso];
+    let rows = '';
+    if (d.hol) rows += `<div class="cal-ml-row"><span class="cal-detail-tag" style="background:var(--purple-dim);color:#A78BFA;">祝日</span><span class="cal-ml-title">${escH(d.hol)}</span></div>`;
+    d.rems.forEach(r => {
+      rows += `<button type="button" class="cal-ml-row tap" onclick="openEdit('${r.id}')">`
+            + `<span class="cal-detail-tag" style="${calRemTagStyle(r)}">期限</span>`
+            + `<span class="cal-ml-title">${escH(r.title)}${r.notes ? `<span class="cal-ml-sub">${escH(r.notes)}</span>` : ''}</span>`
+            + `<span class="cal-ml-go">›</span></button>`;
+    });
+    d.del.forEach(g => {
+      rows += `<div class="cal-ml-row"><span class="cal-detail-tag" style="${g.kind === 'ac' ? 'background:var(--warning-dim);color:#FBB040;' : 'background:var(--success-dim);color:#4ADE80;'}">${g.kind === 'ac' ? '引取' : '納品'}</span>`
+            + `<span class="cal-ml-title">${escH(g.name)}</span><span class="cal-ml-qty">${escH(g.qty)}</span></div>`;
+    });
+    count += (d.hol ? 1 : 0) + d.rems.length + d.del.length;
+    body += `<div class="cal-ml-day${iso === todayISO ? ' today' : ''}" onclick="if(!event.target.closest('.tap')) calSelectDate('${iso}')">${fmtDateStr(iso)}${iso === todayISO ? '<span class="cal-ml-today">今日</span>' : ''}</div>${rows}`;
+  });
+
+  document.getElementById('calMonthList').innerHTML = `<div class="cal-detail cal-month">
+    <div class="cal-detail-hd">${_calMonth+1}月の予定<span class="cal-ml-count">${count ? count + '件' : ''}</span></div>
+    ${count ? body : '<div class="cal-detail-empty">この月の予定はありません</div>'}
+  </div>`;
 }
 
 function isoOf(dt) {
@@ -98,8 +147,7 @@ function calCell(dt, otherMonth, todayISO, reminders, acItems, adItems) {
 function calSelectDate(iso) {
   _calSelected = _calSelected===iso ? null : iso;
   const reminders = getAll().filter(r => !r.completed && r.deadline);
-  const acItems   = (_excelSchedule&&_excelSchedule.ac_side)||[];
-  const adItems   = (_excelSchedule&&_excelSchedule.ad_side)||[];
+  const { ac: acItems, ad: adItems } = schAllItems();
   document.querySelectorAll('.cal-cell').forEach(el => el.classList.remove('selected'));
   if(_calSelected) {
     document.querySelectorAll('.cal-cell').forEach(el => {
@@ -133,12 +181,8 @@ function renderCalDetail(iso, reminders, acItems, adItems) {
       html += `<div class="cal-detail-row"><span class="cal-detail-tag" style="background:var(--success-dim);color:#4ADE80;">納品</span><div><div style="color:var(--text);">${escH(i.d||'')}</div>${i.s||i.u?`<div style="font-size:11px;color:var(--text-sub);">${escH([i.s,i.u].filter(Boolean).join(' · '))}</div>`:''}  </div></div>`;
     });
     dayRems.forEach(r => {
-      const n = daysUntil(r.deadline);
-      const tagColor = n<0 ? 'background:var(--purple-dim);color:#A78BFA;'
-                     : n<=2 ? 'background:var(--danger-dim);color:#F87171;'
-                     : n<=7 ? 'background:var(--warning-dim);color:#FBB040;'
-                     : 'background:var(--surface-2);color:var(--text-sub);';
-      html += `<div class="cal-detail-row"><span class="cal-detail-tag" style="${tagColor}">期限</span><div><div style="color:var(--text);">${escH(r.title)}</div>${r.notes?`<div style="font-size:11px;color:var(--text-sub);">${escH(r.notes)}</div>`:''}</div></div>`;
+      // タップで編集パネル（内容の確認・変更）
+      html += `<div class="cal-detail-row tap" onclick="openEdit('${r.id}')"><span class="cal-detail-tag" style="${calRemTagStyle(r)}">期限</span><div style="flex:1;min-width:0;"><div style="color:var(--text);">${escH(r.title)}</div>${r.notes?`<div style="font-size:11px;color:var(--text-sub);">${escH(r.notes)}</div>`:''}</div><span class="cal-ml-go">›</span></div>`;
     });
   }
 

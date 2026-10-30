@@ -637,6 +637,7 @@ function saveEdit() {
   updateReminder(_editId, { title, deadline: deadline||null, notes: notes||null });
   closeEdit();
   renderHome();
+  if (document.getElementById('tab-calendar').classList.contains('active')) renderCalendar(); // カレンダーから開いた時
   showToast('更新しました');
 }
 
@@ -727,6 +728,33 @@ function lnKind(n) {
   const k = LN_KINDS.find(([re]) => re.test(n));
   return k ? k[1] : n.replace(/[\s　]*L=.*$/, '').trim();
 }
+// 配送データ(excel_schedule)の引取(ac)・納品(ad)を全週ぶん平らにして返す（weeks形式・古い直下形式の両対応）
+function schAllItems() {
+  if (!_excelSchedule) return { ac: [], ad: [] };
+  const weeks = _excelSchedule.weeks ? Object.values(_excelSchedule.weeks) : [_excelSchedule];
+  return { ac: weeks.flatMap(w => w.ac_side || []), ad: weeks.flatMap(w => w.ad_side || []) };
+}
+// ある日の引取・納品を品種ごとにまとめる（ホームの「今日の配送」・カレンダー共用）。引取→納品の順。
+//   引取＝材料名(ag)・数量(mqty。大半は文言「要数」)、納品＝品名(d)・依頼数(u)。
+//   サイズ違いの製品は品種名(lnKind)にまとめ、数量が全部数字なら合計、それ以外は最初の値を出す。
+function schKindRows(iso, items = schAllItems()) {
+  const groups = new Map();
+  const put = (kind, name, qty) => {
+    const key = kind + '|' + name;
+    if (!groups.has(key)) groups.set(key, { kind, name, qtys: [] });
+    if (qty !== null && qty !== undefined && qty !== '') groups.get(key).qtys.push(qty);
+  };
+  items.ac.forEach(i => { if (i.date === iso && i.ag) put('ac', lnKind(i.ag), i.mqty); });
+  items.ad.forEach(i => { if (i.date === iso) put('ad', lnKind(i.d || ''), i.u); });
+  return [...groups.values()]
+    .sort((a,b) => (a.kind === b.kind ? 0 : a.kind === 'ac' ? -1 : 1))
+    .map(g => {
+      const nums = g.qtys.map(q => Number(String(q).replace(/,/g,'')));
+      const qty = !g.qtys.length ? ''
+                : nums.every(n => isFinite(n)) ? nums.reduce((s,n) => s+n, 0).toLocaleString() : String(g.qtys[0]);
+      return { kind: g.kind, name: g.name, qty };
+    });
+}
 // ウィジェットは非表示にされると要素ごと無くなるので、中身の更新は要素がある時だけ行う
 const lnPut = (id, prop, v) => { const el = document.getElementById(id); if (el) el[prop] = v; };
 function lnClockTick() {
@@ -753,31 +781,12 @@ function renderLauncher() {
       }).join('')
     : '<span class="ln-empty">期限のある予定はありません</span>');
 
-  // 今日の配送：excel_schedule.weeks の全週から今日の日付の引取(ac)・納品(ad)を拾い、品種ごとに数量を出す。
-  //   引取＝材料名(ag)・数量(mqty。大半は文言「要数」)、納品＝品名(d)・依頼数(u)。
-  //   サイズ違いの製品は品種名(lnKind)にまとめて1行にし、数量が全部数字なら合計する。
-  const iso = todayStr();
+  // 今日の配送：品種ごとの引取・納品と数量（schKindRows）
   if (_excelSchedule) {
-    const weeks = _excelSchedule.weeks ? Object.values(_excelSchedule.weeks) : [_excelSchedule];
-    const groups = new Map();
-    const put = (kind, name, qty) => {
-      const key = kind + '|' + name;
-      if (!groups.has(key)) groups.set(key, { kind, name, qtys: [] });
-      if (qty !== null && qty !== undefined && qty !== '') groups.get(key).qtys.push(qty);
-    };
-    weeks.forEach(w => {
-      (w.ac_side||[]).forEach(i => { if (i.date === iso && i.ag) put('ac', lnKind(i.ag), i.mqty); });
-      (w.ad_side||[]).forEach(i => { if (i.date === iso) put('ad', lnKind(i.d || ''), i.u); });
-    });
-    const rows = [...groups.values()].sort((a,b) => (a.kind === b.kind ? 0 : a.kind === 'ac' ? -1 : 1));
-    const qtyText = g => {
-      if (!g.qtys.length) return '';
-      const nums = g.qtys.map(q => Number(String(q).replace(/,/g,'')));
-      return nums.every(n => isFinite(n)) ? nums.reduce((s,n) => s+n, 0).toLocaleString() : String(g.qtys[0]);
-    };
+    const rows = schKindRows(todayStr());
     const MAX = 4;
     lnPut('lnDelList', 'innerHTML', rows.length
-      ? rows.slice(0, MAX).map(g => `<span class="ln-del-row"><span class="ln-del-tag ${g.kind}">${g.kind === 'ac' ? '引取' : '納品'}</span><span class="ln-rem-title">${escH(g.name)}</span><span class="ln-del-qty">${escH(qtyText(g))}</span></span>`).join('')
+      ? rows.slice(0, MAX).map(g => `<span class="ln-del-row"><span class="ln-del-tag ${g.kind}">${g.kind === 'ac' ? '引取' : '納品'}</span><span class="ln-rem-title">${escH(g.name)}</span><span class="ln-del-qty">${escH(g.qty)}</span></span>`).join('')
         + (rows.length > MAX ? `<span class="ln-empty">ほか ${rows.length - MAX} 品種</span>` : '')
       : '<span class="ln-empty">今日の配送はありません</span>');
     lnPut('lnDelSub', 'textContent', rows.length ? `${rows.length} 品種` : '');
