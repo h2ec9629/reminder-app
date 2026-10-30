@@ -527,10 +527,18 @@
     body.ph .mh-prev { font-size: 12px; }
     body.ph .mh-prev::before { margin: 0 4px; }
     body.ph .toast { bottom: calc(var(--ph-bar, 0px) + 12px); }
-    /* 履歴：一覧を上、詳細を下に縦積み */
+    /* 履歴：機番一覧を全件出し、機番をタップしたら一覧と入れ替えで詳細を出す（「◀ 機番一覧へ」で戻る） */
     body.ph .hist-view { height: auto; min-height: 100vh; -webkit-flex-direction: column; flex-direction: column; padding-bottom: var(--ph-bar, 0px); }
-    body.ph .hist-sidebar { width: auto; max-width: none; min-width: 0; max-height: 40vh; border-right: none; border-bottom: 1px solid var(--border); }
-    body.ph .hist-detail { overflow-y: visible; }
+    body.ph .hist-sidebar { width: auto; max-width: none; min-width: 0; overflow-y: visible; border-right: none; }
+    body.ph .hist-detail { display: none; overflow-y: visible; }
+    body.ph .hist-view.show-detail .hist-sidebar { display: none; }
+    body.ph .hist-view.show-detail .hist-detail { display: block; }
+    .hist-list-back { display: none; }
+    body.ph .hist-list-back {
+      display: block; width: 100%; margin-bottom: 10px;
+      background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-size: 14px; font-weight: 700; padding: 11px; font-family: inherit; cursor: pointer;
+    }
     body.ph.hist-open .bb-kiban-row, body.ph.hist-open #applyBtn,
     body.ph.hist-open .bb-status-row, body.ph.hist-open .bb-divider { display: none; }   /* LOG中は機番欄をたたむ */
 
@@ -2102,6 +2110,7 @@ function _deleteRecord(rec, kiban) {
   } else {
     _selKiban = null;
     document.getElementById('histDetail').innerHTML = '<div class="hist-detail-empty">←機番を選択</div>';
+    _histShowList();
   }
 }
 
@@ -2261,9 +2270,11 @@ function _renderDetail(kiban) {
   var detail = document.getElementById('histDetail');
   if (!recs.length) {
     detail.innerHTML = '<div class="hist-detail-empty">←機番を選択</div>';
+    _histShowList();
     return;
   }
-  var html = '<div class="hist-detail-hd">'
+  var html = '<button class="hist-list-back" id="histListBack">◀ 機番一覧へ</button>'
+           + '<div class="hist-detail-hd">'
            +   '<span class="hist-detail-memo">機番 ' + _esc(kiban) + '</span>'
            +   '<button class="hist-print-btn" id="histPrintBtn">🖨 印刷用紙</button>'
            + '</div>';
@@ -2290,6 +2301,12 @@ function _renderDetail(kiban) {
   var pbtn = document.getElementById('histPrintBtn');
   if (pbtn) pbtn.onclick = function() { openPrintPreview(kiban); };
 
+  // スマホ表示：一覧を隠して詳細だけにする（戻るボタンで一覧へ）
+  var hv = document.getElementById('histView');
+  if (hv.className.indexOf('show-detail') < 0) hv.className += ' show-detail';
+  window.scrollTo(0, 0); document.body.scrollTop = 0;
+  document.getElementById('histListBack').onclick = _histShowList;
+
   // 各ステータスの×削除（合成clickの二重発火は _delTouchAt でガード。
   // 起点時刻は confirm 終了後に取り直す＝ログ削除バグと同じ対策）
   var dels = detail.getElementsByClassName('hist-rec-del');
@@ -2308,6 +2325,13 @@ function _renderDetail(kiban) {
       };
     })(recs[k]);
   }
+}
+
+// スマホ表示のLOG：詳細を閉じて機番一覧に戻す
+function _histShowList() {
+  var hv = document.getElementById('histView');
+  hv.className = hv.className.replace(/\s*show-detail/g, '');
+  window.scrollTo(0, 0); document.body.scrollTop = 0;
 }
 
 function _esc(s) {
