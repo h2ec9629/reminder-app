@@ -134,11 +134,8 @@ function calcApply(a, b, op) {
 let _calcPgIdx = 0;
 function calcPgGoto(idx) { calcPgSwitch(idx - _calcPgIdx); }
 function calcPgSwitch(dir) {
-  _calcPgIdx = (_calcPgIdx + dir + 3) % 3;
-  // 測定ページ（埋め込みの meas.html）は初めて開いた時に読み込む
-  const mf = document.getElementById('calcMeasFrame');
-  if (_calcPgIdx === 1 && mf && !mf.src) mf.src = mf.dataset.src;
-  ['calcPg0','calcPg1','calcPg2'].forEach((id,i) => {
+  _calcPgIdx = (_calcPgIdx + dir + 2) % 2;   // 0=電卓、1=ニコチン調合計算（測定は2026-10-31に独立タブへ）
+  ['calcPg0','calcPg1'].forEach((id,i) => {
     const el = document.getElementById(id);
     const dot = document.getElementById('cdot'+i);
     if (el) { el.classList.remove('pg-left','pg-right'); if(i!==_calcPgIdx) el.classList.add(i<_calcPgIdx?'pg-left':'pg-right'); }
@@ -169,7 +166,7 @@ let _vapeTarget = null;
 
 function vapeSetVol(v, btn) {
   document.getElementById('vapeVol').value = v;
-  document.querySelectorAll('#calcPg2 .vape-presets .vape-preset').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#calcPg1 .vape-presets .vape-preset').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   vapeCalc();
 }

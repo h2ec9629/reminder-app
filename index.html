@@ -313,11 +313,6 @@
         </div>
       </div>
       <div class="calc-pg pg-right" id="calcPg1">
-        <!-- 測定：測定アプリ(meas.html)をそのまま埋め込む（2026-10-30〜。旧・電卓タブ内の三相測定は廃止）。
-             記録は同じ localStorage の meas_history を使う。初めてこのページを開いた時に読み込む（calcPgSwitch） -->
-        <iframe class="calc-meas-frame" id="calcMeasFrame" data-src="meas.html" title="測定"></iframe>
-      </div>
-      <div class="calc-pg pg-right" id="calcPg2">
         <div class="vape-container">
           <div class="vape-title">ニコチン調合計算</div>
           <div class="vape-section">
@@ -359,8 +354,13 @@
     <div class="calc-dots">
       <span class="calc-dot on" id="cdot0" onclick="calcPgGoto(0)"></span>
       <span class="calc-dot" id="cdot1" onclick="calcPgGoto(1)"></span>
-      <span class="calc-dot" id="cdot2" onclick="calcPgGoto(2)"></span>
     </div>
+  </div>
+
+  <!-- 測定（2026-10-31〜電卓タブから独立）：測定アプリ(meas.html)をそのまま埋め込む。
+       記録は同じ localStorage の meas_history を使う。初めてこのタブを開いた時に読み込む（ui.js:loadMeasFrame） -->
+  <div id="tab-meas" class="tab-content">
+    <iframe id="measFrame" class="vdeck-frame meas-frame" data-src="meas.html" title="測定"></iframe>
   </div>
 
   <!-- VDECK（動画プレイヤー・別アプリをiframeで内蔵） -->
