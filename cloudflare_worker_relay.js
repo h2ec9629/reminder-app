@@ -6,15 +6,25 @@
 //
 // 2026-10-30追加：/news/ 以下はWm2Bのニュース機能用（news.js）。
 //   /news/list?feed=top          … Yahoo!ニュースのRSS（見出し一覧）をJSONにして返す
+//   /news/list?feed=all          … 全ジャンルのRSSをまとめて新しい順に返す（同じ記事は1件に。各記事に cat=ジャンル）
 //   /news/article?url=<記事URL>  … 記事ページを取ってきて本文だけ抜き出してJSONで返す（Wm2Bの画面で読むため）
+//   /news/thumb?url=<記事URL>    … 記事の写真（og:image）へ転送する。一覧のサムネに <img src> でそのまま使う
 //   取りに行ける先は news.yahoo.co.jp だけに限定（何でも中継できる踏み台にしないため）。
 //   本文は読む人の画面に出すだけで、どこにも保存しない。
 
 const CORS = { 'Access-Control-Allow-Origin': '*' };
 
-// 見出し一覧の取得元（feed= の値 → RSSのURL）。ジャンルを増やす時はここに足す
+// 見出し一覧の取得元（feed= の値 → RSSのURL）。Yahoo!のRSSは1本8件前後なので、全ジャンルをまとめて件数を増やす
 const NEWS_FEEDS = {
-  top: 'https://news.yahoo.co.jp/rss/topics/top-picks.xml',
+  top:           'https://news.yahoo.co.jp/rss/topics/top-picks.xml',
+  domestic:      'https://news.yahoo.co.jp/rss/topics/domestic.xml',
+  world:         'https://news.yahoo.co.jp/rss/topics/world.xml',
+  business:      'https://news.yahoo.co.jp/rss/topics/business.xml',
+  entertainment: 'https://news.yahoo.co.jp/rss/topics/entertainment.xml',
+  sports:        'https://news.yahoo.co.jp/rss/topics/sports.xml',
+  it:            'https://news.yahoo.co.jp/rss/topics/it.xml',
+  science:       'https://news.yahoo.co.jp/rss/topics/science.xml',
+  local:         'https://news.yahoo.co.jp/rss/topics/local.xml',
 };
 const NEWS_HOSTS = ['news.yahoo.co.jp'];
 const BROWSER_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
@@ -92,20 +102,43 @@ async function getText(target) {
 async function handleNews(url) {
   try {
     if (url.pathname === '/news/list') {
-      const feed = NEWS_FEEDS[url.searchParams.get('feed') || 'top'];
+      const key = url.searchParams.get('feed') || 'top';
+      if (key === 'all') return json({ items: await allFeeds() }, 200, 300);
+      const feed = NEWS_FEEDS[key];
       if (!feed) return json({ error: 'unknown feed' }, 400);
-      return json({ items: parseRss(await getText(feed)) }, 200, 300);
+      return json({ items: parseRss(await getText(feed)).map(i => ({ ...i, cat: key })) }, 200, 300);
     }
-    if (url.pathname === '/news/article') {
+    if (url.pathname === '/news/article' || url.pathname === '/news/thumb') {
       let target;
       try { target = new URL(url.searchParams.get('url') || ''); } catch (e) { return json({ error: 'bad url' }, 400); }
       if (target.protocol !== 'https:' || !NEWS_HOSTS.includes(target.hostname)) return json({ error: 'host not allowed' }, 400);
+      if (url.pathname === '/news/thumb') {
+        // 写真が無い記事は404（一覧側は画像の読み込み失敗として枠ごと消す）。写真のアドレスは1日覚えさせる
+        const img = meta(await getText(target.href), 'og:image');
+        if (!/^https:\/\//.test(img)) return json({ error: 'no image' }, 404, 3600);
+        return new Response(null, { status: 302, headers: { Location: img, 'Cache-Control': 'public, max-age=86400', ...CORS } });
+      }
       return json(await readArticle(target.href), 200, 600);
     }
     return json({ error: 'not found' }, 404);
   } catch (e) {
     return json({ error: String(e && e.message || e) }, 502);
   }
+}
+
+// 全ジャンルを同時に取ってまとめる。取れなかったジャンルは飛ばす。同じ記事が複数ジャンルにあれば先に出た方（主要が先頭）を残す
+async function allFeeds() {
+  const keys = Object.keys(NEWS_FEEDS);
+  const lists = await Promise.all(keys.map(k => getText(NEWS_FEEDS[k]).then(parseRss, () => [])));
+  const seen = new Set();
+  const all = [];
+  lists.forEach((items, i) => items.forEach(it => {
+    const id = it.link.replace(/\?.*$/, '');
+    if (seen.has(id)) return;
+    seen.add(id);
+    all.push({ ...it, cat: keys[i] });
+  }));
+  return all.sort((a, b) => (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0));
 }
 
 // Yahoo!の「トピックス」はまず要約ページ(/pickup/)で、そこから「記事全文を読む」で本文(/articles/)へ飛ぶ。
