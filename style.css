@@ -962,7 +962,7 @@
     }
     .news-item:active { background: var(--surface-2); }
     .news-item-body  { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-    .news-thumb      { flex-shrink: 0; width: 96px; height: 64px; object-fit: cover; background: var(--surface-2); }
+    .news-thumb      { order: -1; flex-shrink: 0; width: 96px; height: 64px; object-fit: cover; background: var(--surface-2); } /* サムネは左側 */
     .news-item-title { font-size: 15px; font-weight: 600; line-height: 1.45; }
     .news-item-date  { font-size: 11px; color: var(--text-sub); }
     .news-cats { display: flex; gap: 6px; overflow-x: auto; margin: 0 -2px 10px; padding: 0 2px 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
