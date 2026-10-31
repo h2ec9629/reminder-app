@@ -972,6 +972,20 @@
       background: var(--surface); border: 1px solid var(--border); color: var(--text-sub);
     }
     .news-cat.on { background: #E57373; border-color: #E57373; color: #1C1D1F; }
+    .news-modes { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 8px; border: 1px solid var(--border); }
+    .news-mode { padding: 9px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; background: var(--surface); border: 0; color: var(--text-sub); }
+    .news-mode.on { background: var(--surface-2); color: var(--text); box-shadow: inset 0 -2px 0 #E57373; }
+    .news-cat.news-cat-edit { color: var(--text); border-style: dashed; }
+    .news-edit { background: var(--surface); border: 1px solid var(--border); padding: 12px; }
+    .news-edit-hd { display: flex; align-items: center; justify-content: space-between; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+    .news-edit-done, .news-edit-btn { padding: 8px 14px; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; background: #E57373; border: 0; color: #1C1D1F; }
+    .news-edit-add { display: flex; gap: 6px; margin-bottom: 10px; }
+    .news-edit-in { flex: 1; min-width: 0; padding: 9px 10px; font-size: 16px; font-family: inherit; background: var(--bg); border: 1px solid var(--border); color: var(--text); }
+    .news-edit-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 2px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text); }
+    .news-edit-del { width: 32px; height: 32px; font-size: 18px; cursor: pointer; background: var(--surface-2); border: 1px solid var(--border); color: #F08A8A; }
+    .news-edit-reset { display: block; width: 100%; margin-top: 12px; padding: 10px; font-family: inherit; font-size: 13px; cursor: pointer; background: none; border: 1px dashed var(--border); color: var(--text-sub); }
+    .news-edit-note { margin-top: 8px; font-size: 11px; color: var(--text-faint); line-height: 1.6; }
+    .news-orig.news-orig-big { padding: 12px; font-size: 14px; font-weight: 700; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); text-decoration: none; }
     .news-item-cat { margin-right: 6px; padding: 1px 5px; background: var(--surface-2); color: var(--text-sub); }
     .news-empty { text-align: center; color: var(--text-faint); font-size: 13px; padding: 24px 0; }
     .news-reader.hide, #newsListView.hide { display: none; }

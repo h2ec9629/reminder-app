@@ -9,6 +9,8 @@
 //   /news/list?feed=all          … 全ジャンルのRSSをまとめて新しい順に返す（同じ記事は1件に。各記事に cat=ジャンル）
 //   /news/article?url=<記事URL>  … 記事ページを取ってきて本文だけ抜き出してJSONで返す（Wm2Bの画面で読むため）
 //   /news/thumb?url=<記事URL>    … 記事の写真（og:image）へ転送する。一覧のサムネに <img src> でそのまま使う
+//   /news/search?q=<キーワード>  … テーマ用。Yahoo!ニュースの記事検索の結果を返す。読み取れなかった時は
+//                                 Googleニュースの検索で代わりに探す（その記事は ext=true＝Wm2B内で本文は読めない）
 //   取りに行ける先は news.yahoo.co.jp だけに限定（何でも中継できる踏み台にしないため）。
 //   本文は読む人の画面に出すだけで、どこにも保存しない。
 
@@ -108,6 +110,17 @@ async function handleNews(url) {
       if (!feed) return json({ error: 'unknown feed' }, 400);
       return json({ items: parseRss(await getText(feed)).map(i => ({ ...i, cat: key })) }, 200, 300);
     }
+    if (url.pathname === '/news/search') {
+      const q = (url.searchParams.get('q') || '').trim().slice(0, 60);
+      if (!q) return json({ error: 'no query' }, 400);
+      let items = [];
+      try { items = parseYahooSearch(await getText('https://news.yahoo.co.jp/search?ei=utf-8&p=' + encodeURIComponent(q))); } catch (e) {}
+      if (!items.length) {
+        const g = await getText('https://news.google.com/rss/search?hl=ja&gl=JP&ceid=JP:ja&q=' + encodeURIComponent(q));
+        items = parseRss(g).map(i => ({ ...i, title: i.title.replace(/\s+-\s+[^-]+$/, ''), ext: true }));
+      }
+      return json({ items }, 200, 600);
+    }
     if (url.pathname === '/news/article' || url.pathname === '/news/thumb') {
       let target;
       try { target = new URL(url.searchParams.get('url') || ''); } catch (e) { return json({ error: 'bad url' }, 400); }
@@ -190,6 +203,26 @@ function parseRss(xml) {
     const link = tagText(b, 'link');
     if (!title || !link) continue;
     items.push({ title, link, date: tagText(b, 'pubDate') });
+  }
+  return items;
+}
+
+// Yahoo!ニュース検索の結果ページから記事を拾う。記事本文(/articles/)へのリンク1つが1件。
+// リンクの中の文字のうち一番長いものを見出し、<time> を日時、<img> をサムネとして使う（ページの作りが少し変わっても拾えるように）
+function parseYahooSearch(html) {
+  const items = [];
+  const seen = new Set();
+  const re = /<a\s[^>]*href="(https:\/\/news\.yahoo\.co\.jp\/articles\/[0-9a-zA-Z]+)[^"]*"[^>]*>([\s\S]*?)<\/a>/gi;
+  let m;
+  while ((m = re.exec(html)) && items.length < 30) {
+    if (seen.has(m[1])) continue;
+    const inner = m[2];
+    const texts = inner.replace(/<time[\s\S]*?<\/time>/gi, '\n').split(/<[^>]+>/).map(t => decode(t).trim()).filter(Boolean);
+    const title = texts.reduce((a, b) => (b.length > a.length ? b : a), '');
+    if (title.length < 8) continue;
+    seen.add(m[1]);
+    const img = (inner.match(/<img[^>]+src="([^"]+)"/i) || [, ''])[1];
+    items.push({ title, link: m[1], date: tagText(inner, 'time'), image: /^https:/.test(img) ? decode(img) : '' });
   }
   return items;
 }

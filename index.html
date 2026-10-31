@@ -218,6 +218,10 @@
         <div><div class="news-hd">ニュース</div><div class="news-src">Yahoo!ニュース · <span id="newsStatus"></span></div></div>
         <button type="button" class="sm-btn sm-btn-sec" onclick="newsRefresh()">更新</button>
       </div>
+      <div class="news-modes">
+        <button type="button" class="news-mode" data-mode="genre" onclick="newsSetMode('genre')">ジャンル</button>
+        <button type="button" class="news-mode" data-mode="theme" onclick="newsSetMode('theme')">テーマ</button>
+      </div>
       <div class="news-cats" id="newsCats"></div>
       <div id="newsList"></div>
     </div>
