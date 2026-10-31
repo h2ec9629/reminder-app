@@ -7,7 +7,8 @@
 // 2026-10-30追加：/news/ 以下はWm2Bのニュース機能用（news.js）。
 //   /news/list?feed=top          … Yahoo!ニュースのRSS（見出し一覧）をJSONにして返す
 //   /news/list?feed=all          … 全ジャンルのRSSをまとめて新しい順に返す（同じ記事は1件に。各記事に cat=ジャンル）
-//   /news/article?url=<記事URL>  … 記事ページを取ってきて本文だけ抜き出してJSONで返す（Wm2Bの画面で読むため）
+//   /news/article?url=<記事URL>  … 記事ページを取ってきて本文だけ抜き出してJSONで返す（Wm2Bの画面で読むため）。
+//                                 blocks に段落・写真・写真ページへのリンクを本文の順番で入れる
 //   /news/thumb?url=<記事URL>    … 記事の写真（og:image）へ転送する。一覧のサムネに <img src> でそのまま使う
 //   /news/search?q=<キーワード>  … テーマ用。Yahoo!ニュースの記事検索の結果を返す。読み取れなかった時は
 //                                 Googleニュースの検索で代わりに探す（その記事は ext=true＝Wm2B内で本文は読めない）
@@ -232,7 +233,8 @@ function parseYahooSearch(html) {
 const BODY_MARKERS = ['article_body', 'articleBody', 'article-body'];
 const END_MARKERS = ['</article>', 'article_footer', 'class="related', '関連記事', 'コメント'];
 const JUNK = /記事全文を読む|無断転載|Copyright|All rights reserved|Yahoo!ニュース|この記事は|^\s*【関連記事】/;
-function extractParagraphs(html) {
+// 記事本文の入れ物（article_body 等）の中だけを切り出す。見つからなければページ全体
+function bodySlice(html) {
   let body = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '');
   const start = BODY_MARKERS.map(k => body.indexOf(k)).filter(i => i >= 0).sort((a, b) => a - b)[0];
   if (start !== undefined) {
@@ -240,15 +242,49 @@ function extractParagraphs(html) {
     const end = END_MARKERS.map(k => body.indexOf(k, 50)).filter(i => i > 0).sort((a, b) => a - b)[0];
     if (end !== undefined) body = body.slice(0, end);
   }
+  return body;
+}
+function pTexts(pHtml) {
+  const text = decode(pHtml.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, ''));
+  return text.split(/\n\s*\n/).map(t => t.replace(/[ \t　]+\n/g, '\n').trim()).filter(t => t.length >= 10 && !JUNK.test(t));
+}
+function extractParagraphs(html) {
   const out = [];
   const re = /<p[\s>][\s\S]*?<\/p>/gi;
+  const body = bodySlice(html);
+  let m;
+  while ((m = re.exec(body))) out.push(...pTexts(m[0]));
+  return out;
+}
+// 本文を「段落・写真・写真ページへのリンク」の並び順のまま拾う（2026-11-01追加。Wm2Bは本文の途中に写真を出す）
+//   { t:'p', text } / { t:'img', src, cap } / { t:'gallery', url, label }
+//   写真はYahoo!の画像サーバー(yimg.jp)の物だけ（アイコンや広告を拾わないため）。<figcaption> は直前の写真の説明にする
+function extractBlocks(html) {
+  const body = bodySlice(html);
+  const out = [];
+  const seen = new Set();
+  const re = /<a\b[^>]*href="(https:\/\/news\.yahoo\.co\.jp\/articles\/[0-9a-zA-Z]+\/images\/\d+)[^"]*"[^>]*>([\s\S]*?)<\/a>|<p[\s>][\s\S]*?<\/p>|<img\b[^>]*>|<figcaption[\s>][\s\S]*?<\/figcaption>/gi;
   let m;
   while ((m = re.exec(body))) {
-    const text = decode(m[0].replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, ''));
-    text.split(/\n\s*\n/).forEach(t => {
-      t = t.replace(/[ \t　]+\n/g, '\n').trim();
-      if (t.length >= 10 && !JUNK.test(t)) out.push(t);
-    });
+    const tag = m[0];
+    if (m[1]) {
+      if (seen.has(m[1])) continue;
+      seen.add(m[1]);
+      const label = decode(m[2].replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
+      out.push({ t: 'gallery', url: m[1], label: label.length > 40 ? label.slice(0, 40) + '…' : label });
+    } else if (/^<p/i.test(tag)) {
+      pTexts(tag).forEach(text => out.push({ t: 'p', text }));
+    } else if (/^<img/i.test(tag)) {
+      const src = decode((tag.match(/\bdata-src="([^"]+)"/i) || tag.match(/\bsrc="([^"]+)"/i) || [, ''])[1]);
+      const w = +((tag.match(/\bwidth="(\d+)"/i) || [, 999])[1]);
+      if (!/^https:\/\/[^/]*yimg\.jp\//.test(src) || w < 80 || seen.has(src)) continue;
+      seen.add(src);
+      out.push({ t: 'img', src, cap: decode((tag.match(/\balt="([^"]*)"/i) || [, ''])[1]).trim() });
+    } else {
+      const cap = decode(tag.replace(/<[^>]+>/g, '')).trim();
+      const last = out[out.length - 1];
+      if (cap && last && last.t === 'img') last.cap = cap;
+    }
   }
   return out;
 }
@@ -259,5 +295,6 @@ function extractArticle(html) {
     date: (html.match(/<time[^>]*>([^<]+)<\/time>/i) || [, ''])[1].trim(),
     source: meta(html, 'og:site_name') || 'Yahoo!ニュース',
     paragraphs: extractParagraphs(html),
+    blocks: extractBlocks(html),
   };
 }

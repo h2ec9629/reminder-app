@@ -316,21 +316,52 @@ function newsOpenItem(n) {
         + `<a class="news-orig" href="${escH(n.link)}">元の記事を開く</a>`;
     });
 }
+// 写真1枚（タップで大きく表示）
+function newsFigHtml(src, cap) {
+  return `<figure class="news-fig"><img class="news-img" src="${escH(src)}" alt="" loading="lazy" onclick="newsZoom(this.src)" onerror="this.parentNode.remove()">`
+    + (cap ? `<figcaption class="news-cap">${escH(cap)}</figcaption>` : '') + '</figure>';
+}
 function newsArticleHtml(a, n) {
-  const paras = a.paragraphs || [];
-  const meta  = [a.source, a.date || newsAgo(n.date)].filter(Boolean).join(' · ');
+  const paras  = a.paragraphs || [];
+  const blocks = a.blocks || [];   // 中継が新しければ、段落と写真が本文の順番で入っている
+  const meta   = [a.source, a.date || newsAgo(n.date)].filter(Boolean).join(' · ');
+  const base   = s => String(s || '').replace(/\?.*$/, '');
+  // 代表写真(og:image)は、本文の中に同じ写真が無い時だけ一番上に出す
+  const topImg = a.image && !blocks.some(b => b.t === 'img' && base(b.src) === base(a.image));
+  const body = blocks.some(b => b.t === 'p')
+    ? blocks.map(b => b.t === 'p' ? `<p class="news-p">${escH(b.text)}</p>`
+        : b.t === 'img' ? newsFigHtml(b.src, b.cap)
+        // 写真ページへのリンク：中継がそのページの写真へ転送するので、そのまま写真として出す
+        : newsFigHtml(`${NEWS_API}/thumb?url=${encodeURIComponent(b.url)}`, b.label)).join('')
+    : paras.length ? paras.map(p => `<p class="news-p">${escH(p)}</p>`).join('')
+    : '<div class="news-empty">本文を読み取れませんでした</div>';
   return `<div class="news-meta">${escH(meta)}</div>`
-    + (a.image ? `<img class="news-img" src="${escH(a.image)}" alt="" loading="lazy" onerror="this.remove()">` : '')
+    + (topImg ? newsFigHtml(a.image, '') : '')
     + (a.lead && paras.length && paras[0] !== a.lead.split('\n')[0] ? `<p class="news-lead">${escH(a.lead)}</p>` : '')
-    + (paras.length ? paras.map(p => `<p class="news-p">${escH(p)}</p>`).join('')
-                    : '<div class="news-empty">本文を読み取れませんでした</div>')
+    + body
     // 写真・動画・表など、ここで出せない物を見たい時の逃げ道
     + `<a class="news-orig" href="${escH(a.url || n.link)}">元の記事を開く</a>`;
 }
+// 写真を画面いっぱいに表示（タップで閉じる）
+function newsZoom(src) {
+  let z = document.getElementById('newsZoom');
+  if (!z) {
+    z = document.createElement('div');
+    z.id = 'newsZoom';
+    z.className = 'news-zoom';
+    z.onclick = newsZoomClose;
+    z.innerHTML = '<img alt=""><span class="news-zoom-x">✕</span>';
+    document.body.appendChild(z);
+  }
+  z.querySelector('img').src = src;
+  z.classList.add('show');
+}
+function newsZoomClose() { const z = document.getElementById('newsZoom'); if (z) z.classList.remove('show'); }
 let _newsListScroll = 0;
 // 本体は body がスクロール枠なので、window と body の両方に効かせる
 function newsScrollTo(y) { window.scrollTo(0, y); document.body.scrollTop = y; }
 function newsBack() {
+  newsZoomClose();
   const reader = document.getElementById('newsReader');
   const wasOpen = !reader.classList.contains('hide');
   reader.classList.add('hide');
