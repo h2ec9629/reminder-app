@@ -34,9 +34,21 @@ function newsLoad(force) {
 }
 
 // 「3時間前」「10/30 12:10」形式
-function newsAgo(s) {
+// 日時の文字列を時刻(ミリ秒)に。RSSの「Sat, 31 Oct 2026 01:10:17 GMT」と、検索結果の「10/31(土) 9:12」（年なし・日本時間）の両方を読む
+function newsTime(s) {
+  const m = String(s || '').match(/^(\d{1,2})\/(\d{1,2})(?:\([^)]*\))?\s+(\d{1,2}):(\d{2})/);
+  if (m) {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), m[1] - 1, +m[2], +m[3], +m[4]);
+    if (d - now > 86400000) d.setFullYear(d.getFullYear() - 1);  // 年またぎ（1月に見る12月の記事）
+    return d.getTime();
+  }
   const t = Date.parse(s);
-  if (isNaN(t)) return s || '';   // 検索結果の「10/31(土) 9:12」などはそのまま出す
+  return isNaN(t) ? NaN : t;
+}
+function newsAgo(s) {
+  const t = newsTime(s);
+  if (isNaN(t)) return s || '';
   const min = Math.floor((Date.now() - t) / 60000);
   if (min < 1)  return 'たった今';
   if (min < 60) return min + '分前';
@@ -65,10 +77,15 @@ const NEWS_THEME_TTL  = 10 * 60 * 1000;
 const NEWS_THEMES_DEFAULT = ['エイリアン','Anthropic','ChatGPT','OpenAI','人工知能','衆議院 解散','政局','テレビゲーム','国民民主党',
   '富山県','コムドット','東京都知事選挙','安芸高田市','石丸伸二','麻雀','内部告発','Amazonプライム・ビデオ','ミニバン',
   '炎上','YouTuber','地球温暖化','Excel','電子たばこ','YouTube','Amazon','スター・ウォーズ','Steam','暗黒物質','Minecraft','ブラックホール'];
-const _newsThemeCache = {};  // テーマ → { at, items }（このページを開いている間だけ）
+// テーマ → { at, items }。この端末に覚えておき、開き直した時もすぐ出す（古ければ裏で取り直す）
+const NEWS_THEME_CACHE_KEY = 'ojisan_news_theme_cache_v1';
+const _newsThemeCache = (() => { try { return JSON.parse(localStorage.getItem(NEWS_THEME_CACHE_KEY)) || {}; } catch(e) { return {}; } })();
+const _newsThemeLoading = {};
+let _newsAllN = 50;          // 「すべて」で出す件数（「もっと見る」で増やす）
+const NEWS_ALL_PER_THEME = 5; // 「すべて」に混ぜるのは各テーマの新しい方から5件（全部混ぜると数百件になるため）
 let _newsView = [];          // 今一覧に出している記事（タップで開く時に使う）
 let _newsPref = (() => { try { return JSON.parse(localStorage.getItem(NEWS_PREF_KEY)) || {}; } catch(e) { return {}; } })();
-const newsMode = () => _newsPref.mode === 'theme' ? 'theme' : 'genre';
+const newsMode = () => (_newsPref.mode === 'theme' || _newsPref.mode === 'genre') ? _newsPref.mode : 'all';
 function newsSavePref() { try { localStorage.setItem(NEWS_PREF_KEY, JSON.stringify(_newsPref)); } catch(e) {} }
 function newsThemes() {
   try { const t = JSON.parse(localStorage.getItem(NEWS_THEME_KEY)); if (Array.isArray(t)) return t; } catch(e) {}
@@ -80,23 +97,35 @@ function newsSaveThemes(t) { try { localStorage.setItem(NEWS_THEME_KEY, JSON.str
 function newsShow() {
   newsBack();
   newsRender();
-  if (newsMode() === 'genre' && (!newsCached() || Date.now() - newsCached().at >= NEWS_TTL)) newsRefresh();
+  newsEnsureFresh();
 }
 function newsSetMode(m) {
   _newsPref.mode = m; newsSavePref();
+  _newsAllN = 50;
   newsRender();
-  window.scrollTo(0, 0);
-  if (m === 'genre' && (!newsCached() || Date.now() - newsCached().at >= NEWS_TTL)) newsRefresh();
+  newsScrollTo(0);
+  newsEnsureFresh();
+}
+// 今のモードで古くなっている物を取り直す（ジャンル＝5分、テーマ＝10分）
+function newsEnsureFresh() {
+  const m = newsMode();
+  if (m !== 'theme' && (!newsCached() || Date.now() - newsCached().at >= NEWS_TTL)) newsRefreshGenre();
+  if (m === 'all') newsLoadThemes();
 }
 function newsRender() {
   const m = newsMode();
   document.querySelectorAll('.news-mode').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
-  if (m === 'theme') newsRenderTheme(); else newsRenderList();
+  if (m === 'theme') newsRenderTheme(); else if (m === 'genre') newsRenderList(); else newsRenderAll();
 }
 function newsRefresh() {
-  if (newsMode() === 'theme') { const t = _newsPref.theme; if (t) delete _newsThemeCache[t]; newsRenderTheme(); return; }
+  const m = newsMode();
+  if (m === 'theme') { const t = _newsPref.theme; if (t) delete _newsThemeCache[t]; newsRenderTheme(); return; }
+  if (m === 'all') { newsThemes().forEach(t => delete _newsThemeCache[t]); newsLoadThemes(); }
+  newsRefreshGenre();
+}
+function newsRefreshGenre() {
   document.getElementById('newsStatus').textContent = '更新中...';
-  newsLoad(true).then(() => { newsRenderList(); newsWidget(); },
+  newsLoad(true).then(() => { newsRender(); newsWidget(); },
     e => { document.getElementById('newsStatus').textContent = '取得できませんでした（' + e.message + '）'; });
 }
 // 記事カードの一覧を描く（items は記事の配列。タップで _newsView[i] を開く）
@@ -106,7 +135,8 @@ function newsListHtml(items, showCat) {
     ? items.map((n, i) => {
         // サムネ：検索結果に写真があればそれ、無ければ中継が記事ページの写真へ転送する（Yahoo!の記事だけ）。写真が無ければ枠ごと消す
         const img = n.image || (!n.ext ? `${NEWS_API}/thumb?url=${encodeURIComponent(n.link)}` : '');
-        const cat = showCat && n.cat ? `<span class="news-item-cat">${NEWS_CATS[n.cat] || ''}</span>` : '';
+        const tag = n.theme || (n.cat && NEWS_CATS[n.cat]) || '';
+        const cat = showCat && tag ? `<span class="news-item-cat${n.theme ? ' theme' : ''}">${escH(tag)}</span>` : '';
         const ext = n.ext ? '<span class="news-item-cat">外部</span>' : '';
         return `<button type="button" class="news-item" onclick="newsOpenView(${i})">`
           + `<span class="news-item-body"><span class="news-item-title">${escH(n.title)}</span><span class="news-item-date">${cat}${ext}${escH(newsAgo(n.date))}</span></span>`
@@ -128,8 +158,71 @@ function newsRenderList() {
 function newsSetCat(k) {
   _newsCat = k;
   newsRenderList();
-  window.scrollTo(0, 0);
+  newsScrollTo(0);
 }
+// テーマ1つを検索して覚える（同じテーマを同時に2回取りに行かない）
+function newsFetchTheme(t) {
+  if (_newsThemeLoading[t]) return _newsThemeLoading[t];
+  return _newsThemeLoading[t] = fetch(NEWS_API + '/search?q=' + encodeURIComponent(t))
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('status ' + r.status)))
+    .then(d => {
+      _newsThemeCache[t] = { at: Date.now(), items: d.items || [] };
+      newsSaveThemeCache();
+      return _newsThemeCache[t].items;
+    })
+    .finally(() => { delete _newsThemeLoading[t]; });
+}
+let _newsThemeSaveTimer = null;
+function newsSaveThemeCache() {
+  clearTimeout(_newsThemeSaveTimer);
+  _newsThemeSaveTimer = setTimeout(() => {
+    const keep = {};
+    newsThemes().forEach(t => { if (_newsThemeCache[t]) keep[t] = _newsThemeCache[t]; });  // 消したテーマの分は捨てる
+    try { localStorage.setItem(NEWS_THEME_CACHE_KEY, JSON.stringify(keep)); } catch(e) {}
+  }, 500);
+}
+// 古くなった全テーマを4つずつ順番に取り直す（30個を一度に投げない）。届くたびに「すべて」を描き直す
+let _newsThemeQueue = null;
+function newsLoadThemes() {
+  if (_newsThemeQueue) return;
+  const todo = newsThemes().filter(t => !_newsThemeCache[t] || Date.now() - _newsThemeCache[t].at >= NEWS_THEME_TTL);
+  if (!todo.length) return;
+  _newsThemeQueue = todo;
+  let redraw = null;
+  const next = () => {
+    const t = _newsThemeQueue && _newsThemeQueue.shift();
+    if (!t) return Promise.resolve();
+    return newsFetchTheme(t).catch(() => {}).then(() => {
+      if (newsMode() === 'all' && !redraw) redraw = setTimeout(() => { redraw = null; if (newsMode() === 'all') newsRenderAll(); }, 400);
+      return next();
+    });
+  };
+  Promise.all([next(), next(), next(), next()]).then(() => {
+    _newsThemeQueue = null;
+    if (newsMode() === 'all') newsRenderAll();
+  });
+}
+// 「すべて」：ジャンルの記事＋各テーマの新しい5件を、同じ記事は1件にして新しい順に並べる
+function newsRenderAll() {
+  const seen = new Set();
+  const all = [];
+  const add = n => { const id = n.link.replace(/\?.*$/, ''); if (!seen.has(id)) { seen.add(id); all.push(n); } };
+  const c = newsCached();
+  ((c && c.items) || []).forEach(add);
+  newsThemes().forEach(t => {
+    const tc = _newsThemeCache[t];
+    if (tc) tc.items.slice().sort((a, b) => (newsTime(b.date) || 0) - (newsTime(a.date) || 0))
+      .slice(0, NEWS_ALL_PER_THEME).forEach(n => add({ ...n, theme: t }));
+  });
+  all.sort((a, b) => (newsTime(b.date) || 0) - (newsTime(a.date) || 0));
+  const pending = _newsThemeQueue ? _newsThemeQueue.length + Object.keys(_newsThemeLoading).length : 0;
+  document.getElementById('newsStatus').textContent = `${all.length}件` + (pending ? ` · テーマを読み込み中（残り${pending}）` : '');
+  document.getElementById('newsCats').innerHTML = '';
+  const list = document.getElementById('newsList');
+  list.innerHTML = newsListHtml(all.slice(0, _newsAllN), true)
+    + (all.length > _newsAllN ? `<button type="button" class="news-more" onclick="_newsAllN+=50;newsRenderAll()">もっと見る（残り${all.length - _newsAllN}件）</button>` : '');
+}
+
 function newsRenderTheme() {
   const themes = newsThemes();
   if (!themes.includes(_newsPref.theme)) { _newsPref.theme = themes[0] || ''; newsSavePref(); }
@@ -146,13 +239,10 @@ function newsRenderTheme() {
     return;
   }
   document.getElementById('newsStatus').textContent = `「${t}」を検索中...`;
-  list.innerHTML = '<div class="news-empty">読み込み中...</div>';
-  fetch(NEWS_API + '/search?q=' + encodeURIComponent(t))
-    .then(r => r.ok ? r.json() : Promise.reject(new Error('status ' + r.status)))
-    .then(d => {
-      _newsThemeCache[t] = { at: Date.now(), items: d.items || [] };
-      if (newsMode() === 'theme' && _newsPref.theme === t) newsRenderTheme();
-    })
+  // 古い結果があれば先に出しておき、新しいのが届いたら差し替える
+  list.innerHTML = c ? newsListHtml(c.items, false) : '<div class="news-empty">読み込み中...</div>';
+  newsFetchTheme(t)
+    .then(() => { if (newsMode() === 'theme' && _newsPref.theme === t) newsRenderTheme(); })
     .catch(e => {
       if (newsMode() !== 'theme' || _newsPref.theme !== t) return;
       document.getElementById('newsStatus').textContent = `「${t}」を取得できませんでした（${e.message}）`;
@@ -162,7 +252,7 @@ function newsRenderTheme() {
 function newsSetTheme(i) {
   _newsPref.theme = newsThemes()[i]; newsSavePref();
   newsRenderTheme();
-  window.scrollTo(0, 0);
+  newsScrollTo(0);
 }
 // テーマの編集：一覧の上に編集欄を出す（追加・削除・初期に戻す）
 function newsEditThemes() {
@@ -201,9 +291,11 @@ function newsOpenView(i) { if (_newsView[i]) newsOpenItem(_newsView[i]); }
 function newsOpenItem(n) {
   if (!document.getElementById('tab-news').classList.contains('active')) switchTab('news', document.createElement('button'));
   const reader = document.getElementById('newsReader');
-  document.getElementById('newsListView').classList.add('hide');
+  const listView = document.getElementById('newsListView');
+  if (!listView.classList.contains('hide')) _newsListScroll = window.scrollY || document.body.scrollTop;  // 戻った時に同じ位置から見られるように
+  listView.classList.add('hide');
   reader.classList.remove('hide');
-  window.scrollTo(0, 0);
+  newsScrollTo(0);
   const head = `<button type="button" class="news-back" onclick="newsBack()">◀ 一覧へ</button><h2 class="news-title">${escH(n.title)}</h2>`;
   // Yahoo!以外のサイトの記事（テーマ検索の代わりに見つけた物）は本文を読み取れないので元のサイトで開く
   if (n.ext) {
@@ -235,7 +327,31 @@ function newsArticleHtml(a, n) {
     // 写真・動画・表など、ここで出せない物を見たい時の逃げ道
     + `<a class="news-orig" href="${escH(a.url || n.link)}">元の記事を開く</a>`;
 }
+let _newsListScroll = 0;
+// 本体は body がスクロール枠なので、window と body の両方に効かせる
+function newsScrollTo(y) { window.scrollTo(0, y); document.body.scrollTop = y; }
 function newsBack() {
-  document.getElementById('newsReader').classList.add('hide');
+  const reader = document.getElementById('newsReader');
+  const wasOpen = !reader.classList.contains('hide');
+  reader.classList.add('hide');
   document.getElementById('newsListView').classList.remove('hide');
+  if (wasOpen) newsScrollTo(_newsListScroll);
 }
+
+// 記事を読んでいる時に右へフリックすると一覧へ戻る（iPhoneの「戻る」と同じ感覚）。
+// 横に80px以上・縦の動きの2倍以上・0.5秒以内のはっきりしたフリックだけ（縦スクロールや写真の拡大では反応しない）
+(function () {
+  let sx = 0, sy = 0, st = 0, on = false;
+  document.addEventListener('touchstart', e => {
+    const r = document.getElementById('newsReader');
+    on = !!r && !r.classList.contains('hide') && document.getElementById('tab-news').classList.contains('active') && e.touches.length === 1;
+    if (on) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); }
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (!on) return;
+    on = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - sx, dy = t.clientY - sy;
+    if (dx > 80 && dx > Math.abs(dy) * 2 && Date.now() - st < 500) newsBack();
+  }, { passive: true });
+})();
