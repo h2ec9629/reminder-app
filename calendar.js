@@ -13,6 +13,12 @@ const JP_HOLIDAYS = {
   '2026-05-06':'振替休日','2026-07-20':'海の日','2026-08-11':'山の日',
   '2026-09-21':'敬老の日','2026-09-23':'秋分の日','2026-10-12':'スポーツの日',
   '2026-11-03':'文化の日','2026-11-23':'勤労感謝の日',
+  '2027-01-01':'元日','2027-01-11':'成人の日','2027-02-11':'建国記念日',
+  '2027-02-23':'天皇誕生日','2027-03-21':'春分の日','2027-03-22':'振替休日',
+  '2027-04-29':'昭和の日','2027-05-03':'憲法記念日','2027-05-04':'みどりの日',
+  '2027-05-05':'こどもの日','2027-07-19':'海の日','2027-08-11':'山の日',
+  '2027-09-20':'敬老の日','2027-09-23':'秋分の日','2027-10-11':'スポーツの日',
+  '2027-11-03':'文化の日','2027-11-23':'勤労感謝の日',
 };
 
 let _calYear  = new Date().getFullYear();
@@ -201,6 +207,30 @@ function abbrevName(n) {
   return n;
 }
 
+// d2h（日付→時間軸h。稼働日1日=8h）を、エクセルの最後の日より先へ延長する。
+// 土日と祝日(JP_HOLIDAYS)を飛ばして1日8hずつ足し、仕事の棒の終わり(ab)・納品日・期日・支給日が全部入る所まで。
+// 最低でも10稼働日ぶんは足す（最大120稼働日）。延長した日は会社の休み（年末年始など）を知らないので、そこは平日扱い
+function ganttExtendD2h(src, rows) {
+  const d2h = { ...src };
+  const keys = Object.keys(d2h).filter(k => d2h[k] >= 0).sort();
+  if (!keys.length) return d2h;
+  let lastH = d2h[keys[keys.length - 1]];
+  const maxAb = Math.max(0, ...rows.map(r => +r.ab || 0));
+  const isDate = d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d);
+  const maxDate = rows.reduce((m, r) => [r.k, r.e, r.s].reduce((mm, d) => (isDate(d) && d > mm ? d : mm), m), keys[keys.length - 1]);
+  const dt = new Date(keys[keys.length - 1] + 'T00:00:00');
+  let added = 0;
+  while ((lastH < maxAb + 8 || isoOf(dt) < maxDate || added < 10) && added < 120) {
+    dt.setDate(dt.getDate() + 1);
+    const iso = isoOf(dt);
+    if (dt.getDay() === 0 || dt.getDay() === 6 || JP_HOLIDAYS[iso]) continue;
+    lastH += 8;
+    d2h[iso] = lastH;
+    added++;
+  }
+  return d2h;
+}
+
 // ▼ガントタブ＝横棒チャート。データは gantt_data.rows（VBA:Module2が生成）。
 //   完了フィルタあり（259行付近）：進捗100%or工数0は消すが、納品日(e)が未来なら残す。
 //   ※「日程タブ」のカードリストは別ファイル ui.js:renderSchedule()。混同注意。
@@ -225,6 +255,9 @@ function renderGantt() {
     '2026-08-03':368, '2026-08-04':376, '2026-08-05':384
   };
   if (_ganttData && _ganttData.d2h) d2h = _ganttData.d2h;
+  // エクセルの稼働日マップ(d2h)はエクセルの表にある日付までしか無く、それより先の日付が描けなかった
+  // （2026-11：11/24以降が見えない）。最後の日より先を自動で延長する（ganttExtendD2h）
+  d2h = ganttExtendD2h(d2h, (_ganttData && _ganttData.rows) || []);
 
   // 基準日（デイライン）：エクセルのd2hマップ＋base_dateだけで決める。
   // PCの今日(new Date)は一切使わない＝エクセルファイルのミラーに徹する。
