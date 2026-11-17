@@ -27,7 +27,7 @@
     </div>
     <div id="scheduleGrid"></div>
     <div id="schSynced" class="sch-synced"></div>
-    <button type="button" class="sch-week-btn drv-reload" onclick="loadDriver()">最新に更新</button>
+    <button type="button" class="sch-week-btn drv-reload" onclick="hardReload()">最新に更新</button>
   </div>
 <script>
 // 以下は ui.js の配送タブ部分（escH / circledNum / renderSchedule / 週切替 / fmtDateStr）の写し。
@@ -277,6 +277,15 @@ async function loadDriver() {
     return;
   }
   renderSchedule();
+}
+// 「最新に更新」ボタン：日程データだけでなくページ自体（HTML/CSS）も読み込み直す。
+// 普通の再読込だとブラウザが覚えている古いstyle.css等を使い続けることがあるので、
+// 先にcache:'reload'で取り直してブラウザの記憶を上書きしてから再読込する。
+async function hardReload() {
+  try {
+    await Promise.all(['driver.html', 'style.css'].map(u => fetch(u, { cache: 'reload' })));
+  } catch(e) { /* 取れなくても再読込はする */ }
+  location.reload();
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadDriver(); });
 renderSchedule();
