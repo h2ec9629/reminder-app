@@ -8,7 +8,11 @@
   <link rel="stylesheet" href="style.css">
   <style>
     /* ドライバー用：リマインダーアプリの配送タブ(ui.js:renderSchedule)だけを単独ページにしたもの */
-    html, body { height: auto; overflow-y: auto; }
+    /* bodyを独立したスクロール箱にすると、style.cssのoverscroll-behavior:noneで
+       指のスワイプが画面全体のスクロールへ伝わらず、全く動かなくなる。
+       スクロールはhtml（画面全体）だけに任せ、bodyはoverflow:visibleに戻す。 */
+    html { height: auto; overflow-y: auto; }
+    body { height: auto; overflow: visible; }
     .drv-wrap { max-width: 640px; margin: 0 auto; padding: 14px 12px 24px; }
     .drv-reload { display: block; margin: 14px auto 0; }
   </style>
