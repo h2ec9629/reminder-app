@@ -122,6 +122,20 @@ function renderSchedule() {
   });
   const dates = Object.keys(dateMap).sort();
 
+  // 2026-11-18〜：週の納品有無ストリップ（月〜金の下に、納品がある日だけ〇）。週全体をひと目で見る用。
+  //   〇の日をタップすると、その日のカードまでスクロールする。
+  const WS_WD = '月火水木金';
+  let stripHtml = '<div class="sch-week-strip"><span class="sch-ws-label">納品</span>';
+  for (let i = 0; i < 5; i++) {
+    const dd = new Date(selMonD); dd.setDate(dd.getDate() + i);
+    const iso = toIso(dd);
+    const has = !!(dateMap[iso] && dateMap[iso].ad.length);
+    stripHtml += `<button type="button" class="sch-ws-day${has ? ' on' : ''}"${has ? ` onclick="schJumpDay('${iso}')"` : ' disabled'}>
+      <span class="sch-ws-wd">${WS_WD[i]}</span><span class="sch-ws-mark">${has ? '〇' : ''}</span>
+    </button>`;
+  }
+  stripHtml += '</div>';
+
   let shikyuHtml = '';
   if (shikyu && (shikyu.sono||[]).length) {
     shikyuHtml += `<div class="sch-day-card">
@@ -141,7 +155,7 @@ function renderSchedule() {
   }
 
   if (dates.length === 0) {
-    grid.innerHTML = `<div class="sch-empty-msg">${weekLabelText}の日程はありません</div>` + shikyuHtml;
+    grid.innerHTML = stripHtml + `<div class="sch-empty-msg">${weekLabelText}の日程はありません</div>` + shikyuHtml;
   } else {
     let html = '';
     dates.forEach(date => {
@@ -151,7 +165,7 @@ function renderSchedule() {
       const dotColor = (hasAc && hasAd) ? 'var(--warning)'
                      : hasAc ? 'var(--warning)'
                      : 'var(--success)';
-      html += `<div class="sch-day-card">
+      html += `<div class="sch-day-card" id="sch-day-${date}">
         <div class="sch-day-hd">
           <span class="sch-day-hd-dot" style="background:${dotColor}"></span>
           ${fmtDateStr(date)}
@@ -230,13 +244,19 @@ function renderSchedule() {
       });
       html += '</div>';
     });
-    grid.innerHTML = html + shikyuHtml;
+    grid.innerHTML = stripHtml + html + shikyuHtml;
   }
 
   if (_schSyncedAt) {
     const d = new Date(_schSyncedAt);
     syncd.textContent = `最終同期: ${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
   }
+}
+
+// 週の納品有無ストリップの〇をタップ → その日のカードへスクロール
+function schJumpDay(iso) {
+  const el = document.getElementById('sch-day-' + iso);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // 配送タブの週切替（今週/来週の2週のみ。Gist側もこの2週分しか持っていない）
