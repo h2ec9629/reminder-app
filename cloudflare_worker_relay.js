@@ -209,7 +209,13 @@ function parseRss(xml) {
 }
 
 // Yahoo!ニュース検索の結果ページから記事を拾う。記事本文(/articles/)へのリンク1つが1件。
-// リンクの中の文字のうち一番長いものを見出し、<time> を日時、<img> をサムネとして使う（ページの作りが少し変わっても拾えるように）
+// <time> を日時、<img> をサムネとして使う。
+// 見出しの決め方（2026-11-18変更）：以前は「リンクの中で一番長い文字」を見出しにしていたが、
+// 検索結果には見出しより長い要約文も入っていて、しかも検索語が<em>等で強調されて文字が途切れるため、
+// 「の会員サービス…」「・足羽発電所で…」のような要約の途中が見出しになっていた。
+//   1) 強調などの文中のタグ（em/b/strong/mark/i/u/span）は外してから文字を拾う（途中で切れないように）
+//   2) class名に title を含む要素があれば、その中身を見出しにする
+//   3) 無ければ、リンクの中で最初に出てくる8文字以上の文字（見出しは要約より前に置かれる）
 function parseYahooSearch(html) {
   const items = [];
   const seen = new Set();
@@ -218,8 +224,11 @@ function parseYahooSearch(html) {
   while ((m = re.exec(html)) && items.length < 30) {
     if (seen.has(m[1])) continue;
     const inner = m[2];
-    const texts = inner.replace(/<time[\s\S]*?<\/time>/gi, '\n').split(/<[^>]+>/).map(t => decode(t).trim()).filter(Boolean);
-    const title = texts.reduce((a, b) => (b.length > a.length ? b : a), '');
+    const flat  = inner.replace(/<time[\s\S]*?<\/time>/gi, '\n').replace(/<\/?(?:em|b|strong|mark|i|u|span)\b[^>]*>/gi, '');
+    const texts = s => s.split(/<[^>]+>/).map(t => decode(t).replace(/\s+/g, ' ').trim()).filter(Boolean);
+    const tm    = flat.match(/<(\w+)\b[^>]*class="[^"]*title[^"]*"[^>]*>([\s\S]*?)<\/\1>/i);
+    const titled = tm ? texts(tm[2]).join(' ') : '';
+    const title = titled.length >= 8 ? titled : (texts(flat).find(t => t.length >= 8) || '');
     if (title.length < 8) continue;
     seen.add(m[1]);
     const img = (inner.match(/<img[^>]+src="([^"]+)"/i) || [, ''])[1];

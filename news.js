@@ -296,19 +296,29 @@ function newsOpenItem(n) {
   listView.classList.add('hide');
   reader.classList.remove('hide');
   newsScrollTo(0);
-  const head = `<button type="button" class="news-back" onclick="newsBack()">◀ 一覧へ</button><h2 class="news-title">${escH(n.title)}</h2>`;
+  let head = `<button type="button" class="news-back" onclick="newsBack()">◀ 一覧へ</button><h2 class="news-title">${escH(n.title)}</h2>`;
+  // 2026-11-18〜：テーマ検索の見出しが要約の途中になっていることがあるので、本文側の正式な見出し(og:title)が
+  //   取れたらそちらで上書きする（一覧の見出しも直す）
+  const fixTitle = a => {
+    const t = String(a.title || '').replace(/\s*[-|｜]\s*Yahoo!ニュース\s*$/, '').trim();
+    if (t.length < 8 || t === n.title) return;
+    n.title = t;
+    head = `<button type="button" class="news-back" onclick="newsBack()">◀ 一覧へ</button><h2 class="news-title">${escH(t)}</h2>`;
+    newsSaveThemeCache();
+  };
   // Yahoo!以外のサイトの記事（テーマ検索の代わりに見つけた物）は本文を読み取れないので元のサイトで開く
   if (n.ext) {
     reader.innerHTML = head + `<div class="news-meta">${escH(newsAgo(n.date))}</div><div class="news-empty">この記事はYahoo!ニュース以外のサイトのため、Wm2Bの中では本文を読めません</div>`
       + `<a class="news-orig news-orig-big" href="${escH(n.link)}">元のサイトで読む</a>`;
     return;
   }
-  if (_newsArticles[n.link]) { reader.innerHTML = head + newsArticleHtml(_newsArticles[n.link], n); return; }
+  if (_newsArticles[n.link]) { fixTitle(_newsArticles[n.link]); reader.innerHTML = head + newsArticleHtml(_newsArticles[n.link], n); return; }
   reader.innerHTML = head + '<div class="news-empty">本文を読み込み中...</div>';
   fetch(NEWS_API + '/article?url=' + encodeURIComponent(n.link))
     .then(r => r.ok ? r.json() : Promise.reject(new Error('status ' + r.status)))
     .then(a => {
       _newsArticles[n.link] = a;
+      fixTitle(a);
       if (!reader.classList.contains('hide')) reader.innerHTML = head + newsArticleHtml(a, n);
     })
     .catch(e => {
