@@ -1034,15 +1034,11 @@
       font-size: 12px; font-weight: 700; color: var(--text-sub);
       flex-shrink: 0;
     }
-    /* 週の納品有無ストリップ（2026-11-18追加：月〜金のうち納品がある日に〇） */
+    /* 週の納品・引取ストリップ（2026-11-18追加：白◎＝納品＋引取／緑●＝納品のみ／黄●＝引取のみ） */
     .sch-week-strip {
       display: flex; align-items: stretch; gap: 4px;
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 6px 8px; margin-bottom: 10px;
-    }
-    .sch-ws-label {
-      align-self: center; font-size: 11px; font-weight: 700;
-      color: var(--text-sub); padding-right: 4px; flex-shrink: 0;
+      border-radius: 12px 12px 0 0; padding: 6px 8px;
     }
     .sch-ws-day {
       flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -1051,7 +1047,18 @@
     }
     .sch-ws-day.on { color: var(--text); cursor: pointer; }
     .sch-ws-wd   { font-size: 12px; font-weight: 700; }
-    .sch-ws-mark { font-size: 15px; font-weight: 700; line-height: 1; min-height: 15px; color: var(--success); }
+    .sch-ws-mark { font-size: 16px; font-weight: 700; line-height: 1; min-height: 16px; }
+    .sch-ws-mark.both { color: #FFFFFF; }
+    .sch-ws-mark.ad   { color: var(--success); }
+    .sch-ws-mark.ac   { color: #FACC15; }
+    .sch-ws-legend {
+      display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+      background: var(--surface); border: 1px solid var(--border); border-top: 0;
+      border-radius: 0 0 12px 12px; padding: 3px 8px 6px; margin-bottom: 10px;
+      font-size: 10px; color: var(--text-sub);
+    }
+    .sch-ws-legend span { display: inline-flex; align-items: center; gap: 3px; }
+    .sch-ws-legend .sch-ws-mark { font-size: 11px; min-height: 0; }
     .sch-day-card {
       background: var(--surface);
       border: 1px solid var(--border);

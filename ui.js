@@ -415,19 +415,26 @@ function renderSchedule() {
   });
   const dates = Object.keys(dateMap).sort();
 
-  // 2026-11-18〜：週の納品有無ストリップ（月〜金の下に、納品がある日だけ〇）。週全体をひと目で見る用。
-  //   〇の日をタップすると、その日のカードまでスクロールする。
+  // 2026-11-18〜：週の納品・引取ストリップ（月〜金の下に印）。週全体をひと目で見る用。
+  //   白◎＝納品と引取の両方／緑●＝納品のみ／黄●＝引取のみ（引取には梱包箱の支給も含む）。
+  //   印のある日をタップすると、その日のカードまでスクロールする。
   const WS_WD = '月火水木金';
-  let stripHtml = '<div class="sch-week-strip"><span class="sch-ws-label">納品</span>';
+  let stripHtml = '<div class="sch-week-strip">';
   for (let i = 0; i < 5; i++) {
     const dd = new Date(selMonD); dd.setDate(dd.getDate() + i);
     const iso = toIso(dd);
-    const has = !!(dateMap[iso] && dateMap[iso].ad.length);
-    stripHtml += `<button type="button" class="sch-ws-day${has ? ' on' : ''}"${has ? ` onclick="schJumpDay('${iso}')"` : ' disabled'}>
-      <span class="sch-ws-wd">${WS_WD[i]}</span><span class="sch-ws-mark">${has ? '〇' : ''}</span>
+    const hasAd = !!(dateMap[iso] && dateMap[iso].ad.length);
+    const hasAc = !!(dateMap[iso] && dateMap[iso].ac.length);
+    const kind  = (hasAd && hasAc) ? 'both' : hasAd ? 'ad' : hasAc ? 'ac' : '';
+    const mark  = kind === 'both' ? '◎' : kind ? '●' : '';
+    stripHtml += `<button type="button" class="sch-ws-day${kind ? ' on' : ''}"${kind ? ` onclick="schJumpDay('${iso}')"` : ' disabled'}>
+      <span class="sch-ws-wd">${WS_WD[i]}</span><span class="sch-ws-mark ${kind}">${mark}</span>
     </button>`;
   }
-  stripHtml += '</div>';
+  stripHtml += '</div><div class="sch-ws-legend">'
+    + '<span><b class="sch-ws-mark both">◎</b>納品＋引取</span>'
+    + '<span><b class="sch-ws-mark ad">●</b>納品のみ</span>'
+    + '<span><b class="sch-ws-mark ac">●</b>引取のみ</span></div>';
 
   let shikyuHtml = '';
   if (shikyu && (shikyu.sono||[]).length) {
