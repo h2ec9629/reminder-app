@@ -1034,31 +1034,32 @@
       font-size: 12px; font-weight: 700; color: var(--text-sub);
       flex-shrink: 0;
     }
-    /* 週の納品・引取ストリップ（2026-11-18追加：白◎＝納品＋引取／緑●＝納品のみ／黄●＝引取のみ） */
-    .sch-week-strip {
-      display: flex; align-items: stretch; gap: 4px;
+    /* 週の納品・引取表（2026-11-18追加：罫線付き。1段目＝日付(曜日)、2段目＝白◎納品＋引取／緑●納品のみ／黄●引取のみ） */
+    .sch-week-tbl {
+      width: 100%; border-collapse: collapse; table-layout: fixed;
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px 12px 0 0; padding: 6px 8px;
     }
-    .sch-ws-day {
-      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-      background: none; border: 0; padding: 2px 0; color: var(--text-faint);
-      font: inherit; cursor: default;
+    .sch-week-tbl th, .sch-week-tbl td {
+      border: 1px solid var(--border); text-align: center; padding: 5px 2px;
+      color: var(--text-faint);
     }
-    .sch-ws-day.on { color: var(--text); cursor: pointer; }
-    .sch-ws-wd   { font-size: 12px; font-weight: 700; }
-    .sch-ws-mark { font-size: 16px; font-weight: 700; line-height: 1; min-height: 16px; }
+    .sch-week-tbl th {
+      background: var(--surface-2); font-size: 12px; font-weight: 700; line-height: 1.3;
+    }
+    .sch-week-tbl td { height: 30px; }
+    .sch-week-tbl .on { color: var(--text); cursor: pointer; }
+    .sch-ws-wd   { display: block; font-size: 10px; font-weight: 600; }
+    .sch-ws-mark { font-size: 16px; font-weight: 700; line-height: 1; }
     .sch-ws-mark.both { color: #FFFFFF; }
     .sch-ws-mark.ad   { color: var(--success); }
     .sch-ws-mark.ac   { color: #FACC15; }
     .sch-ws-legend {
       display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
-      background: var(--surface); border: 1px solid var(--border); border-top: 0;
-      border-radius: 0 0 12px 12px; padding: 3px 8px 6px; margin-bottom: 10px;
+      padding: 4px 8px 0; margin-bottom: 10px;
       font-size: 10px; color: var(--text-sub);
     }
     .sch-ws-legend span { display: inline-flex; align-items: center; gap: 3px; }
-    .sch-ws-legend .sch-ws-mark { font-size: 11px; min-height: 0; }
+    .sch-ws-legend .sch-ws-mark { font-size: 11px; }
     .sch-day-card {
       background: var(--surface);
       border: 1px solid var(--border);
